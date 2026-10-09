@@ -1,18 +1,37 @@
 # GitHub Pages Setup
 
-Recommended public URL:
+Current temporary public URL:
+
+```text
+https://katjanestrickland.github.io/did-eprc-workshop/
+```
+
+Current temporary repository:
+
+```text
+katjanestrickland/did-eprc-workshop
+```
+
+Eventual LCDS public URL:
 
 ```text
 https://lcds-lab.github.io/did-eprc-workshop/
 ```
 
-Recommended repository:
+Eventual LCDS repository:
 
 ```text
 lcds-lab/did-eprc-workshop
 ```
 
-## One-Time Setup
+## Current Temporary Setup
+
+The site has been published from the personal repository `katjanestrickland/did-eprc-workshop` using GitHub Pages from:
+
+- Branch: `main`
+- Folder: `/root`
+
+## Later LCDS Setup
 
 1. Create a new public repository under the `lcds-lab` organization named `did-eprc-workshop`.
 2. Upload or push the contents of this `workshop-site` folder to the root of that repository.

@@ -2,6 +2,12 @@
 
 This folder is a practice GitHub Pages-style workshop site for the DID EPRC workshop.
 
+Temporary public site:
+
+```text
+https://katjanestrickland.github.io/did-eprc-workshop/
+```
+
 ## Current Contents
 
 - Static HTML mockup: `index.html`, `slides.html`, `code.html`, `data.html`, `resources.html`
