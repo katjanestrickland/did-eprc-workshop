@@ -1,0 +1,12 @@
+---
+title: "Data Downloads"
+---
+
+Links to the simulated data files used in the workshop examples.
+
+| Dataset | Purpose | Downloads |
+|---|---|---|
+| `simple_did_district` | Traditional DID, TWFE, and event-study examples with one treatment cohort. | [CSV](assets/data/simple_did_district.csv), [Stata](assets/data/simple_did_district.dta) |
+| `staggered_did_district` | Preview dataset with early adopters, later adopters, and never-treated districts. | [CSV](assets/data/staggered_did_district.csv), [Stata](assets/data/staggered_did_district.dta) |
+| `data_dictionary` | Variable names and descriptions. | [CSV](assets/data/data_dictionary.csv) |
+| `workshop_estimates` | Reference estimates from generated examples. | [CSV](assets/data/workshop_estimates.csv) |

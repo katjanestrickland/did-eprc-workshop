@@ -1,0 +1,5 @@
+---
+title: "Slides and Talk Outline"
+---
+
+[Download current outline PDF](slides/eprc_did_workshop_talk_outline.pdf)

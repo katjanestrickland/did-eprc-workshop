@@ -1,0 +1,9 @@
+---
+title: "Workshop Code"
+---
+
+Links to the draft student-facing code files:
+
+- [Part 1: Simple DID](code/01_simple_did.R)
+- [Part 2: Event Study](code/02_event_study.R)
+- [Part 3: Staggered DID Preview](code/03_staggered_preview.R)

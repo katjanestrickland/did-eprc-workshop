@@ -1,0 +1,15 @@
+variable,description
+district_id,Synthetic district identifier.
+school_id,Synthetic school identifier for the nested extension.
+school_numeric_id,Numeric school identifier for Stata compatibility.
+year,Study year coded 1 through 11.
+cohort,Treatment timing group.
+treatment_start_year,Year treatment begins; 0 for never-treated units.
+treated_ever,Indicator for ever-treated units.
+treated,Indicator for being treated in the current year.
+post,"Post-period indicator for the simple DID example, coded year >= 5."
+event_time,Years since treatment starts; never-treated units coded -99.
+pct_frl,Synthetic district share of students eligible for free/reduced-price lunch.
+untreated_outcome,Potential outcome without the treatment effect.
+true_effect,Known treatment effect added by the data-generating process.
+outcome,Observed synthetic achievement outcome.

@@ -1,0 +1,15 @@
+---
+title: "Difference-in-Differences for Education Policy"
+subtitle: "Practice GitHub Pages mockup for the EPRC workshop"
+---
+
+This 45-minute lecture introduces traditional DID, TWFE, event studies, and a brief preview of staggered adoption designs using synthetic district-year data.
+
+## Talk Outline
+
+| Time | Topic |
+|---|---|
+| 0-10 min | Policy question and data structure: introduce the education-policy example, simulated district-year panel, treatment timing, outcome, and comparison group. |
+| 10-25 min | Traditional DID: parallel trends, 2x2 DID, and the simple regression version. |
+| 25-38 min | TWFE and event study: district and year fixed effects, event-time indicators, and dynamic effects. |
+| 38-45 min | Staggered preview: year-5 and year-8 treatment groups as the transition to Wei's staggered DID section. |

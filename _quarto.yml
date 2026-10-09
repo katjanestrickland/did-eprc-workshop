@@ -1,0 +1,25 @@
+project:
+  type: website
+
+website:
+  title: "DID EPRC Workshop"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: slides.qmd
+        text: Slides
+      - href: code.qmd
+        text: Code
+      - href: data.qmd
+        text: Data
+      - href: resources.qmd
+        text: Resources
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    toc-location: right
+    page-layout: full
