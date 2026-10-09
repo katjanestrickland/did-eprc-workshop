@@ -4,11 +4,11 @@
 \usepackage{amsmath}
 \usepackage{array}
 \usepackage{booktabs}
+\usepackage{caption}
 \usepackage{enumitem}
 \usepackage{float}
 \usepackage{graphicx}
 \usepackage{hyperref}
-\usepackage{longtable}
 \usepackage{xcolor}
 
 \graphicspath{{../figures/}{figures/}{../workshop-site/assets/figures/}}
@@ -19,164 +19,138 @@
   urlcolor=blue!45!black
 }
 
-\setlist[itemize]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.25em}
-\setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=1.45em}
-\renewcommand{\arraystretch}{1.18}
+\setlist[itemize]{topsep=2pt,itemsep=2pt,parsep=0pt,leftmargin=1.25em}
+\renewcommand{\arraystretch}{1.14}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
 
-\newcommand{\slidehead}[2]{%
+\newcommand{\slideheading}[2]{%
   \subsection*{Slide #1. #2}
 }
 
-\newcommand{\maybegraphic}[3]{%
-  \IfFileExists{#1}{%
-    \begin{figure}[H]
-    \centering
-    \includegraphics[width=#2\textwidth]{#1}
-    \caption{#3}
-    \end{figure}
-  }{%
-    \begin{center}
-    \fbox{\parbox{0.82\textwidth}{\centering Figure placeholder: \texttt{\detokenize{#1}}\\#3}}
-    \end{center}
-  }%
+\newcommand{\slidecontent}[1]{#1}
+
+\newcommand{\plannedfig}[3]{%
+  \begin{figure}[H]
+  \centering
+  \includegraphics[width=#2\textwidth,height=0.29\textheight,keepaspectratio]{#1}
+  \caption*{\footnotesize #3}
+  \end{figure}
 }
 
 \title{\textbf{DID EPRC Workshop Talk}\\
-\large Fleshed-Out Slide Outline for Parts A--C}
+\large Working Slide Outline With Planned Figures and Tables}
 \author{Draft working document}
 \date{October 2026}
 
 \begin{document}
 \maketitle
 
-\section*{Purpose}
+\section*{Overview}
 
-This document turns the rough workshop plan into a slide-by-slide outline. The
-talk is designed as a 45-minute introduction to difference-in-differences (DID)
-methods for education policy researchers. The first pass focuses on:
+This document drafts the main content for each slide in the DID EPRC workshop
+talk. It is not the final slide deck. Each entry gives the slide-facing text and
+then shows the table, equation, or figure that would appear on that slide.
 
-\begin{itemize}
-  \item Part A: a traditional DID example using simulated education-policy data.
-  \item Part B: the regression version, two-way fixed effects (TWFE), and an event-study extension.
-  \item Part C: a light transition to staggered DID, leaving most details for Wei's section.
-\end{itemize}
+The empirical motivation is Strickland, Chan, and Gottfried (2026), an
+\emph{Educational Evaluation and Policy Analysis} paper on NYC's Gifted and
+Talented (G\&T) program using a staggered difference-in-differences design. The
+workshop exercises use synthetic panel data generated for teaching, inspired by
+that setting; they are not the NYC administrative data used in the paper.
 
-\section*{Running Example}
+\section*{Part A. DID Setup and Intuition}
 
-The motivating education-policy example is entry into a gifted and talented
-(G\&T) program:
+\slideheading{1}{Title and Roadmap}
 
-\begin{quote}
-Do students, schools, or districts exposed to a G\&T policy change experience
-larger achievement gains than a comparable group not yet exposed to the policy?
-\end{quote}
+\slidecontent{Difference-in-differences (DID) is a common strategy for studying
+education policies when some units are exposed to a policy and others are not.
+The talk starts with the simplest version of DID, then builds toward TWFE,
+event-study models, and staggered adoption.}
 
-For the first workshop version, the data are simulated district-year panel data.
-The story can be translated into student-level or school-level language later,
-but the simplest teaching version should keep the design at one level: one unit,
-one time variable, one treatment timing variable, and one outcome.
-
-\section*{Data Used in the Examples}
-
-\begin{center}
-\begin{tabular}{p{0.28\textwidth}p{0.62\textwidth}}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.18\textwidth}p{0.68\textwidth}}
 \toprule
-\textbf{File} & \textbf{Use in the talk} \\
+\textbf{Approx. time} & \textbf{Topic} \\
 \midrule
-\texttt{simple\_did\_district.csv/.dta} &
-Main teaching data for traditional DID. Half of units are treated starting in year 5; half are never treated. \\
-\texttt{staggered\_did\_district.csv/.dta} &
-Preview data for staggered DID. Some units adopt in year 5, some adopt in year 8, and some are never treated. \\
-\texttt{workshop\_estimates.csv} &
-Small reference table comparing estimated effects to the known simulated treatment effect. \\
+0--5 min & Why DID is useful for education policy questions. \\
+5--15 min & Traditional two-group, two-period DID intuition. \\
+15--25 min & Regression DID, TWFE, and event-study framing. \\
+25--35 min & Staggered treatment timing preview. \\
+35--45 min & Covariates placeholder and handoff to workshop materials. \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption*{\footnotesize Planned table for Slide 1: roadmap for the 45-minute talk.}
+\end{table}
 
-\section*{Slide Map}
+\slideheading{2}{Policy Example: NYC Gifted and Talented}
 
-\begin{longtable}{p{0.08\textwidth}p{0.18\textwidth}p{0.34\textwidth}p{0.30\textwidth}}
+\slidecontent{\textbf{Policy example / research question.} NYC's Gifted and
+Talented (G\&T) program. Do students who enter the program experience better
+outcomes after entry than comparable students who are not yet exposed to G\&T?
+This example is motivated by Strickland, Chan, and Gottfried (2026), which
+studies the longitudinal effects of NYC's G\&T program using a staggered DID
+design.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.28\textwidth}p{0.25\textwidth}p{0.25\textwidth}}
 \toprule
-\textbf{Slide} & \textbf{Section} & \textbf{Main point} & \textbf{Suggested visual} \\
+\textbf{Group} & \textbf{Before G\&T entry} & \textbf{After G\&T entry} \\
 \midrule
-1 & Opening & Title slide and workshop goals. & Title plus 3 learning goals. \\
-2 & Traditional DID & One education-policy example of traditional DID and the idea of parallel trends. & \texttt{simple\_parallel\_trends.png}. \\
-3 & Data setup & What data do we need for DID? Units, time, outcome, treatment, comparison group. & Variable/design table. \\
-4 & DID contrast & DID compares changes, not only levels. & \texttt{simple\_did\_2x2.png}. \\
-5 & Regression version & The two-by-two contrast can be written as an interaction model. & Equation plus estimate/truth table. \\
-6 & TWFE & Add unit and year fixed effects to absorb stable unit differences and common shocks. & TWFE equation and interpretation. \\
-7 & Event study & Replace one post-treatment indicator with event-time indicators. & \texttt{simple\_event\_study.png}. \\
-8 & Limitation & A single TWFE coefficient can hide dynamic treatment effects. & Return to event-study figure. \\
-9 & Staggered transition & What changes when treatment begins at different times? & \texttt{staggered\_timing\_plot.png}. \\
-10 & Staggered preview & Early and later treatment groups can both be treated, but at different event times. & \texttt{staggered\_group\_trends.png}. \\
-11 & Handoff & Preview Wei's section: TWFE problems, CSA, ETWFE, covariates, clustering, PT/CPT. & Roadmap slide. \\
-12 & Lab setup & Orient students to the website, data, and code. & Workshop website links. \\
+Students who enter G\&T & Pre-entry outcomes & Post-entry outcomes \\
+Comparison students & Same pre period & Same post period \\
 \bottomrule
-\end{longtable}
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 2: the G\&T example as a simple before/after comparison.}
+\end{table}
 
-\clearpage
-\section*{Detailed Slide Outline}
+\slidecontent{\textbf{Workshop data.} The empirical study motivates the policy
+example, but the workshop uses synthetic teaching data. The generated data keep
+the same DID logic while simplifying the setting to district-year panels.}
 
-\slidehead{1}{Title Slide}
+\slideheading{3}{What Data Do We Need for DID?}
 
-\textbf{Purpose.} Set up the session as a practical 45-minute introduction to
-DID for education policy.
+\slidecontent{To estimate DID, we need repeated observations on units over time,
+an outcome, treatment status, and a way to define pre- and post-treatment
+periods. In the synthetic example, the unit is a district and the policy turns
+on for treated districts in a known year.}
 
-\textbf{Draft slide title.} Difference-in-Differences for Education Policy.
-
-\textbf{On-slide bullets.}
-\begin{itemize}
-  \item What DID estimates.
-  \item What parallel trends means.
-  \item How the same idea appears in regression, TWFE, and event-study form.
-  \item Why staggered treatment timing requires extra care.
-\end{itemize}
-
-\textbf{Speaker note.} Emphasize that the examples use generated data so the
-true treatment effect is known.
-
-\slidehead{2}{Traditional DID Example and Parallel Trends}
-
-\textbf{Purpose.} Start with intuition: treated and comparison units are
-followed before and after a policy change.
-
-\textbf{Example language.} Suppose some districts adopt a G\&T access policy in
-year 5 and other districts do not. DID asks whether achievement changes more in
-the treated districts than in the comparison districts after adoption.
-
-\textbf{Main point.} Parallel trends is the claim that, absent treatment, the
-treated group would have continued to move like the comparison group.
-
-\maybegraphic{simple_parallel_trends.png}{0.86}{Traditional DID example: one treated group adopts in year 5 and one comparison group is never treated.}
-
-\slidehead{3}{What Data Do We Need?}
-
-\textbf{Purpose.} Make the required panel structure concrete before notation.
-
-\begin{center}
-\begin{tabular}{p{0.23\textwidth}p{0.30\textwidth}p{0.33\textwidth}}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.23\textwidth}p{0.32\textwidth}p{0.27\textwidth}}
 \toprule
-\textbf{DID ingredient} & \textbf{G\&T example} & \textbf{Simulated variable} \\
+\textbf{DID ingredient} & \textbf{G\&T interpretation} & \textbf{Synthetic data variable} \\
 \midrule
 Unit & Student, school, or district & \texttt{district\_id} \\
 Time & Year or grade & \texttt{year} \\
-Outcome & Achievement & \texttt{outcome} \\
-Treatment group & Units exposed to policy & \texttt{treated\_ever} \\
-Post period & Years after adoption & \texttt{post} \\
+Outcome & Achievement or attendance & \texttt{outcome} \\
+Treatment group & Exposed to G\&T or policy & \texttt{treated\_ever} \\
+Post period & After entry or adoption & \texttt{post} \\
 Treatment timing & First exposure year & \texttt{treatment\_start\_year} \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption*{\footnotesize Planned table for Slide 3: variables needed for the synthetic DID example.}
+\end{table}
 
-\textbf{Speaker note.} The current generated data are district-year, but the
-same logic applies to student-year or school-year panels.
+\slideheading{4}{Traditional DID and Parallel Trends}
 
-\slidehead{4}{DID Compares Changes}
+\slidecontent{\textbf{Key identifying idea.} DID asks what would have happened
+to treated units after treatment if they had not been treated. The comparison
+group is useful if, before treatment, it was moving in parallel with the treated
+group. In this simple synthetic example, one group adopts treatment in year 5
+and one group is never treated.}
 
-\textbf{Purpose.} Show the two-by-two DID contrast visually.
+\plannedfig{simple_parallel_trends.png}{0.76}{Planned figure for Slide 4: treated units adopt in year 5; comparison units are never treated.}
 
-\textbf{Main point.} DID is not simply treated versus comparison after the
-policy. It is the treated group's change minus the comparison group's change.
+\slideheading{5}{DID Compares Changes, Not Just Levels}
+
+\slidecontent{The DID estimand subtracts the comparison group's before-after
+change from the treated group's before-after change. This is why the method is
+called ``difference-in-differences.''}
 
 \[
 \widehat{\delta}_{DID}
@@ -184,11 +158,14 @@ policy. It is the treated group's change minus the comparison group's change.
 - (\bar{Y}_{C,post} - \bar{Y}_{C,pre})
 \]
 
-\maybegraphic{simple_did_2x2.png}{0.78}{The two-by-two DID contrast compares changes from pre to post across groups.}
+\plannedfig{simple_did_2x2.png}{0.68}{Planned figure for Slide 5: the two-by-two DID comparison.}
 
-\slidehead{5}{The Simple DID Regression}
+\slideheading{6}{Regression Version of the Same Idea}
 
-\textbf{Purpose.} Connect the visual contrast to the regression coefficient.
+\slidecontent{The same two-by-two contrast can be estimated with a regression.
+The coefficient on the interaction between treatment group and post period is
+the DID estimate. Because the data are generated, we can compare the estimated
+effect with the known simulated effect.}
 
 \[
 Y_{it}
@@ -196,126 +173,165 @@ Y_{it}
 + \beta_1 Treat_i
 + \beta_2 Post_t
 + \delta(Treat_i \times Post_t)
-+ \varepsilon_{it}
++ \varepsilon_{it}.
 \]
 
-\begin{center}
-\begin{tabular}{p{0.38\textwidth}cc}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.42\textwidth}cc}
 \toprule
 \textbf{Model} & \textbf{Estimated effect} & \textbf{Known simulated effect} \\
 \midrule
 Two-by-two DID regression & 0.087 & 0.090 \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption*{\footnotesize Planned table for Slide 6: estimated DID effect versus the known simulated effect.}
+\end{table}
 
-\textbf{Speaker note.} This slide is where we say why simulation is helpful:
-students can see that the estimator is recovering something close to the known
-effect.
+\section*{Part B. TWFE and Event Studies}
 
-\slidehead{6}{Two-Way Fixed Effects}
+\slideheading{7}{Two-Way Fixed Effects}
 
-\textbf{Purpose.} Move from the simplest DID regression to the common TWFE
-form.
+\slidecontent{Many applied DID papers estimate a two-way fixed effects (TWFE)
+model. Unit fixed effects absorb stable differences across units, and year fixed
+effects absorb shocks common to all units in a given year. In the simple
+one-treatment-cohort case, TWFE maps closely onto the standard DID contrast.}
 
 \[
-Y_{it} = \alpha_i + \lambda_t + \delta D_{it} + \varepsilon_{it}
+Y_{it} = \alpha_i + \lambda_t + \delta D_{it} + \varepsilon_{it}.
 \]
 
-\textbf{On-slide bullets.}
-\begin{itemize}
-  \item Unit fixed effects, $\alpha_i$, absorb stable differences across units.
-  \item Year fixed effects, $\lambda_t$, absorb shocks common to all units in a given year.
-  \item $D_{it}$ turns on once the unit is treated.
-  \item In the simple one-cohort case, TWFE lines up with the basic DID logic.
-\end{itemize}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.22\textwidth}p{0.62\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Interpretation} \\
+\midrule
+$\alpha_i$ & Unit fixed effects: stable differences across units. \\
+$\lambda_t$ & Year fixed effects: shocks common to all units in a year. \\
+$D_{it}$ & Indicator that turns on after treatment starts. \\
+$\delta$ & Average treatment effect estimate in the simple setup. \\
+\bottomrule
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 7: pieces of the TWFE model.}
+\end{table}
 
-\textbf{Speaker note.} The goal is not to over-teach TWFE here; it is to show
-that the familiar DID contrast is the same idea students see in applied papers.
+\clearpage
 
-\slidehead{7}{Event-Study Version}
+\slideheading{8}{Event Studies: Re-centering Time Around Treatment}
 
-\textbf{Purpose.} Show how the design becomes a set of event-time coefficients.
+\slidecontent{Event studies extend DID by comparing outcomes at multiple time
+points before and after treatment. The key move is to re-center time around
+treatment entry. In the G\&T example, event time 0 is the year a student enters
+G\&T; event time -1 is the year just before entry. In the simple synthetic data,
+year 5 is treatment start, so year 4 is the reference year.}
 
 \[
 Y_{it} = \alpha_i + \lambda_t
 + \sum_{k \neq -1} \beta_k 1[t - G_i = k]
-+ \varepsilon_{it}
++ \varepsilon_{it}.
 \]
 
-\textbf{Main point.} Event studies help us look at pre-treatment differences
-and dynamic post-treatment effects.
+\plannedfig{normalized_event_time_trends.png}{0.62}{Planned figure for Slide 8: outcomes centered at event time -1. Pre-treatment event times show whether treated and comparison groups were already diverging; post-treatment event times show how effects evolve after treatment.}
 
-\maybegraphic{simple_event_study.png}{0.82}{Event-study coefficients for the simple DID example, using year -1 as the reference period.}
+\slideheading{9}{What a Single TWFE Coefficient Can Hide}
 
-\slidehead{8}{What TWFE Can Hide}
+\slidecontent{A single TWFE treatment coefficient can be too compressed if
+effects change over time or if the design includes multiple treatment timings.
+The event-study setup helps make those dynamics visible before moving into the
+staggered DID case.}
 
-\textbf{Purpose.} Introduce the first limitation without getting too technical.
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.30\textwidth}p{0.53\textwidth}}
+\toprule
+\textbf{What we estimate} & \textbf{What it can miss} \\
+\midrule
+One TWFE treatment coefficient & Whether effects grow, fade, or appear only after several years. \\
+Average post-treatment effect & Differences across event time. \\
+Simple treated/control comparison & Whether pre-treatment trends were already diverging. \\
+\bottomrule
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 9: why event-time thinking is useful before staggered DID.}
+\end{table}
 
-\textbf{On-slide bullets.}
-\begin{itemize}
-  \item The TWFE coefficient gives one average effect.
-  \item In the simulated data, the treatment effect grows over time.
-  \item A single coefficient can be useful, but it can hide dynamics.
-  \item Event-study plots make those dynamics more visible.
-\end{itemize}
+\clearpage
 
-\textbf{Speaker note.} This slide sets up the next question: if one treatment
-date already requires care, what happens when treatment timing differs across
-groups?
+\section*{Part C. Staggered DID Preview}
 
-\slidehead{9}{Transition to Staggered DID}
+\slideheading{10}{Staggered Treatment Timing}
 
-\textbf{Purpose.} Introduce multiple treatment timings as the bridge to Wei's
-section.
+\slidecontent{In many education settings, treatment does not start for everyone
+at the same time. In the G\&T example, students can enter the program at
+different grade points. In the synthetic workshop data, one treated group
+adopts in year 5 and another treated group adopts in year 8.}
 
-\textbf{Example language.} In the G\&T example, students may enter at different
-grade points. In the simulated data, one cohort is treated in year 5 and another
-cohort is treated in year 8.
+\plannedfig{staggered_timing_plot.png}{0.72}{Planned figure for Slide 10: early adopters, later adopters, and never-treated units.}
 
-\maybegraphic{staggered_timing_plot.png}{0.84}{Staggered preview: early adopters, later adopters, and never-treated units.}
+\slideheading{11}{Group Trends With Two Treated Cohorts}
 
-\slidehead{10}{Staggered Group Trends}
+\slidecontent{With staggered timing, the comparison problem changes. In the same
+calendar year, some units may be newly treated, some may already be treated, and
+some may not yet be treated. This slide previews the issue without fully
+covering the staggered DID estimators.}
 
-\textbf{Purpose.} Show that the same policy can create multiple treated groups
-over time.
+\plannedfig{staggered_group_trends.png}{0.72}{Planned figure for Slide 11: early-treated, later-treated, and never-treated group trends.}
 
-\textbf{On-slide bullets.}
-\begin{itemize}
-  \item Early adopters are treated beginning in year 5.
-  \item Later adopters are untreated until year 8.
-  \item Never-treated units are untreated throughout.
-  \item The comparison group can change depending on the estimand and method.
-\end{itemize}
+\slideheading{12}{Covariates Placeholder}
 
-\maybegraphic{staggered_group_trends.png}{0.84}{Mean trends for early-treated, later-treated, and never-treated units.}
+\slidecontent{\textbf{Placeholder for Wei's section.} This slide will introduce
+the question of covariates in DID: what changes when parallel trends is framed
+as conditional parallel trends, and how should time-varying versus time-invariant
+covariates be handled in TWFE and staggered DID estimators?}
 
-\slidehead{11}{Handoff to Wei's Staggered DID Section}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.30\textwidth}p{0.52\textwidth}}
+\toprule
+\textbf{Issue} & \textbf{Placeholder content} \\
+\midrule
+Conditional parallel trends & Define the assumption and connect it to covariate adjustment. \\
+Time-invariant covariates & Clarify what unit fixed effects already absorb. \\
+Time-varying covariates & Flag why timing and interpretation require care. \\
+Estimator choice & Add CSA/Wooldridge/Sant'Anna and Zhao details later. \\
+\bottomrule
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 12: placeholder structure for the covariates discussion.}
+\end{table}
 
-\textbf{Purpose.} Mark the boundary between the introductory section and the
-more advanced staggered DID section.
+\slideheading{13}{Handoff and Workshop Materials}
 
-\textbf{Placeholder bullets for Wei.}
-\begin{itemize}
-  \item Why TWFE can be problematic with staggered timing and heterogeneous effects.
-  \item Goodman-Bacon decomposition intuition.
-  \item Callaway--Sant'Anna: estimate group-time ATT$(g,t)$ and aggregate.
-  \item Wooldridge pooled OLS / ETWFE as another route.
-  \item Covariates, conditional parallel trends, clustering, and inference.
-\end{itemize}
+\slidecontent{The introductory section closes by pointing participants to the
+workshop materials: the synthetic data, starter code, outline/slides, and
+readings.}
 
-\slidehead{12}{Lab and Materials}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.22\textwidth}p{0.58\textwidth}}
+\toprule
+\textbf{Material} & \textbf{Where it lives} \\
+\midrule
+Outline/slides & Workshop website Slides tab. \\
+Synthetic data & Workshop website Data tab; CSV and Stata files. \\
+Code & Workshop website Code tab; starter R scripts. \\
+Readings & Workshop website Resources tab. \\
+\bottomrule
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 13: final slide with workshop links.}
+\end{table}
 
-\textbf{Purpose.} Point students to the workshop site and files.
+\url{https://katjanestrickland.github.io/did-eprc-workshop/}
 
-\textbf{On-slide bullets.}
-\begin{itemize}
-  \item Slides/outline: downloadable PDF from the workshop website.
-  \item Data: CSV and Stata versions of the simulated data.
-  \item Code: simple DID, event study, and staggered preview scripts.
-  \item Resources: citations for follow-up reading.
-\end{itemize}
+\section*{Reference To Include}
 
-\textbf{Website placeholder.} \url{https://katjanestrickland.github.io/did-eprc-workshop/}
+Strickland, K., Chan, W., and Gottfried, M. A. (2026). Longitudinal effects of
+NYC's Gifted and Talented program: Evidence from a staggered
+difference-in-differences approach. \emph{Educational Evaluation and Policy
+Analysis}. \url{https://doi.org/10.3102/01623737261438146}
 
 \end{document}
