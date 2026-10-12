@@ -68,10 +68,10 @@ that setting; they are not the NYC administrative data used in the paper.
 \mainpoint{1: DID is popular in policy and program evaluation, and TWFE is commonly used.}
 
 \slidecontent{Difference-in-differences (DID) is widely used in education
-policy and program evaluation when some students, schools, or districts are
-exposed to a policy and others are not. The roadmap makes clear that the talk
-moves from traditional DID to TWFE, event studies, staggered adoption, and then
-hands off before the covariates section.}
+policy and program evaluation when random assignment is not feasible and some
+districts are exposed to a policy while others are not. The roadmap makes clear
+that the talk moves from traditional DID to TWFE, event studies, staggered
+adoption, and then hands off before the covariates section.}
 
 \begin{table}[H]
 \centering
@@ -94,14 +94,17 @@ hands off before the covariates section.}
 \mainpoint{1(a), setup: use one education-policy example to motivate traditional DID.}
 
 \slidecontent{\textbf{Policy example / research question.} NYC's Gifted and
-Talented (G\&T) program. Do students who enter G\&T experience better outcomes
-after entry than comparable students who do not enter? This example is motivated
-by Strickland, Chan, and Gottfried (2026), which studies the longitudinal
-effects of NYC's G\&T program using a staggered DID design.}
+Talented (G\&T) program motivates the workshop example. Strickland, Chan, and
+Gottfried (2026) study the longitudinal effects of NYC's G\&T program using a
+staggered DID design.}
+
+\slidecontent{\textbf{Synthetic-data research question.} Do districts that
+implement a G\&T-style program in year 5 experience larger gains in average
+achievement than districts that do not implement the program?}
 
 \slidecontent{\textbf{Important clarification.} The workshop data are synthetic.
-They are inspired by this education policy setting, but they are not the NYC
-administrative data used in the paper.}
+They are inspired by this education policy setting, but they are district-level
+teaching data, not the NYC administrative data used in the paper.}
 
 \begin{table}[H]
 \centering
@@ -112,10 +115,10 @@ administrative data used in the paper.}
 \midrule
 Unit & Student, school, or district & District. \\
 Time & School year or grade & Year. \\
-Treatment & G\&T entry & Treatment turns on. \\
-Treated group & Students exposed to G\&T & Districts treated in year 5. \\
-Comparison group & Not-yet or never exposed students & Never-treated districts. \\
-Outcome & Achievement, attendance, or behavior & Standardized achievement outcome. \\
+Treatment & G\&T participation or access & G\&T-style program begins. \\
+Treated group & Students or settings exposed to G\&T & Districts treated in year 5. \\
+Comparison group & Not-yet or never exposed students/settings & Never-treated districts. \\
+Outcome & Achievement, attendance, or behavior & District average standardized achievement. \\
 \bottomrule
 \end{tabular}
 \caption*{\footnotesize Planned table for Slide 2: policy example mapped to the synthetic data.}
@@ -127,7 +130,8 @@ Outcome & Achievement, attendance, or behavior & Standardized achievement outcom
 \slidecontent{In the simplest DID design, we compare two groups across two
 periods. One group receives treatment after the pre-period. The other group is
 not treated. DID asks whether the treated group changes more after treatment
-than the comparison group changes over the same period.}
+than the comparison group changes over the same period. In the synthetic data,
+the treated group is districts that implement the G\&T-style program in year 5.}
 
 \[
 \widehat{\delta}_{DID}
@@ -162,13 +166,17 @@ DID & & & Treated change minus comparison change. \\
 \slidecontent{\textbf{Key identifying idea.} DID asks what would have happened
 to treated units after treatment if they had not been treated. The comparison
 group is useful if it tells us what would have happened to the treated group in
-the absence of treatment.}
+the absence of treatment. Parallel trends is therefore an assumption about
+untreated potential outcomes, not about the observed post-treatment outcomes.}
 
 \[
 E[Y_{T,post}(0) - Y_{T,pre}(0)]
 =
 E[Y_{C,post}(0) - Y_{C,pre}(0)].
 \]
+
+\slidecontent{In words: without the G\&T-style program, treated districts would
+have experienced the same average change in achievement as comparison districts.}
 
 \plannedfig{simple_parallel_trends.png}{0.74}{Planned figure for Slide 4: raw group trends from the synthetic data. Treated units adopt in year 5; comparison units are never treated.}
 
@@ -179,6 +187,12 @@ E[Y_{C,post}(0) - Y_{C,pre}(0)].
 observed post-treatment outcome, but the missing object is the treated group's
 counterfactual post-treatment outcome: where would the treated group have been
 without treatment?}
+
+\slidecontent{\textbf{Potential outcomes.} For district $i$ in year $t$,
+$Y_{it}(1)$ is the potential outcome with the program and $Y_{it}(0)$ is the
+potential outcome without the program. For treated districts after year 5, we
+observe $Y_{it}(1)$, but we do not observe $Y_{it}(0)$. DID uses the comparison
+group trend to approximate that missing counterfactual.}
 
 \[
 \widehat{Y}_{T,post}(0)
@@ -195,6 +209,15 @@ without treatment?}
 -
 \widehat{Y}_{T,post}(0).
 \]
+
+\[
+ATT =
+E[Y_i(1)-Y_i(0)\mid G_i=1].
+\]
+
+\slidecontent{Standard DID usually targets the average treatment effect on the
+treated (ATT): the average effect for districts that actually implemented the
+program.}
 
 \plannedfig{classic_did_counterfactual.png}{0.74}{Planned figure for Slide 5: comparison trend, observed treated trend, dashed treated counterfactual trend, and the DID estimate.}
 
@@ -264,10 +287,11 @@ full panel and controls for unit fixed effects and time fixed effects.}
 Y_{it} = \alpha_i + \lambda_t + \delta D_{it} + \varepsilon_{it}.
 \]
 
-\slidecontent{\textbf{Concept.} In the simple one-treatment-cohort case, TWFE
-maps closely onto the familiar DID contrast. The model is attractive because it
-uses repeated observations and absorbs stable unit differences and common time
-shocks.}
+\slidecontent{\textbf{Concept.} TWFE is the fixed-effects version of the DID
+regression. In the simple one-treatment-cohort case, the treatment indicator is
+the same treated-after-treatment idea as $Treat_i \times Post_t$. The model is
+attractive because it uses repeated observations and absorbs stable district
+differences and common year shocks.}
 
 \begin{table}[H]
 \centering
@@ -278,35 +302,66 @@ shocks.}
 \midrule
 $\alpha_i$ & Unit fixed effects: stable differences across districts. \\
 $\lambda_t$ & Year fixed effects: shocks common to all districts in a year. \\
-$D_{it}$ & Treatment indicator that equals 1 after treatment begins. \\
-$\delta$ & Average treatment effect in the simple setup. \\
+$D_{it}$ & Treatment indicator that equals 1 for treated districts after treatment begins. \\
+$\delta$ & Estimated treatment effect in the simple setup. \\
 \bottomrule
 \end{tabular}
 \caption*{\footnotesize Planned table for Slide 7: pieces of the TWFE model.}
 \end{table}
+
+\[
+\widehat{\delta}
+=
+(\overline{Y}_{T,post}-\overline{Y}_{T,pre})
+-
+(\overline{Y}_{C,post}-\overline{Y}_{C,pre}).
+\]
+
+\slidecontent{In a balanced panel with one common treatment start and
+never-treated comparison districts, the TWFE coefficient recovers the familiar
+DID contrast. The pre and post means can average over multiple years, not just
+one pre year and one post year.}
 
 \slideheading{8}{Event Studies: Re-centering Time Around Treatment}
 \mainpoint{1(b)(ii): introduce event-study models.}
 
 \slidecontent{An event study replaces the single treatment indicator with
 indicators for time relative to treatment. This lets us look at outcomes before
-and after treatment entry. In the G\&T example, event time 0 is the year a
-student enters G\&T. In the synthetic data, event time 0 is year 5.}
+and after treatment. In the synthetic data, event time 0 is year 5, when treated
+districts implement the G\&T-style program.}
 
 \[
 Y_{it} = \alpha_i + \lambda_t
 +
-\sum_{k \neq -1} \beta_k 1[t - G_i = k]
+\sum_{k \neq -1} \beta_k \mathbf{1}[t - G_i = k]
 +
 \varepsilon_{it}.
 \]
 
-\slidecontent{\textbf{Concept.} Pre-treatment coefficients describe whether
-treated and comparison units were already diverging. Post-treatment coefficients
-show how effects evolve after treatment. Event time -1 is omitted as the
-reference period.}
+\slidecontent{Here, $G_i$ is the year district $i$ first receives treatment and
+$k=t-G_i$ is event time. The indicator $\mathbf{1}[t-G_i=k]$ equals 1 when the
+district-year observation is exactly $k$ years from treatment, and 0 otherwise.
+Never-treated districts have all event-time indicators equal to 0.}
 
-\plannedfig{normalized_event_time_trends.png}{0.62}{Planned figure for Slide 8: outcomes centered at event time -1. Pre-treatment event times show whether treated and comparison groups were already diverging; post-treatment event times show how effects evolve after treatment.}
+\[
+\begin{array}{c|ccccccc}
+\text{Calendar year } t & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
+\hline
+\text{Treatment year } G_i & 5 & 5 & 5 & 5 & 5 & 5 & 5 \\
+\text{Event time } k=t-G_i & -4 & -3 & -2 & -1 & 0 & 1 & 2
+\end{array}
+\]
+
+\slidecontent{Event time $k=-1$ is omitted because it is the reference period:
+the year immediately before treatment. For example, for a district treated in
+year 5, $\mathbf{1}[t-G_i=2]=1$ in year 7 because $7-5=2$.}
+
+\slidecontent{\textbf{Concept.} Pre-treatment coefficients show whether treated
+and comparison districts were already diverging before treatment. Post-treatment
+coefficients show whether effects appear immediately, grow, or fade after
+treatment.}
+
+\plannedfig{normalized_event_time_trends.png}{0.62}{Planned figure for Slide 8: outcomes centered at event time -1. The plot should label $k=-1$ as the reference year, $k=0$ as treatment begins, the left side as pre-treatment, and the right side as post-treatment.}
 
 \slideheading{9}{Limitation of a Single TWFE Coefficient}
 \mainpoint{1(b)(iii): explain the limitation of TWFE models - one constant ATT can hide dynamic or heterogeneous effects.}

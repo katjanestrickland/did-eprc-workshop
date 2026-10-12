@@ -182,6 +182,7 @@ p_event_time <- ggplot(event_time_means, aes(x = event_time_plot, y = outcome_re
   annotate("text", x = -2.7, y = event_y_text, label = "Pre-treatment:\ncheck trends", size = 3.4, color = "gray25") +
   annotate("text", x = 3.1, y = event_y_text, label = "Post-treatment:\ndynamic effects", size = 3.4, color = "gray25") +
   annotate("text", x = -1, y = 0.07, label = "reference year (-1)", size = 3.1, color = "gray25") +
+  annotate("text", x = 0.55, y = -0.08, label = "treatment begins\n(k = 0)", size = 3.1, color = "gray25") +
   scale_x_continuous(breaks = -4:6) +
   labs(
     title = "Event-Time View: Outcomes Centered at Year -1",
