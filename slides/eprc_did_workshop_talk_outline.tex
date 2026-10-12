@@ -23,6 +23,7 @@
 \renewcommand{\arraystretch}{1.14}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{4pt}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
 \newcommand{\slideheading}[2]{%
   \subsection*{Slide #1. #2}
@@ -491,65 +492,83 @@ cohort-time effects directly and then aggregate them using clearer choices.}
 \slideheading{12}{Staggered DID Estimator: CSA Logic}
 \mainpoint{1(c)(ii)(A): CSA - group units into 2-by-2 designs, estimate ATT(g,t), then take a weighted average.}
 
-\slidecontent{Modern staggered DID estimators avoid relying on one opaque TWFE
-coefficient. The Callaway and Sant'Anna logic is to define treatment cohorts,
-estimate group-time treatment effects, and then aggregate those effects in a way
-that matches the research question.}
+\slidecontent{TWFE mixes many comparisons together. Callaway and
+Sant'Anna-style staggered DID starts by estimating the pieces first: treatment
+effects separately by treatment cohort and calendar year.}
 
 \[
 ATT(g,t)
 =
-E[Y_t(g) - Y_t(0) \mid G_i = g].
+E[Y_t(g) - Y_t(0) \mid G_i = g],
+\qquad t \geq g.
 \]
 
-\slidecontent{For group $g$, first treated in period $g$, estimate the effect at
-time $t$ by comparing that group to appropriate untreated or not-yet-treated
-units.}
-
-\[
-ATT
-=
-\sum_{g,t} w_{gt} ATT(g,t).
-\]
+\slidecontent{Here, $G_i=g$ means district $i$ first receives treatment in year
+$g$, and $t$ is the calendar year where the effect is measured. For
+$ATT(g,t)$ to be an actual post-treatment effect, we need $t \geq g$.}
 
 \begin{table}[H]
 \centering
-\small
-\begin{tabular}{p{0.28\textwidth}p{0.54\textwidth}}
+\tiny
+\begin{tabular}{lccccccccccc}
 \toprule
-\textbf{Object} & \textbf{Meaning} \\
+\textbf{Cohort} & \textbf{Y1} & \textbf{Y2} & \textbf{Y3} & \textbf{Y4} & \textbf{Y5} & \textbf{Y6} & \textbf{Y7} & \textbf{Y8} & \textbf{Y9} & \textbf{Y10} & \textbf{Y11} \\
 \midrule
-$G_i = g$ & Unit $i$ first receives treatment in period $g$. \\
-$ATT(g,t)$ & Effect for cohort $g$ at calendar time $t$. \\
-$w_{gt}$ & Weight used to summarize group-time effects. \\
-$ATT$ & Weighted average of selected group-time treatment effects. \\
+$G=5$ & pre & pre & pre & pre & $ATT(5,5)$ & $ATT(5,6)$ & $ATT(5,7)$ & $ATT(5,8)$ & $ATT(5,9)$ & $ATT(5,10)$ & $ATT(5,11)$ \\
+$G=8$ & pre & pre & pre & pre & pre & pre & pre & $ATT(8,8)$ & $ATT(8,9)$ & $ATT(8,10)$ & $ATT(8,11)$ \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 12: CSA-style group-time estimand and weighted aggregation.}
+\caption*{\footnotesize Planned table for Slide 12: cohort-by-year cells. Post-treatment cells are group-time effects; pre-treatment cells are not treatment effects.}
 \end{table}
+
+\slidecontent{\textbf{Examples in our data.} $ATT(5,5)$ is the effect for
+year-5 adopters in year 5. $ATT(5,8)$ is the effect for year-5 adopters in
+year 8. $ATT(8,8)$ is the effect for year-8 adopters in year 8. $ATT(8,10)$ is
+the effect for year-8 adopters in year 10.}
+
+\slidecontent{$ATT(5,1)$ is not a treatment effect because year 1 is before
+treatment for the $G=5$ cohort. Pre-treatment cells are useful for placebo or
+pre-trend checks, but they are not post-treatment ATT estimates.}
 
 \slideheading{13}{CSA Aggregations: Group, Simple, and Event-Time ATT}
 \mainpoint{1(c)(ii)(A)(i): group, simple, and aggregate ATT summaries.}
 
-\slidecontent{After estimating $ATT(g,t)$, the next question is what summary to
-report. The \texttt{did} package often describes these as \texttt{aggte()}
-summaries. The important idea for the workshop is that the same group-time
-effects can be aggregated in different ways.}
+\slidecontent{After estimating the group-time pieces $ATT(g,t)$, the next
+question is how to summarize them. The aggregation should follow the research
+question rather than letting one regression coefficient choose the summary for
+us.}
+
+\[
+\widehat{ATT}
+=
+\sum_{g,t} w_{gt}\widehat{ATT}(g,t).
+\]
+
+\slidecontent{In words: the overall summary is a weighted average of selected
+group-time treatment effects. Different summaries answer different questions.}
 
 \begin{table}[H]
 \centering
-\small
-\begin{tabular}{p{0.27\textwidth}p{0.55\textwidth}}
+\scriptsize
+\begin{tabular}{@{}L{0.15\textwidth}L{0.23\textwidth}L{0.31\textwidth}L{0.18\textwidth}@{}}
 \toprule
-\textbf{Aggregation} & \textbf{Meaning} \\
+\textbf{Summary} & \textbf{Formula idea} & \textbf{Example from our data} & \textbf{Question answered} \\
 \midrule
-Simple ATT & Weighted average of all relevant post-treatment $ATT(g,t)$ values. \\
-Group ATT & Average effect by treatment cohort or adoption group. \\
-Dynamic / event-time ATT & Average effect by time since treatment. \\
-Calendar ATT & Average effect in a given calendar period. \\
+Simple ATT & Average all post-treatment $ATT(g,t)$ values. &
+$ATT(5,5)$ through $ATT(5,11)$ and $ATT(8,8)$ through $ATT(8,11)$. &
+Average effect across treated districts and post-treatment years. \\
+Group ATT & Average within treatment cohort. &
+$ATT(5)$ summarizes year-5 adopters; $ATT(8)$ summarizes year-8 adopters. &
+Do effects differ for early vs. late adopters? \\
+Dynamic ATT & Average by event time $e=t-g$. &
+$e=0$: $ATT(5,5)$ and $ATT(8,8)$. $e=1$: $ATT(5,6)$ and $ATT(8,9)$. &
+Do effects grow, fade, or appear later? \\
+Calendar ATT & Average within calendar year. &
+Year 8 can include $ATT(5,8)$ and $ATT(8,8)$. &
+What is the average effect in a specific year? \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 13: CSA aggregation choices after estimating $ATT(g,t)$.}
+\caption*{\footnotesize Planned table for Slide 13: ways to aggregate group-time effects after estimating $ATT(g,t)$.}
 \end{table}
 
 \clearpage
@@ -557,24 +576,46 @@ Calendar ATT & Average effect in a given calendar period. \\
 \slideheading{14}{Inference for Staggered DID}
 \mainpoint{1(c)(ii)(A)(ii): inference.}
 
-\slidecontent{Inference is not just a detail after estimating $ATT(g,t)$. The
-standard errors need to reflect that group-time effects are estimated from
-clustered panel data and then combined into aggregate summaries.}
+\slidecontent{Inference asks how uncertain the group-time effects and the
+aggregated summaries are. Once we choose the estimand, the standard errors and
+confidence intervals should match that estimand.}
+
+\[
+SE\!\left(\widehat{ATT}(g,t)\right)
+\qquad \text{and} \qquad
+SE\!\left(\sum_{g,t} w_{gt}\widehat{ATT}(g,t)\right).
+\]
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{p{0.24\textwidth}p{0.60\textwidth}}
+\begin{tabular}{@{}L{0.27\textwidth}L{0.57\textwidth}@{}}
 \toprule
-\textbf{Issue} & \textbf{Workshop explanation} \\
+\textbf{Choice} & \textbf{Workshop explanation} \\
 \midrule
-Clustering & Account for repeated observations within districts or schools. \\
-Aggregation & Uncertainty carries from $ATT(g,t)$ into simple, group, and dynamic summaries. \\
-Software & Use estimator-specific standard errors or bootstrap procedures where appropriate. \\
-Interpretation & Report uncertainty for the estimand being discussed, not just the raw regression coefficient. \\
+Analytical / influence-function SEs & Fast large-sample standard errors for $ATT(g,t)$ and aggregated summaries. \\
+Multiplier bootstrap SEs & A resampling approach commonly used for CSA-style estimators and confidence bands. \\
+Pointwise confidence intervals & One interval for one estimate, such as $ATT(5,8)$. \\
+Uniform confidence bands & Joint bands for many estimates at once, especially dynamic/event-study estimates. \\
+Aggregation & Uncertainty from each $ATT(g,t)$ carries into simple, group, dynamic, and calendar summaries. \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 14: inference issues to flag without fully teaching implementation details.}
+\caption*{\footnotesize Planned table for Slide 14: inference choices to explain conceptually before showing software options in the lab.}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}L{0.31\textwidth}L{0.53\textwidth}@{}}
+\toprule
+\textbf{Data structure} & \textbf{Clustering choice} \\
+\midrule
+District-year data & Cluster by district because the same districts are observed repeatedly over time. \\
+School-year data, schools nested in districts & If treatment timing varies by district, cluster by district. Schools in the same district share treatment timing and district-level shocks. \\
+Rule of thumb & Cluster at the treatment assignment level or higher. \\
+\bottomrule
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 14: clustering examples for the main district-level data and the school-within-district extension.}
 \end{table}
 
 \slideheading{15}{Brief Alternatives and Reading Group Handoff}
