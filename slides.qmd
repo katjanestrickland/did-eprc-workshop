@@ -2,4 +2,6 @@
 title: "Slides and Talk Outline"
 ---
 
-[Download current outline PDF](slides/eprc_did_workshop_talk_outline.pdf)
+Download a simple mock PowerPoint deck for the workshop. It includes a polished title slide and five blank placeholder slides for the main sections.
+
+[Download mock slide deck](slides/eprc_did_workshop_mock_deck.pptx)
