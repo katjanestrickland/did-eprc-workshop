@@ -30,6 +30,10 @@
 
 \newcommand{\slidecontent}[1]{#1}
 
+\newcommand{\mainpoint}[1]{%
+  \slidecontent{\textcolor{red}{\textbf{Main.tex #1}}}
+}
+
 \newcommand{\plannedfig}[3]{%
   \begin{figure}[H]
   \centering
@@ -61,12 +65,13 @@ that setting; they are not the NYC administrative data used in the paper.
 \section*{Part A. DID Setup and Intuition}
 
 \slideheading{1}{Title and Roadmap}
+\mainpoint{1: DID is popular in policy and program evaluation, and TWFE is commonly used.}
 
 \slidecontent{Difference-in-differences (DID) is widely used in education
 policy and program evaluation when some students, schools, or districts are
-exposed to a policy and others are not. This talk starts with the simplest DID
-setup, then explains how the same logic becomes a TWFE model, an event-study
-model, and finally a staggered adoption design.}
+exposed to a policy and others are not. The roadmap makes clear that the talk
+moves from traditional DID to TWFE, event studies, staggered adoption, and then
+hands off before the covariates section.}
 
 \begin{table}[H]
 \centering
@@ -76,16 +81,17 @@ model, and finally a staggered adoption design.}
 \textbf{Approx. time} & \textbf{Topic} \\
 \midrule
 0--5 min & Why DID is useful for education policy questions. \\
-5--15 min & Traditional DID and parallel trends. \\
-15--25 min & Regression DID, TWFE, and event-study models. \\
-25--35 min & Why TWFE becomes harder with staggered adoption. \\
-35--45 min & Preview of staggered DID estimators and handoff. \\
+5--15 min & Main.tex 1(a): traditional DID and parallel trends. \\
+15--25 min & Main.tex 1(b): TWFE, event studies, and TWFE limitations. \\
+25--35 min & Main.tex 1(c): staggered DID example and TWFE problem. \\
+35--45 min & Main.tex 1(c)(ii): CSA-style estimator, aggregations, inference, and alternatives. \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 1: roadmap for the 45-minute talk.}
+\caption*{\footnotesize Planned table for Slide 1: roadmap keyed to the main.tex outline.}
 \end{table}
 
 \slideheading{2}{Policy Example: NYC Gifted and Talented}
+\mainpoint{1(a), setup: use one education-policy example to motivate traditional DID.}
 
 \slidecontent{\textbf{Policy example / research question.} NYC's Gifted and
 Talented (G\&T) program. Do students who enter G\&T experience better outcomes
@@ -116,6 +122,7 @@ Outcome & Achievement, attendance, or behavior & Standardized achievement outcom
 \end{table}
 
 \slideheading{3}{Traditional DID Setup}
+\mainpoint{1(a): one example of traditional DID.}
 
 \slidecontent{In the simplest DID design, we compare two groups across two
 periods. One group receives treatment after the pre-period. The other group is
@@ -150,6 +157,7 @@ DID & & & Treated change minus comparison change. \\
 \end{table}
 
 \slideheading{4}{Parallel Trends: The Identifying Assumption}
+\mainpoint{1(a): use a graph to show the idea of parallel trends.}
 
 \slidecontent{\textbf{Key identifying idea.} DID asks what would have happened
 to treated units after treatment if they had not been treated. The comparison
@@ -165,6 +173,7 @@ E[Y_{C,post}(0) - Y_{C,pre}(0)].
 \plannedfig{simple_parallel_trends.png}{0.74}{Planned figure for Slide 4: raw group trends from the synthetic data. Treated units adopt in year 5; comparison units are never treated.}
 
 \slideheading{5}{Classic DID Picture: Observed vs. Counterfactual}
+\mainpoint{1(a): use a traditional DID graph to show observed treated outcomes, the counterfactual trend, and the DID effect.}
 
 \slidecontent{This is the classic DID teaching figure. The treated group has an
 observed post-treatment outcome, but the missing object is the treated group's
@@ -190,6 +199,7 @@ without treatment?}
 \plannedfig{classic_did_counterfactual.png}{0.74}{Planned figure for Slide 5: comparison trend, observed treated trend, dashed treated counterfactual trend, and the DID estimate.}
 
 \slideheading{6}{DID as a Regression}
+\mainpoint{1(a), bridge: connect the traditional DID example to the regression version before introducing TWFE.}
 
 \slidecontent{The same two-by-two contrast can be estimated with a regression.
 The coefficient on the interaction between treatment group and post period is
@@ -244,11 +254,11 @@ Two-by-two DID regression & 0.087 & 0.090 \\
 \section*{Part B. TWFE and Event Studies}
 
 \slideheading{7}{Introduce the TWFE Model}
+\mainpoint{1(b)(i): introduce the TWFE model.}
 
-\slidecontent{\textcolor{red}{\textbf{Introduce the TWFE model here.}} Many
-applied DID papers estimate a two-way fixed effects (TWFE) model. Instead of
-only using one pre-period and one post-period, TWFE uses the full panel and
-controls for unit fixed effects and time fixed effects.}
+\slidecontent{Many applied DID papers estimate a two-way fixed effects (TWFE)
+model. Instead of only using one pre-period and one post-period, TWFE uses the
+full panel and controls for unit fixed effects and time fixed effects.}
 
 \[
 Y_{it} = \alpha_i + \lambda_t + \delta D_{it} + \varepsilon_{it}.
@@ -276,9 +286,9 @@ $\delta$ & Average treatment effect in the simple setup. \\
 \end{table}
 
 \slideheading{8}{Event Studies: Re-centering Time Around Treatment}
+\mainpoint{1(b)(ii): introduce event-study models.}
 
-\slidecontent{\textcolor{red}{\textbf{Introduce the event-study version of
-TWFE here.}} An event study replaces the single treatment indicator with
+\slidecontent{An event study replaces the single treatment indicator with
 indicators for time relative to treatment. This lets us look at outcomes before
 and after treatment entry. In the G\&T example, event time 0 is the year a
 student enters G\&T. In the synthetic data, event time 0 is year 5.}
@@ -299,11 +309,11 @@ reference period.}
 \plannedfig{normalized_event_time_trends.png}{0.62}{Planned figure for Slide 8: outcomes centered at event time -1. Pre-treatment event times show whether treated and comparison groups were already diverging; post-treatment event times show how effects evolve after treatment.}
 
 \slideheading{9}{Limitation of a Single TWFE Coefficient}
+\mainpoint{1(b)(iii): explain the limitation of TWFE models - one constant ATT can hide dynamic or heterogeneous effects.}
 
-\slidecontent{\textcolor{red}{\textbf{Explain the limitation of TWFE: one
-coefficient can hide treatment-effect dynamics.}} A single TWFE coefficient is
-simple, but it compresses many possible effects into one number. This can be
-misleading if effects grow, fade, or appear only several years after treatment.}
+\slidecontent{A single TWFE coefficient is simple, but it compresses many
+possible effects into one number. This can be misleading if effects grow, fade,
+or appear only several years after treatment.}
 
 \slidecontent{In the simple design, TWFE is close to the familiar DID contrast.
 Once treatment timing varies, TWFE can compare newly treated units to
@@ -330,11 +340,11 @@ A familiar regression model & Comparisons involving already-treated units. \\
 \section*{Part C. Staggered DID Preview}
 
 \slideheading{10}{Staggered DID Example: G\&T Entry at Different Times}
+\mainpoint{1(c): one example of staggered DID, G\&T, with one graph to show different treatment timing.}
 
-\slidecontent{\textcolor{red}{\textbf{Use G\&T to introduce staggered treatment
-timing.}} In many education settings, treatment does not start for everyone at
-the same time. Students may enter G\&T at different grade points. Districts or
-schools may adopt a policy in different years.}
+\slidecontent{In many education settings, treatment does not start for everyone
+at the same time. Students may enter G\&T at different grade points. Districts
+or schools may adopt a policy in different years.}
 
 \slidecontent{In the synthetic data, one treated group adopts in year 5 and
 another adopts in year 8. A third group is never treated. This mirrors the core
@@ -345,19 +355,19 @@ staggered-adoption problem: treatment timing is itself part of the design.}
 \clearpage
 
 \slideheading{11}{Why Staggered Timing Complicates TWFE}
+\mainpoint{1(c)(i): discussion of the problem of TWFE - Bacon decomposition.}
 
-\slidecontent{\textcolor{red}{\textbf{Explain the problem of TWFE under
-staggered adoption.}} With staggered timing, the comparison group changes over
-time. In some years, later-treated units can serve as comparisons for
-early-treated units. After the later group becomes treated, those comparisons
-become more complicated.}
+\slidecontent{With staggered timing, the comparison group changes over time. In
+some years, later-treated units can serve as comparisons for early-treated
+units. After the later group becomes treated, those comparisons become more
+complicated.}
 
 \plannedfig{staggered_group_trends.png}{0.70}{Planned figure for Slide 11: early-treated, later-treated, and never-treated group trends.}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{p{0.30\textwidth}p{0.52\textwidth}}
+\begin{tabular}{p{0.24\textwidth}p{0.60\textwidth}}
 \toprule
 \textbf{Comparison type} & \textbf{Interpretation} \\
 \midrule
@@ -375,12 +385,13 @@ DID comparisons, not all of which answer the same policy question.}
 
 \clearpage
 
-\slideheading{12}{Preview of Staggered DID Estimators}
+\slideheading{12}{Staggered DID Estimator: CSA Logic}
+\mainpoint{1(c)(ii)(A): CSA - group units into 2-by-2 designs, estimate ATT(g,t), then take a weighted average.}
 
-\slidecontent{\textcolor{red}{\textbf{Preview CSA logic: estimate group-time
-effects, then aggregate.}} Modern staggered DID estimators avoid relying on one
-opaque TWFE coefficient. Instead, they estimate treatment effects for specific
-groups at specific times.}
+\slidecontent{Modern staggered DID estimators avoid relying on one opaque TWFE
+coefficient. The Callaway and Sant'Anna logic is to define treatment cohorts,
+estimate group-time treatment effects, and then aggregate those effects in a way
+that matches the research question.}
 
 \[
 ATT(g,t)
@@ -390,8 +401,7 @@ E[Y_t(g) - Y_t(0) \mid G_i = g].
 
 \slidecontent{For group $g$, first treated in period $g$, estimate the effect at
 time $t$ by comparing that group to appropriate untreated or not-yet-treated
-units. Then aggregate group-time effects into the summary needed for the
-research question.}
+units.}
 
 \[
 ATT
@@ -404,23 +414,72 @@ ATT
 \small
 \begin{tabular}{p{0.28\textwidth}p{0.54\textwidth}}
 \toprule
-\textbf{Estimand} & \textbf{Meaning} \\
+\textbf{Object} & \textbf{Meaning} \\
 \midrule
-$ATT(g,t)$ & Effect for the cohort first treated in period $g$ at time $t$. \\
-Simple aggregation & Average over group-time effects. \\
-Group aggregation & Average effects by treatment cohort. \\
-Event-time aggregation & Average effects by time since treatment. \\
+$G_i = g$ & Unit $i$ first receives treatment in period $g$. \\
+$ATT(g,t)$ & Effect for cohort $g$ at calendar time $t$. \\
+$w_{gt}$ & Weight used to summarize group-time effects. \\
+$ATT$ & Weighted average of selected group-time treatment effects. \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 12: CSA-style group-time estimands and aggregations.}
+\caption*{\footnotesize Planned table for Slide 12: CSA-style group-time estimand and weighted aggregation.}
 \end{table}
 
-\slideheading{13}{Brief Alternatives and Reading Group Handoff}
+\slideheading{13}{CSA Aggregations: Group, Simple, and Event-Time ATT}
+\mainpoint{1(c)(ii)(A)(i): group, simple, and aggregate ATT summaries.}
 
-\slidecontent{\textcolor{red}{\textbf{Briefly introduce alternatives; do not
-teach them fully here.}} This workshop will not fully cover every modern
-staggered DID estimator. The goal is to show why we need alternatives to naive
-TWFE and where those alternatives fit.}
+\slidecontent{After estimating $ATT(g,t)$, the next question is what summary to
+report. The \texttt{did} package often describes these as \texttt{aggte()}
+summaries. The important idea for the workshop is that the same group-time
+effects can be aggregated in different ways.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.27\textwidth}p{0.55\textwidth}}
+\toprule
+\textbf{Aggregation} & \textbf{Meaning} \\
+\midrule
+Simple ATT & Weighted average of all relevant post-treatment $ATT(g,t)$ values. \\
+Group ATT & Average effect by treatment cohort or adoption group. \\
+Dynamic / event-time ATT & Average effect by time since treatment. \\
+Calendar ATT & Average effect in a given calendar period. \\
+\bottomrule
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 13: CSA aggregation choices after estimating $ATT(g,t)$.}
+\end{table}
+
+\clearpage
+
+\slideheading{14}{Inference for Staggered DID}
+\mainpoint{1(c)(ii)(A)(ii): inference.}
+
+\slidecontent{Inference is not just a detail after estimating $ATT(g,t)$. The
+standard errors need to reflect that group-time effects are estimated from
+clustered panel data and then combined into aggregate summaries.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.24\textwidth}p{0.60\textwidth}}
+\toprule
+\textbf{Issue} & \textbf{Workshop explanation} \\
+\midrule
+Clustering & Account for repeated observations within districts or schools. \\
+Aggregation & Uncertainty carries from $ATT(g,t)$ into simple, group, and dynamic summaries. \\
+Software & Use estimator-specific standard errors or bootstrap procedures where appropriate. \\
+Interpretation & Report uncertainty for the estimand being discussed, not just the raw regression coefficient. \\
+\bottomrule
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 14: inference issues to flag without fully teaching implementation details.}
+\end{table}
+
+\slideheading{15}{Brief Alternatives and Reading Group Handoff}
+\mainpoint{1(c)(ii)(B): briefly introduce alternative methods; 1(c)(ii)(B)(i): briefly introduce Wooldridge pooled OLS and ETWFE.}
+
+\slidecontent{This workshop will not fully cover every modern staggered DID
+estimator. The goal is to show why we need alternatives to naive TWFE and where
+those alternatives fit. The reading group can return to the details.}
 
 \begin{table}[H]
 \centering
@@ -430,13 +489,17 @@ TWFE and where those alternatives fit.}
 \textbf{Method} & \textbf{What it helps clarify} \\
 \midrule
 Goodman-Bacon decomposition & What comparisons TWFE is using. \\
-Callaway and Sant'Anna & Group-time treatment effects. \\
-Wooldridge pooled OLS / ETWFE & Regression-based alternatives. \\
+Callaway and Sant'Anna & Group-time treatment effects and aggregation. \\
 Sun and Abraham & Event-study estimates with staggered timing. \\
+Wooldridge pooled OLS / ETWFE & Regression-based alternatives for staggered designs. \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 13: methods to flag before Wei's next section.}
+\caption*{\footnotesize Planned table for Slide 15: methods to flag before Wei's next section.}
 \end{table}
+
+\slidecontent{\textcolor{red}{\textbf{Main.tex point intentionally skipped for
+now: Covariates - Wei; three-level clustering or multisite design - Wei; PT/CPT
+testing and possible solutions - Wei; further topics and lab session.}}}
 
 \slidecontent{The introductory section closes by pointing participants to the
 workshop materials: the synthetic data, starter code, outline/slides, and
