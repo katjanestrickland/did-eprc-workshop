@@ -62,10 +62,11 @@ that setting; they are not the NYC administrative data used in the paper.
 
 \slideheading{1}{Title and Roadmap}
 
-\slidecontent{Difference-in-differences (DID) is a common strategy for studying
-education policies when some units are exposed to a policy and others are not.
-The talk starts with the simplest version of DID, then builds toward TWFE,
-event-study models, and staggered adoption.}
+\slidecontent{Difference-in-differences (DID) is widely used in education
+policy and program evaluation when some students, schools, or districts are
+exposed to a policy and others are not. This talk starts with the simplest DID
+setup, then explains how the same logic becomes a TWFE model, an event-study
+model, and finally a staggered adoption design.}
 
 \begin{table}[H]
 \centering
@@ -75,10 +76,10 @@ event-study models, and staggered adoption.}
 \textbf{Approx. time} & \textbf{Topic} \\
 \midrule
 0--5 min & Why DID is useful for education policy questions. \\
-5--15 min & Traditional two-group, two-period DID intuition. \\
-15--25 min & Regression DID, TWFE, and event-study framing. \\
-25--35 min & Staggered treatment timing preview. \\
-35--45 min & Covariates placeholder and handoff to workshop materials. \\
+5--15 min & Traditional DID and parallel trends. \\
+15--25 min & Regression DID, TWFE, and event-study models. \\
+25--35 min & Why TWFE becomes harder with staggered adoption. \\
+35--45 min & Preview of staggered DID estimators and handoff. \\
 \bottomrule
 \end{tabular}
 \caption*{\footnotesize Planned table for Slide 1: roadmap for the 45-minute talk.}
@@ -87,80 +88,108 @@ event-study models, and staggered adoption.}
 \slideheading{2}{Policy Example: NYC Gifted and Talented}
 
 \slidecontent{\textbf{Policy example / research question.} NYC's Gifted and
-Talented (G\&T) program. Do students who enter the program experience better
-outcomes after entry than comparable students who are not yet exposed to G\&T?
-This example is motivated by Strickland, Chan, and Gottfried (2026), which
-studies the longitudinal effects of NYC's G\&T program using a staggered DID
-design.}
+Talented (G\&T) program. Do students who enter G\&T experience better outcomes
+after entry than comparable students who do not enter? This example is motivated
+by Strickland, Chan, and Gottfried (2026), which studies the longitudinal
+effects of NYC's G\&T program using a staggered DID design.}
+
+\slidecontent{\textbf{Important clarification.} The workshop data are synthetic.
+They are inspired by this education policy setting, but they are not the NYC
+administrative data used in the paper.}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{p{0.28\textwidth}p{0.25\textwidth}p{0.25\textwidth}}
+\begin{tabular}{p{0.22\textwidth}p{0.30\textwidth}p{0.28\textwidth}}
 \toprule
-\textbf{Group} & \textbf{Before G\&T entry} & \textbf{After G\&T entry} \\
+\textbf{DID piece} & \textbf{G\&T example} & \textbf{Synthetic workshop data} \\
 \midrule
-Students who enter G\&T & Pre-entry outcomes & Post-entry outcomes \\
-Comparison students & Same pre period & Same post period \\
+Unit & Student, school, or district & District. \\
+Time & School year or grade & Year. \\
+Treatment & G\&T entry & Treatment turns on. \\
+Treated group & Students exposed to G\&T & Districts treated in year 5. \\
+Comparison group & Not-yet or never exposed students & Never-treated districts. \\
+Outcome & Achievement, attendance, or behavior & Standardized achievement outcome. \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 2: the G\&T example as a simple before/after comparison.}
+\caption*{\footnotesize Planned table for Slide 2: policy example mapped to the synthetic data.}
 \end{table}
 
-\slidecontent{\textbf{Workshop data.} The empirical study motivates the policy
-example, but the workshop uses synthetic teaching data. The generated data keep
-the same DID logic while simplifying the setting to district-year panels.}
+\slideheading{3}{Traditional DID Setup}
 
-\slideheading{3}{What Data Do We Need for DID?}
-
-\slidecontent{To estimate DID, we need repeated observations on units over time,
-an outcome, treatment status, and a way to define pre- and post-treatment
-periods. In the synthetic example, the unit is a district and the policy turns
-on for treated districts in a known year.}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{p{0.23\textwidth}p{0.32\textwidth}p{0.27\textwidth}}
-\toprule
-\textbf{DID ingredient} & \textbf{G\&T interpretation} & \textbf{Synthetic data variable} \\
-\midrule
-Unit & Student, school, or district & \texttt{district\_id} \\
-Time & Year or grade & \texttt{year} \\
-Outcome & Achievement or attendance & \texttt{outcome} \\
-Treatment group & Exposed to G\&T or policy & \texttt{treated\_ever} \\
-Post period & After entry or adoption & \texttt{post} \\
-Treatment timing & First exposure year & \texttt{treatment\_start\_year} \\
-\bottomrule
-\end{tabular}
-\caption*{\footnotesize Planned table for Slide 3: variables needed for the synthetic DID example.}
-\end{table}
-
-\slideheading{4}{Traditional DID and Parallel Trends}
-
-\slidecontent{\textbf{Key identifying idea.} DID asks what would have happened
-to treated units after treatment if they had not been treated. The comparison
-group is useful if, before treatment, it was moving in parallel with the treated
-group. In this simple synthetic example, one group adopts treatment in year 5
-and one group is never treated.}
-
-\plannedfig{simple_parallel_trends.png}{0.76}{Planned figure for Slide 4: treated units adopt in year 5; comparison units are never treated.}
-
-\slideheading{5}{DID Compares Changes, Not Just Levels}
-
-\slidecontent{The DID estimand subtracts the comparison group's before-after
-change from the treated group's before-after change. This is why the method is
-called ``difference-in-differences.''}
+\slidecontent{In the simplest DID design, we compare two groups across two
+periods. One group receives treatment after the pre-period. The other group is
+not treated. DID asks whether the treated group changes more after treatment
+than the comparison group changes over the same period.}
 
 \[
 \widehat{\delta}_{DID}
-= (\bar{Y}_{T,post} - \bar{Y}_{T,pre})
-- (\bar{Y}_{C,post} - \bar{Y}_{C,pre})
+=
+(\bar{Y}_{T,post} - \bar{Y}_{T,pre})
+-
+(\bar{Y}_{C,post} - \bar{Y}_{C,pre}).
 \]
 
-\plannedfig{simple_did_2x2.png}{0.68}{Planned figure for Slide 5: the two-by-two DID comparison.}
+\slidecontent{\textbf{Concept.} DID is not just treated versus comparison after
+treatment. It is the treated group's change minus the comparison group's
+change.}
 
-\slideheading{6}{Regression Version of the Same Idea}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.22\textwidth}p{0.18\textwidth}p{0.18\textwidth}p{0.24\textwidth}}
+\toprule
+\textbf{Group} & \textbf{Pre} & \textbf{Post} & \textbf{Change} \\
+\midrule
+Treated & Mean before year 5 & Mean after year 5 & Treated change. \\
+Comparison & Mean before year 5 & Mean after year 5 & Comparison change. \\
+DID & & & Treated change minus comparison change. \\
+\bottomrule
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 3: two-group, two-period DID structure.}
+\end{table}
+
+\slideheading{4}{Parallel Trends: The Identifying Assumption}
+
+\slidecontent{\textbf{Key identifying idea.} DID asks what would have happened
+to treated units after treatment if they had not been treated. The comparison
+group is useful if it tells us what would have happened to the treated group in
+the absence of treatment.}
+
+\[
+E[Y_{T,post}(0) - Y_{T,pre}(0)]
+=
+E[Y_{C,post}(0) - Y_{C,pre}(0)].
+\]
+
+\plannedfig{simple_parallel_trends.png}{0.74}{Planned figure for Slide 4: raw group trends from the synthetic data. Treated units adopt in year 5; comparison units are never treated.}
+
+\slideheading{5}{Classic DID Picture: Observed vs. Counterfactual}
+
+\slidecontent{This is the classic DID teaching figure. The treated group has an
+observed post-treatment outcome, but the missing object is the treated group's
+counterfactual post-treatment outcome: where would the treated group have been
+without treatment?}
+
+\[
+\widehat{Y}_{T,post}(0)
+=
+\bar{Y}_{T,pre}
++
+(\bar{Y}_{C,post} - \bar{Y}_{C,pre}).
+\]
+
+\[
+\widehat{\delta}_{DID}
+=
+\bar{Y}_{T,post}
+-
+\widehat{Y}_{T,post}(0).
+\]
+
+\plannedfig{classic_did_counterfactual.png}{0.74}{Planned figure for Slide 5: comparison trend, observed treated trend, dashed treated counterfactual trend, and the DID estimate.}
+
+\slideheading{6}{DID as a Regression}
 
 \slidecontent{The same two-by-two contrast can be estimated with a regression.
 The coefficient on the interaction between treatment group and post period is
@@ -169,12 +198,33 @@ effect with the known simulated effect.}
 
 \[
 Y_{it}
-= \alpha
-+ \beta_1 Treat_i
-+ \beta_2 Post_t
-+ \delta(Treat_i \times Post_t)
-+ \varepsilon_{it}.
+=
+\alpha
++
+\beta Treat_i
++
+\gamma Post_t
++
+\delta(Treat_i \times Post_t)
++
+\varepsilon_{it}.
 \]
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.28\textwidth}p{0.54\textwidth}}
+\toprule
+\textbf{Term} & \textbf{Meaning} \\
+\midrule
+$Treat_i$ & Treated units differ from comparison units. \\
+$Post_t$ & Outcomes differ after treatment begins. \\
+$Treat_i \times Post_t$ & Treated units change more or less after treatment. \\
+$\delta$ & DID estimate. \\
+\bottomrule
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 6: terms in the two-by-two DID regression.}
+\end{table}
 
 \begin{table}[H]
 \centering
@@ -189,149 +239,230 @@ Two-by-two DID regression & 0.087 & 0.090 \\
 \caption*{\footnotesize Planned table for Slide 6: estimated DID effect versus the known simulated effect.}
 \end{table}
 
+\clearpage
+
 \section*{Part B. TWFE and Event Studies}
 
-\slideheading{7}{Two-Way Fixed Effects}
+\slideheading{7}{Introduce the TWFE Model}
 
-\slidecontent{Many applied DID papers estimate a two-way fixed effects (TWFE)
-model. Unit fixed effects absorb stable differences across units, and year fixed
-effects absorb shocks common to all units in a given year. In the simple
-one-treatment-cohort case, TWFE maps closely onto the standard DID contrast.}
+\slidecontent{\textcolor{red}{\textbf{Introduce the TWFE model here.}} Many
+applied DID papers estimate a two-way fixed effects (TWFE) model. Instead of
+only using one pre-period and one post-period, TWFE uses the full panel and
+controls for unit fixed effects and time fixed effects.}
 
 \[
 Y_{it} = \alpha_i + \lambda_t + \delta D_{it} + \varepsilon_{it}.
 \]
 
+\slidecontent{\textbf{Concept.} In the simple one-treatment-cohort case, TWFE
+maps closely onto the familiar DID contrast. The model is attractive because it
+uses repeated observations and absorbs stable unit differences and common time
+shocks.}
+
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{p{0.22\textwidth}p{0.62\textwidth}}
+\begin{tabular}{p{0.27\textwidth}p{0.55\textwidth}}
 \toprule
-\textbf{Term} & \textbf{Interpretation} \\
+\textbf{Model piece} & \textbf{Interpretation} \\
 \midrule
-$\alpha_i$ & Unit fixed effects: stable differences across units. \\
-$\lambda_t$ & Year fixed effects: shocks common to all units in a year. \\
-$D_{it}$ & Indicator that turns on after treatment starts. \\
-$\delta$ & Average treatment effect estimate in the simple setup. \\
+$\alpha_i$ & Unit fixed effects: stable differences across districts. \\
+$\lambda_t$ & Year fixed effects: shocks common to all districts in a year. \\
+$D_{it}$ & Treatment indicator that equals 1 after treatment begins. \\
+$\delta$ & Average treatment effect in the simple setup. \\
 \bottomrule
 \end{tabular}
 \caption*{\footnotesize Planned table for Slide 7: pieces of the TWFE model.}
 \end{table}
 
-\clearpage
-
 \slideheading{8}{Event Studies: Re-centering Time Around Treatment}
 
-\slidecontent{Event studies extend DID by comparing outcomes at multiple time
-points before and after treatment. The key move is to re-center time around
-treatment entry. In the G\&T example, event time 0 is the year a student enters
-G\&T; event time -1 is the year just before entry. In the simple synthetic data,
-year 5 is treatment start, so year 4 is the reference year.}
+\slidecontent{\textcolor{red}{\textbf{Introduce the event-study version of
+TWFE here.}} An event study replaces the single treatment indicator with
+indicators for time relative to treatment. This lets us look at outcomes before
+and after treatment entry. In the G\&T example, event time 0 is the year a
+student enters G\&T. In the synthetic data, event time 0 is year 5.}
 
 \[
 Y_{it} = \alpha_i + \lambda_t
-+ \sum_{k \neq -1} \beta_k 1[t - G_i = k]
-+ \varepsilon_{it}.
++
+\sum_{k \neq -1} \beta_k 1[t - G_i = k]
++
+\varepsilon_{it}.
 \]
+
+\slidecontent{\textbf{Concept.} Pre-treatment coefficients describe whether
+treated and comparison units were already diverging. Post-treatment coefficients
+show how effects evolve after treatment. Event time -1 is omitted as the
+reference period.}
 
 \plannedfig{normalized_event_time_trends.png}{0.62}{Planned figure for Slide 8: outcomes centered at event time -1. Pre-treatment event times show whether treated and comparison groups were already diverging; post-treatment event times show how effects evolve after treatment.}
 
-\slideheading{9}{What a Single TWFE Coefficient Can Hide}
+\slideheading{9}{Limitation of a Single TWFE Coefficient}
 
-\slidecontent{A single TWFE treatment coefficient can be too compressed if
-effects change over time or if the design includes multiple treatment timings.
-The event-study setup helps make those dynamics visible before moving into the
-staggered DID case.}
+\slidecontent{\textcolor{red}{\textbf{Explain the limitation of TWFE: one
+coefficient can hide treatment-effect dynamics.}} A single TWFE coefficient is
+simple, but it compresses many possible effects into one number. This can be
+misleading if effects grow, fade, or appear only several years after treatment.}
+
+\slidecontent{In the simple design, TWFE is close to the familiar DID contrast.
+Once treatment timing varies, TWFE can compare newly treated units to
+never-treated units, not-yet-treated units, and already-treated units in ways
+that are harder to interpret.}
 
 \begin{table}[H]
 \centering
 \small
 \begin{tabular}{p{0.30\textwidth}p{0.53\textwidth}}
 \toprule
-\textbf{What we estimate} & \textbf{What it can miss} \\
+\textbf{What TWFE gives us} & \textbf{What it can hide} \\
 \midrule
-One TWFE treatment coefficient & Whether effects grow, fade, or appear only after several years. \\
-Average post-treatment effect & Differences across event time. \\
-Simple treated/control comparison & Whether pre-treatment trends were already diverging. \\
+One treatment coefficient & Effects that change over time. \\
+A simple average & Differences across treatment cohorts. \\
+A familiar regression model & Comparisons involving already-treated units. \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 9: why event-time thinking is useful before staggered DID.}
+\caption*{\footnotesize Planned table for Slide 9: why one TWFE coefficient can be too compressed.}
 \end{table}
 
 \clearpage
 
 \section*{Part C. Staggered DID Preview}
 
-\slideheading{10}{Staggered Treatment Timing}
+\slideheading{10}{Staggered DID Example: G\&T Entry at Different Times}
 
-\slidecontent{In many education settings, treatment does not start for everyone
-at the same time. In the G\&T example, students can enter the program at
-different grade points. In the synthetic workshop data, one treated group
-adopts in year 5 and another treated group adopts in year 8.}
+\slidecontent{\textcolor{red}{\textbf{Use G\&T to introduce staggered treatment
+timing.}} In many education settings, treatment does not start for everyone at
+the same time. Students may enter G\&T at different grade points. Districts or
+schools may adopt a policy in different years.}
+
+\slidecontent{In the synthetic data, one treated group adopts in year 5 and
+another adopts in year 8. A third group is never treated. This mirrors the core
+staggered-adoption problem: treatment timing is itself part of the design.}
 
 \plannedfig{staggered_timing_plot.png}{0.72}{Planned figure for Slide 10: early adopters, later adopters, and never-treated units.}
 
-\slideheading{11}{Group Trends With Two Treated Cohorts}
+\clearpage
 
-\slidecontent{With staggered timing, the comparison problem changes. In the same
-calendar year, some units may be newly treated, some may already be treated, and
-some may not yet be treated. This slide previews the issue without fully
-covering the staggered DID estimators.}
+\slideheading{11}{Why Staggered Timing Complicates TWFE}
 
-\plannedfig{staggered_group_trends.png}{0.72}{Planned figure for Slide 11: early-treated, later-treated, and never-treated group trends.}
+\slidecontent{\textcolor{red}{\textbf{Explain the problem of TWFE under
+staggered adoption.}} With staggered timing, the comparison group changes over
+time. In some years, later-treated units can serve as comparisons for
+early-treated units. After the later group becomes treated, those comparisons
+become more complicated.}
 
-\slideheading{12}{Covariates Placeholder}
-
-\slidecontent{\textbf{Placeholder for Wei's section.} This slide will introduce
-the question of covariates in DID: what changes when parallel trends is framed
-as conditional parallel trends, and how should time-varying versus time-invariant
-covariates be handled in TWFE and staggered DID estimators?}
+\plannedfig{staggered_group_trends.png}{0.70}{Planned figure for Slide 11: early-treated, later-treated, and never-treated group trends.}
 
 \begin{table}[H]
 \centering
 \small
 \begin{tabular}{p{0.30\textwidth}p{0.52\textwidth}}
 \toprule
-\textbf{Issue} & \textbf{Placeholder content} \\
+\textbf{Comparison type} & \textbf{Interpretation} \\
 \midrule
-Conditional parallel trends & Define the assumption and connect it to covariate adjustment. \\
-Time-invariant covariates & Clarify what unit fixed effects already absorb. \\
-Time-varying covariates & Flag why timing and interpretation require care. \\
-Estimator choice & Add CSA/Wooldridge/Sant'Anna and Zhao details later. \\
+Treated vs. never treated & Usually the most intuitive DID comparison. \\
+Early treated vs. not-yet treated & Useful before the later group adopts. \\
+Later treated vs. already treated & Can be problematic if effects evolve over time. \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 12: placeholder structure for the covariates discussion.}
+\caption*{\footnotesize Planned table for Slide 11: why staggered timing changes the comparison problem.}
 \end{table}
 
-\slideheading{13}{Handoff and Workshop Materials}
+\slidecontent{This motivates the Goodman-Bacon decomposition: TWFE with
+staggered adoption can be understood as a weighted average of many two-by-two
+DID comparisons, not all of which answer the same policy question.}
 
-\slidecontent{The introductory section closes by pointing participants to the
-workshop materials: the synthetic data, starter code, outline/slides, and
-readings.}
+\clearpage
+
+\slideheading{12}{Preview of Staggered DID Estimators}
+
+\slidecontent{\textcolor{red}{\textbf{Preview CSA logic: estimate group-time
+effects, then aggregate.}} Modern staggered DID estimators avoid relying on one
+opaque TWFE coefficient. Instead, they estimate treatment effects for specific
+groups at specific times.}
+
+\[
+ATT(g,t)
+=
+E[Y_t(g) - Y_t(0) \mid G_i = g].
+\]
+
+\slidecontent{For group $g$, first treated in period $g$, estimate the effect at
+time $t$ by comparing that group to appropriate untreated or not-yet-treated
+units. Then aggregate group-time effects into the summary needed for the
+research question.}
+
+\[
+ATT
+=
+\sum_{g,t} w_{gt} ATT(g,t).
+\]
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{p{0.22\textwidth}p{0.58\textwidth}}
+\begin{tabular}{p{0.28\textwidth}p{0.54\textwidth}}
 \toprule
-\textbf{Material} & \textbf{Where it lives} \\
+\textbf{Estimand} & \textbf{Meaning} \\
 \midrule
-Outline/slides & Workshop website Slides tab. \\
-Synthetic data & Workshop website Data tab; CSV and Stata files. \\
-Code & Workshop website Code tab; starter R scripts. \\
-Readings & Workshop website Resources tab. \\
+$ATT(g,t)$ & Effect for the cohort first treated in period $g$ at time $t$. \\
+Simple aggregation & Average over group-time effects. \\
+Group aggregation & Average effects by treatment cohort. \\
+Event-time aggregation & Average effects by time since treatment. \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 13: final slide with workshop links.}
+\caption*{\footnotesize Planned table for Slide 12: CSA-style group-time estimands and aggregations.}
 \end{table}
+
+\slideheading{13}{Brief Alternatives and Reading Group Handoff}
+
+\slidecontent{\textcolor{red}{\textbf{Briefly introduce alternatives; do not
+teach them fully here.}} This workshop will not fully cover every modern
+staggered DID estimator. The goal is to show why we need alternatives to naive
+TWFE and where those alternatives fit.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.34\textwidth}p{0.48\textwidth}}
+\toprule
+\textbf{Method} & \textbf{What it helps clarify} \\
+\midrule
+Goodman-Bacon decomposition & What comparisons TWFE is using. \\
+Callaway and Sant'Anna & Group-time treatment effects. \\
+Wooldridge pooled OLS / ETWFE & Regression-based alternatives. \\
+Sun and Abraham & Event-study estimates with staggered timing. \\
+\bottomrule
+\end{tabular}
+\caption*{\footnotesize Planned table for Slide 13: methods to flag before Wei's next section.}
+\end{table}
+
+\slidecontent{The introductory section closes by pointing participants to the
+workshop materials: the synthetic data, starter code, outline/slides, and
+readings. The next section can pick up with covariates and conditional parallel
+trends.}
 
 \url{https://katjanestrickland.github.io/did-eprc-workshop/}
 
-\section*{Reference To Include}
+\section*{References To Include}
 
 Strickland, K., Chan, W., and Gottfried, M. A. (2026). Longitudinal effects of
 NYC's Gifted and Talented program: Evidence from a staggered
 difference-in-differences approach. \emph{Educational Evaluation and Policy
 Analysis}. \url{https://doi.org/10.3102/01623737261438146}
+
+Goodman-Bacon, A. (2021). Difference-in-differences with variation in treatment
+timing. \emph{Journal of Econometrics}, 225(2), 254--277.
+
+Callaway, B., and Sant'Anna, P. H. C. (2021). Difference-in-differences with
+multiple time periods. \emph{Journal of Econometrics}, 225(2), 200--230.
+
+Sun, L., and Abraham, S. (2021). Estimating dynamic treatment effects in event
+studies with heterogeneous treatment effects. \emph{Journal of Econometrics},
+225(2), 175--199.
+
+Wooldridge, J. M. (2021). Two-way fixed effects, the two-way Mundlak regression,
+and difference-in-differences estimators.
 
 \end{document}
