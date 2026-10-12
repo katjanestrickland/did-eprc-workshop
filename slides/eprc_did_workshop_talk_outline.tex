@@ -412,31 +412,79 @@ staggered-adoption problem: treatment timing is itself part of the design.}
 \slideheading{11}{Why Staggered Timing Complicates TWFE}
 \mainpoint{1(c)(i): discussion of the problem of TWFE - Bacon decomposition.}
 
-\slidecontent{With staggered timing, the comparison group changes over time. In
-some years, later-treated units can serve as comparisons for early-treated
-units. After the later group becomes treated, those comparisons become more
-complicated.}
+\slidecontent{With staggered timing, TWFE no longer compares one treated group
+to one untreated group. Instead, the regression uses variation in treatment
+status across groups and years. That means the comparison group changes
+depending on which cohort and time period we are looking at.}
 
-\plannedfig{staggered_group_trends.png}{0.70}{Planned figure for Slide 11: early-treated, later-treated, and never-treated group trends.}
+\slidecontent{In the synthetic data, there are three treatment-timing groups:}
+
+\[
+G_i=5 \quad \text{early adopters}
+\]
+
+\[
+G_i=8 \quad \text{later adopters}
+\]
+
+\[
+G_i=\infty \quad \text{never-treated districts}.
+\]
+
+\plannedfig{staggered_group_trends.png}{0.70}{Planned figure for Slide 11: early-treated, later-treated, and never-treated group trends. The figure helps students see when each group is untreated, newly treated, or already treated.}
+
+\slidecontent{\textbf{Goodman-Bacon decomposition.} With staggered adoption,
+the TWFE coefficient can be written as a weighted average of many smaller
+two-by-two DID comparisons.}
+
+\[
+\widehat{\beta}_{TWFE}
+=
+\sum_j w_j \widehat{\beta}^{2\times2}_j.
+\]
+
+\slidecontent{The key question is: what comparisons are inside that weighted
+average? Some comparisons are intuitive; others are problematic.}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{p{0.24\textwidth}p{0.60\textwidth}}
+\begin{tabular}{p{0.18\textwidth}p{0.20\textwidth}p{0.46\textwidth}}
 \toprule
-\textbf{Comparison type} & \textbf{Interpretation} \\
+\textbf{Comparison} & \textbf{Years used} & \textbf{Interpretation} \\
 \midrule
-Treated vs. never treated & Usually the most intuitive DID comparison. \\
-Early treated vs. not-yet treated & Useful before the later group adopts. \\
-Later treated vs. already treated & Can be problematic if effects evolve over time. \\
+$G=5$ vs. never & Years 5--11 &
+Early adopters compared with districts that are never treated. This is the most
+intuitive DID comparison. \\
+$G=8$ vs. never & Years 8--11 &
+Later adopters compared with districts that are never treated. This is also an
+intuitive DID comparison. \\
+$G=5$ vs. $G=8$ & Years 5--7 &
+Early adopters compared with later adopters before the later adopters are
+treated. The later group is not-yet-treated, so this can be a useful comparison. \\
+\textcolor{red}{$G=8$ vs. $G=5$} & \textcolor{red}{Years 8--11} &
+\textcolor{red}{Later adopters compared with early adopters after the early
+adopters are already treated. This is the problematic comparison.} \\
 \bottomrule
 \end{tabular}
-\caption*{\footnotesize Planned table for Slide 11: why staggered timing changes the comparison problem.}
+\caption*{\footnotesize Planned table for Slide 11: examples of the comparisons inside a TWFE estimate with staggered treatment timing.}
 \end{table}
 
-\slidecontent{This motivates the Goodman-Bacon decomposition: TWFE with
-staggered adoption can be understood as a weighted average of many two-by-two
-DID comparisons, not all of which answer the same policy question.}
+\slidecontent{The problematic comparison is sometimes called a
+\textbf{forbidden comparison}: TWFE may compare newly treated districts to
+already-treated districts. But already-treated districts are not untreated
+controls. If treatment effects evolve over time, those districts may already
+have accumulated treatment effects.}
+
+\slidecontent{This is why the single TWFE coefficient can become hard to
+interpret. It is not simply ``the average effect of the G\&T-style program.''
+It is a weighted average of several DID comparisons, and the weights can be
+unequal, hard to interpret, or even negative.}
+
+\slidecontent{\textbf{Takeaway.} In staggered DID, the problem is not only that
+there are multiple treatment timings. The problem is that TWFE chooses the
+comparisons and weights for us. Modern staggered DID estimators try to estimate
+cohort-time effects directly and then aggregate them using clearer choices.}
 
 \clearpage
 
