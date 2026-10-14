@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workshop | EPRC DID Workshop</title><link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="syntax.css"><script src="workshop.js" defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><nav class="nav" aria-label="Main navigation">
+<a class="brand" href="index.html"><span class="brand-mark">DID</span><span>EPRC Workshop</span></a>
+<div class="nav-links"><a href="index.html">Home</a>
+<a href="slides.html">Slides</a>
+<a href="workshop.html" aria-current="page">Workshop</a>
+<a href="code.html">Code</a>
+<a href="data.html">Data</a>
+<a href="resources.html">Resources</a></div></nav></header>
+<main id="main" class="document lab-layout">
+<aside class="lab-toc" aria-label="On this page"><strong>In this lab</strong><nav><a href="#lab">Hands-on R Lab</a><a href="#setup">Before You Begin</a><a href="#data">1. Meet the Data</a><a href="#traditional">2. Traditional DID</a><a href="#twfe">3. Estimate TWFE</a><a href="#staggered">4. Staggered DID</a><a href="#csa">5. Estimate Cohort-Period Effects</a><a href="#aggregation">6. Compute the Simple ATT</a><a href="#etwfe">7. Extended TWFE (Optional)</a><a href="#event-study">8. Event Study (Optional)</a><a href="#discussion">Questions &amp; Discussion</a></nav></aside><article><h2 id="lab">Hands-on R Lab</h2>
+<p><strong>October 22, 2026 | 1:00-1:30 PM Eastern</strong></p>
+<p>This guided lab applies traditional and staggered DID methods to two simulated district-year datasets. We begin with a common treatment start, then examine districts adopting a gifted education program in different years. These are synthetic teaching examples, not the data or results of an actual gifted education study.</p>
+<p><a href="code/workshop_lab.R">Download the complete R script</a> · <a href="workshop.Rmd">Download the R Markdown</a> · <a href="data.html">Data and codebook</a></p>
+<p>Allow 5 minutes for setup and data, 10 minutes for traditional DID, and 15 minutes for staggered DID and aggregation. The last two sections are optional follow-up.</p>
+<h2 id="setup">Before You Begin</h2>
+<p>Install R and RStudio before the session. Run the installation code once, then load the packages each time you start a new R session. No prior DID programming experience is required. An internet connection is needed for package installation and for downloading the datasets; downloaded files can be used offline.</p>
+<details>
+<summary>
+Install packages (run once before the lab)
+</summary>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;dplyr&quot;</span>, <span class="st">&quot;readr&quot;</span>, <span class="st">&quot;ggplot2&quot;</span>, <span class="st">&quot;fixest&quot;</span>, <span class="st">&quot;did&quot;</span>, <span class="st">&quot;etwfe&quot;</span>, <span class="st">&quot;knitr&quot;</span>))</span></code></pre></div>
+</details>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(fixest)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(did)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(etwfe)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20261014</span>)</span></code></pre></div>
+<h2 id="data">1. Meet the Data</h2>
+<p>Each row represents one district in one study year. Both panels contain <strong>160 districts observed for seven years (1,120 rows)</strong>, with no adjustment covariates. Treatment stays on after adoption. Years 1-4 precede the earliest adoption.</p>
+<p>The code first looks for local files, then uses the workshop downloads. To work offline, place the CSV files in your working folder or its <code>data</code> subfolder.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>read_workshop_data <span class="ot">&lt;-</span> <span class="cf">function</span>(filename) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  candidates <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">file.path</span>(<span class="st">&quot;assets/data&quot;</span>, filename), <span class="fu">file.path</span>(<span class="st">&quot;data&quot;</span>, filename), filename)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  local <span class="ot">&lt;-</span> candidates[<span class="fu">file.exists</span>(candidates)]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  source <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">length</span>(local)) local[<span class="dv">1</span>] <span class="cf">else</span> <span class="fu">paste0</span>(</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;https://katjanestrickland.github.io/did-eprc-workshop/assets/data/&quot;</span>, filename)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read_csv</span>(source, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> <span class="fu">read_workshop_data</span>(<span class="st">&quot;simple_did_district.csv&quot;</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>staggered <span class="ot">&lt;-</span> <span class="fu">read_workshop_data</span>(<span class="st">&quot;staggered_did_district.csv&quot;</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">head</span>(simple), <span class="at">digits =</span> <span class="dv">2</span>)</span></code></pre></div>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 4%" />
+<col style="width: 12%" />
+<col style="width: 19%" />
+<col style="width: 12%" />
+<col style="width: 7%" />
+<col style="width: 10%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: right;">district_id</th>
+<th style="text-align: right;">year</th>
+<th style="text-align: left;">cohort</th>
+<th style="text-align: right;">treatment_start_year</th>
+<th style="text-align: right;">treated_ever</th>
+<th style="text-align: right;">treated</th>
+<th style="text-align: right;">event_time</th>
+<th style="text-align: right;">outcome_std</th>
+<th style="text-align: right;">outcome_raw</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">treated_year5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-4</td>
+<td style="text-align: right;">1.32</td>
+<td style="text-align: right;">63.16</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">treated_year5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-3</td>
+<td style="text-align: right;">1.37</td>
+<td style="text-align: right;">63.74</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">treated_year5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-2</td>
+<td style="text-align: right;">1.69</td>
+<td style="text-align: right;">66.92</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">treated_year5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-1</td>
+<td style="text-align: right;">1.55</td>
+<td style="text-align: right;">65.48</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">treated_year5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2.00</td>
+<td style="text-align: right;">70.04</td>
+</tr>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: left;">treated_year5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.94</td>
+<td style="text-align: right;">69.44</td>
+</tr>
+</tbody>
+</table>
+<p><code>treatment_start_year = 0</code> identifies never-treated districts. <code>treated</code> becomes 1 in the district’s adoption year. <code>event_time</code> is years since adoption and is missing for never-treated districts.</p>
+<p>Both outcome columns describe <strong>the same continuous outcome</strong>: <code>outcome_raw = 50 + 10 * outcome_std</code>. We use raw score points for all models and graphs here. One reference SD equals 10 raw points. The scale is synthetic and unbounded, not a real test score or a 0-100 scale. Standardization uses the pooled untreated Years 1-4 reference distribution, not each cohort or year separately.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>design <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(simple, <span class="at">simulation =</span> <span class="st">&quot;1: Common start&quot;</span>),</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(staggered, <span class="at">simulation =</span> <span class="st">&quot;2: Staggered start&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(simulation, treatment_start_year) <span class="sc">|&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">districts =</span> <span class="fu">n_distinct</span>(district_id), <span class="at">rows =</span> <span class="fu">n</span>(),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">mean_score =</span> <span class="fu">mean</span>(outcome_raw), <span class="at">sd_score =</span> <span class="fu">sd</span>(outcome_raw), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(design, <span class="at">digits =</span> <span class="dv">2</span>)</span></code></pre></div>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 28%" />
+<col style="width: 13%" />
+<col style="width: 6%" />
+<col style="width: 14%" />
+<col style="width: 12%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">simulation</th>
+<th style="text-align: right;">treatment_start_year</th>
+<th style="text-align: right;">districts</th>
+<th style="text-align: right;">rows</th>
+<th style="text-align: right;">mean_score</th>
+<th style="text-align: right;">sd_score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">1: Common start</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">80</td>
+<td style="text-align: right;">560</td>
+<td style="text-align: right;">53.13</td>
+<td style="text-align: right;">10.01</td>
+</tr>
+<tr>
+<td style="text-align: left;">1: Common start</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">80</td>
+<td style="text-align: right;">560</td>
+<td style="text-align: right;">52.18</td>
+<td style="text-align: right;">10.81</td>
+</tr>
+<tr>
+<td style="text-align: left;">2: Staggered start</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">280</td>
+<td style="text-align: right;">52.51</td>
+<td style="text-align: right;">11.22</td>
+</tr>
+<tr>
+<td style="text-align: left;">2: Staggered start</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">280</td>
+<td style="text-align: right;">54.68</td>
+<td style="text-align: right;">10.51</td>
+</tr>
+<tr>
+<td style="text-align: left;">2: Staggered start</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">280</td>
+<td style="text-align: right;">51.94</td>
+<td style="text-align: right;">9.14</td>
+</tr>
+<tr>
+<td style="text-align: left;">2: Staggered start</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">280</td>
+<td style="text-align: right;">51.48</td>
+<td style="text-align: right;">10.79</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(simple) <span class="sc">==</span> <span class="dv">1120</span>, <span class="fu">nrow</span>(staggered) <span class="sc">==</span> <span class="dv">1120</span>,</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>          <span class="fu">all</span>(<span class="fu">table</span>(simple<span class="sc">$</span>district_id) <span class="sc">==</span> <span class="dv">7</span>), <span class="fu">all</span>(<span class="fu">table</span>(staggered<span class="sc">$</span>district_id) <span class="sc">==</span> <span class="dv">7</span>))</span></code></pre></div>
+<h2 id="traditional">2. Traditional DID</h2>
+<p>In Simulation 1, <strong>80 districts adopt in Year 5</strong> and <strong>80 remain untreated</strong>. The research question is: Do districts improve after adopting a gifted education program, compared with the change in districts that remain untreated?</p>
+<p>Plot the observed group means first. Parallel trends concerns how the groups would change <strong>without treatment</strong>; similar observed pre-trends alone do not prove it.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>simple_means <span class="ot">&lt;-</span> simple <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">group =</span> <span class="fu">ifelse</span>(treated_ever <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;Adopts in Year 5&quot;</span>, <span class="st">&quot;Never treated&quot;</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(group, year) <span class="sc">|&gt;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">mean_score =</span> <span class="fu">mean</span>(outcome_raw), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(simple_means, <span class="fu">aes</span>(year, mean_score, <span class="at">color =</span> group)) <span class="sc">+</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fl">4.5</span>, <span class="at">linetype =</span> <span class="dv">2</span>, <span class="at">color =</span> <span class="st">&quot;grey55&quot;</span>) <span class="sc">+</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">7</span>) <span class="sc">+</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;#2454a6&quot;</span>, <span class="st">&quot;#117c78&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Study year&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Mean achievement (raw score points)&quot;</span>, <span class="at">color =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span></code></pre></div>
+<figure>
+<img src="assets/figures/lab-simple-trends-1.png" alt="plot of chunk simple-trends" />
+<figcaption aria-hidden="true">plot of chunk simple-trends</figcaption>
+</figure>
+<h2 id="twfe">3. Estimate TWFE</h2>
+<p>District fixed effects account for stable differences across districts. Year fixed effects account for common year changes. The <code>treated</code> coefficient estimates the ATT under parallel trends, no anticipation, and the other DID assumptions. This simulation uses a constant treatment effect. Cluster standard errors by district because the same districts are observed repeatedly and treatment is assigned at the district level.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>twfe <span class="ot">&lt;-</span> <span class="fu">feols</span>(outcome_raw <span class="sc">~</span> treated <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> simple, <span class="at">vcov =</span> <span class="sc">~</span>district_id)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>twfe_ci <span class="ot">&lt;-</span> <span class="fu">confint</span>(twfe, <span class="st">&quot;treated&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>twfe_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate =</span> <span class="fu">coef</span>(twfe)[<span class="st">&quot;treated&quot;</span>], <span class="at">std_error =</span> <span class="fu">se</span>(twfe)[<span class="st">&quot;treated&quot;</span>],</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">lower_95 =</span> twfe_ci[<span class="dv">1</span>, <span class="dv">1</span>], <span class="at">upper_95 =</span> twfe_ci[<span class="dv">1</span>, <span class="dv">2</span>])</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(twfe_table, <span class="at">digits =</span> <span class="dv">3</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">estimate</th>
+<th style="text-align: right;">std_error</th>
+<th style="text-align: right;">lower_95</th>
+<th style="text-align: right;">upper_95</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">2.287</td>
+<td style="text-align: right;">0.345</td>
+<td style="text-align: right;">1.606</td>
+<td style="text-align: right;">2.968</td>
+</tr>
+</tbody>
+</table>
+<p>The estimated effect is <strong>2.29 raw score points</strong>, or <strong>0.229 reference SDs</strong>. These are simulated results, not evidence about the effectiveness of gifted education.</p>
+<p>With this balanced, common-start panel, TWFE equals the difference between group changes averaged over all pre- and all post-treatment years. Check that directly:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>changes <span class="ot">&lt;-</span> simple <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(treated_ever) <span class="sc">|&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">change =</span> <span class="fu">mean</span>(outcome_raw[year <span class="sc">&gt;=</span> <span class="dv">5</span>]) <span class="sc">-</span> <span class="fu">mean</span>(outcome_raw[year <span class="sc">&lt;</span> <span class="dv">5</span>]))</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>manual_did <span class="ot">&lt;-</span> changes<span class="sc">$</span>change[changes<span class="sc">$</span>treated_ever <span class="sc">==</span> <span class="dv">1</span>] <span class="sc">-</span> changes<span class="sc">$</span>change[changes<span class="sc">$</span>treated_ever <span class="sc">==</span> <span class="dv">0</span>]</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">abs</span>(manual_did <span class="sc">-</span> <span class="fu">coef</span>(twfe)[<span class="st">&quot;treated&quot;</span>]) <span class="sc">&lt;</span> <span class="fl">1e-8</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>manual_did</span></code></pre></div>
+<pre><code>#&gt; [1] 2.287095</code></pre>
+<h2 id="staggered">4. Staggered DID</h2>
+<p>Simulation 2 has <strong>40 districts in each cohort: Year 5, Year 6, Year 7, and never treated</strong>. Effects vary across cohorts and with time since adoption. The earlier cohort contributes three post-treatment years, the next contributes two, and the last contributes one. A single TWFE coefficient can mix comparisons with already-treated groups when effects vary.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>timing <span class="ot">&lt;-</span> staggered <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(cohort, treatment_start_year, year, treated)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(timing, <span class="fu">aes</span>(year, <span class="fu">reorder</span>(cohort, <span class="sc">-</span>treatment_start_year), <span class="at">fill =</span> <span class="fu">factor</span>(treated))) <span class="sc">+</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_tile</span>(<span class="at">color =</span> <span class="st">&quot;white&quot;</span>, <span class="at">width =</span> <span class="fl">0.94</span>, <span class="at">height =</span> <span class="fl">0.75</span>) <span class="sc">+</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">7</span>, <span class="at">position =</span> <span class="st">&quot;top&quot;</span>) <span class="sc">+</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;#e1e7eb&quot;</span>, <span class="st">&quot;#2454a6&quot;</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;Untreated&quot;</span>, <span class="st">&quot;Treated&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Study year&quot;</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">panel.grid =</span> <span class="fu">element_blank</span>(), <span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span></code></pre></div>
+<figure>
+<img src="assets/figures/lab-timing-1.png" alt="plot of chunk timing" />
+<figcaption aria-hidden="true">plot of chunk timing</figcaption>
+</figure>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>staggered_means <span class="ot">&lt;-</span> staggered <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(cohort, year) <span class="sc">|&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">mean_score =</span> <span class="fu">mean</span>(outcome_raw), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(staggered_means, <span class="fu">aes</span>(year, mean_score, <span class="at">color =</span> cohort)) <span class="sc">+</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">7</span>) <span class="sc">+</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;#5b6773&quot;</span>, <span class="st">&quot;#2454a6&quot;</span>, <span class="st">&quot;#117c78&quot;</span>, <span class="st">&quot;#b3435d&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Study year&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Mean achievement (raw score points)&quot;</span>, <span class="at">color =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span></code></pre></div>
+<figure>
+<img src="assets/figures/lab-staggered-trends-1.png" alt="plot of chunk staggered-trends" />
+<figcaption aria-hidden="true">plot of chunk staggered-trends</figcaption>
+</figure>
+<h2 id="csa">5. Estimate Cohort-Period Effects</h2>
+<p>Callaway and Sant’Anna estimate an ATT for each cohort and post-treatment period. Here we use <strong>never-treated districts</strong> as controls. <code>xformla = ~1</code> means no adjustment covariates. The baseline for a post-treatment effect is the year just before that cohort adopts. For example, ATT(5,7) compares the Year 4-to-7 change in the Year 5 cohort with that change in the never-treated group.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20261014</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>cs <span class="ot">&lt;-</span> <span class="fu">att_gt</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">yname =</span> <span class="st">&quot;outcome_raw&quot;</span>, <span class="at">tname =</span> <span class="st">&quot;year&quot;</span>, <span class="at">idname =</span> <span class="st">&quot;district_id&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">gname =</span> <span class="st">&quot;treatment_start_year&quot;</span>, <span class="at">xformla =</span> <span class="sc">~</span><span class="dv">1</span>, <span class="at">data =</span> <span class="fu">as.data.frame</span>(staggered),</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">panel =</span> <span class="cn">TRUE</span>, <span class="at">control_group =</span> <span class="st">&quot;nevertreated&quot;</span>, <span class="at">base_period =</span> <span class="st">&quot;universal&quot;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">anticipation =</span> <span class="dv">0</span>, <span class="at">est_method =</span> <span class="st">&quot;reg&quot;</span>, <span class="at">bstrap =</span> <span class="cn">TRUE</span>, <span class="at">biters =</span> <span class="dv">999</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">clustervars =</span> <span class="st">&quot;district_id&quot;</span>, <span class="at">cband =</span> <span class="cn">TRUE</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>cells <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">cohort =</span> cs<span class="sc">$</span>group, <span class="at">year =</span> cs<span class="sc">$</span>t, <span class="at">ATT =</span> cs<span class="sc">$</span>att, <span class="at">SE =</span> cs<span class="sc">$</span>se) <span class="sc">|&gt;</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> cohort)</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(cells, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">cohort</th>
+<th style="text-align: right;">year</th>
+<th style="text-align: right;">ATT</th>
+<th style="text-align: right;">SE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1.322</td>
+<td style="text-align: right;">0.414</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">2.720</td>
+<td style="text-align: right;">0.587</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">3.768</td>
+<td style="text-align: right;">0.654</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1.805</td>
+<td style="text-align: right;">0.524</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1.482</td>
+<td style="text-align: right;">0.596</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1.778</td>
+<td style="text-align: right;">0.559</td>
+</tr>
+</tbody>
+</table>
+<p>The table shows post-treatment effects and bootstrap standard errors. The multiplier bootstrap clusters at district level. <code>cband = TRUE</code> requests simultaneous confidence bands in the package summary; individual estimate intervals and simultaneous bands answer different uncertainty questions.</p>
+<h2 id="aggregation">6. Compute the Simple ATT</h2>
+<p>The Simple ATT averages the cohort-period effects with cohort-size weights. There are six observed post-treatment cells. All cohort sizes are 40, so each cell receives weight 1/6. Cohort 5 contributes 3/6 of the total weight, cohort 6 contributes 2/6, and cohort 7 contributes 1/6. This is not an equal-weight average of the three cohort averages.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>simple_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(cs, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>cohort_sizes <span class="ot">&lt;-</span> staggered <span class="sc">|&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(district_id, treatment_start_year) <span class="sc">|&gt;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(treatment_start_year, <span class="at">name =</span> <span class="st">&quot;districts&quot;</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>weighted_cells <span class="ot">&lt;-</span> cells <span class="sc">|&gt;</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(cohort_sizes, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;cohort&quot;</span> <span class="ot">=</span> <span class="st">&quot;treatment_start_year&quot;</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">weight =</span> districts <span class="sc">/</span> <span class="fu">sum</span>(districts), <span class="at">contribution =</span> weight <span class="sc">*</span> ATT)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">select</span>(weighted_cells, cohort, year, districts, ATT, weight, contribution), <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">cohort</th>
+<th style="text-align: right;">year</th>
+<th style="text-align: right;">districts</th>
+<th style="text-align: right;">ATT</th>
+<th style="text-align: right;">weight</th>
+<th style="text-align: right;">contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">1.322</td>
+<td style="text-align: right;">0.167</td>
+<td style="text-align: right;">0.220</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">2.720</td>
+<td style="text-align: right;">0.167</td>
+<td style="text-align: right;">0.453</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">3.768</td>
+<td style="text-align: right;">0.167</td>
+<td style="text-align: right;">0.628</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">1.805</td>
+<td style="text-align: right;">0.167</td>
+<td style="text-align: right;">0.301</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">1.482</td>
+<td style="text-align: right;">0.167</td>
+<td style="text-align: right;">0.247</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">1.778</td>
+<td style="text-align: right;">0.167</td>
+<td style="text-align: right;">0.296</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>manual_simple_att <span class="ot">&lt;-</span> <span class="fu">sum</span>(weighted_cells<span class="sc">$</span>contribution)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">abs</span>(manual_simple_att <span class="sc">-</span> simple_att<span class="sc">$</span>overall.att) <span class="sc">&lt;</span> <span class="fl">1e-8</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(simple_att)</span></code></pre></div>
+<pre><code>#&gt; 
+#&gt; Call:
+#&gt; aggte(MP = cs, type = &quot;simple&quot;)
+#&gt; 
+#&gt; Reference: Callaway, Brantly and Pedro H.C. Sant&#39;Anna.  &quot;Difference-in-Differences with Multiple Time Periods.&quot; Journal of Econometrics, Vol. 225, No. 2, pp. 200-230, 2021. &lt;https://doi.org/10.1016/j.jeconom.2020.12.001&gt;, &lt;https://arxiv.org/abs/1803.09015&gt; 
+#&gt; 
+#&gt; 
+#&gt;     ATT    Std. Error     [ 95%  Conf. Int.]  
+#&gt;  2.1459        0.3348     1.4897      2.8021 *
+#&gt; 
+#&gt; 
+#&gt; ---
+#&gt; Signif. codes: `*&#39; confidence band does not cover 0
+#&gt; 
+#&gt; Control Group:  Never Treated,  Anticipation Periods:  0
+#&gt; Estimation Method:  Outcome Regression</code></pre>
+<p>The Simple ATT is <strong>2.15 raw score points</strong>. The calculation uses unrounded values. The package computes uncertainty using the joint estimation structure; do not average the six standard errors.</p>
+<p>For a direct check of the six DID contrasts:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>manual_cell <span class="ot">&lt;-</span> <span class="cf">function</span>(g, t) {</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  treated_change <span class="ot">&lt;-</span> <span class="fu">with</span>(staggered, <span class="fu">mean</span>(outcome_raw[treatment_start_year <span class="sc">==</span> g <span class="sc">&amp;</span> year <span class="sc">==</span> t]) <span class="sc">-</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">mean</span>(outcome_raw[treatment_start_year <span class="sc">==</span> g <span class="sc">&amp;</span> year <span class="sc">==</span> g<span class="dv">-1</span>]))</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  control_change <span class="ot">&lt;-</span> <span class="fu">with</span>(staggered, <span class="fu">mean</span>(outcome_raw[treatment_start_year <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> year <span class="sc">==</span> t]) <span class="sc">-</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">mean</span>(outcome_raw[treatment_start_year <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> year <span class="sc">==</span> g<span class="dv">-1</span>]))</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  treated_change <span class="sc">-</span> control_change</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>manual_effects <span class="ot">&lt;-</span> <span class="fu">mapply</span>(manual_cell, cells<span class="sc">$</span>cohort, cells<span class="sc">$</span>year)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">max</span>(<span class="fu">abs</span>(manual_effects <span class="sc">-</span> cells<span class="sc">$</span>ATT)) <span class="sc">&lt;</span> <span class="fl">1e-8</span>)</span></code></pre></div>
+<h2 id="etwfe">7. Extended TWFE (Optional)</h2>
+<p>Extended TWFE allows cohort and time interactions rather than imposing one constant treatment coefficient. Use the same never-treated comparison group and raw outcome. <code>emfx(type = "simple")</code> summarizes post-treatment effects across treated observations. In this balanced panel, those observations give the same 1/6 weights to the six cells. Estimates can still differ because the estimation methods use time periods differently; matching the estimand does not guarantee identical finite-sample results.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>extended <span class="ot">&lt;-</span> <span class="fu">etwfe</span>(outcome_raw <span class="sc">~</span> <span class="dv">0</span>, <span class="at">tvar =</span> year, <span class="at">gvar =</span> treatment_start_year,</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data =</span> staggered, <span class="at">cgroup =</span> <span class="st">&quot;never&quot;</span>, <span class="at">gref =</span> <span class="dv">0</span>,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">vcov =</span> <span class="sc">~</span>district_id)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>extended_att <span class="ot">&lt;-</span> <span class="fu">emfx</span>(extended, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">as.data.frame</span>(extended_att)[, <span class="fu">c</span>(<span class="st">&quot;estimate&quot;</span>, <span class="st">&quot;std.error&quot;</span>, <span class="st">&quot;conf.low&quot;</span>, <span class="st">&quot;conf.high&quot;</span>)], <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">estimate</th>
+<th style="text-align: right;">std.error</th>
+<th style="text-align: right;">conf.low</th>
+<th style="text-align: right;">conf.high</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">2.146</td>
+<td style="text-align: right;">0.343</td>
+<td style="text-align: right;">1.473</td>
+<td style="text-align: right;">2.819</td>
+</tr>
+</tbody>
+</table>
+<p>This optional model uses district-clustered covariance estimates and delta-method uncertainty, rather than the CSA multiplier bootstrap.</p>
+<h2 id="event-study">8. Event Study (Optional)</h2>
+<p>For Simulation 1, estimate separate coefficients relative to Year 4, the final pre-treatment year. Never-treated districts provide the comparison. Years 5, 6, and 7 correspond to event times 0, 1, and 2. Pre-treatment estimates are diagnostics, not proof of parallel trends. This common-start specification should not be carried over mechanically to staggered adoption.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>event_model <span class="ot">&lt;-</span> <span class="fu">feols</span>(outcome_raw <span class="sc">~</span> <span class="fu">i</span>(year, treated_ever, <span class="at">ref =</span> <span class="dv">4</span>) <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                     <span class="at">data =</span> simple, <span class="at">vcov =</span> <span class="sc">~</span>district_id)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">iplot</span>(event_model, <span class="at">xlab =</span> <span class="st">&quot;Study year (Year 4 reference)&quot;</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">ylab =</span> <span class="st">&quot;Effect relative to Year 4 (raw points)&quot;</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">main =</span> <span class="st">&quot;Simulation 1: common-start event study&quot;</span>)</span></code></pre></div>
+<figure>
+<img src="assets/figures/lab-event-study-1.png" alt="plot of chunk event-study" />
+<figcaption aria-hidden="true">plot of chunk event-study</figcaption>
+</figure>
+<p>The plot shows pointwise 95% confidence intervals. Multiple pre-period tests require care; failure to reject a pre-trend is not evidence that the identifying assumptions hold.</p>
+<h2 id="discussion">Questions &amp; Discussion</h2>
+<p><strong>1:30-2:00 PM:</strong> Which units receive treatment in your application? Which units could supply an untreated comparison? Which treatment-effect summary answers your research question? What would make parallel trends plausible?</p>
+<p>Methods: <a href="https://doi.org/10.1016/j.jeconom.2020.12.001">Callaway and Sant’Anna (2021)</a>, <a href="https://doi.org/10.1007/s00181-025-02807-z">Wooldridge (2025)</a>. See <a href="resources.html">Resources</a> for further reading.</p>
+<details>
+<summary>
+R session and package versions used for these results
+</summary>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
+<pre><code>#&gt; R version 4.4.2 (2024-10-31)
+#&gt; Platform: aarch64-apple-darwin20
+#&gt; Running under: macOS Sequoia 15.5
+#&gt; 
+#&gt; Matrix products: default
+#&gt; BLAS:   /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRblas.0.dylib 
+#&gt; LAPACK: /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.0
+#&gt; 
+#&gt; locale:
+#&gt; [1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+#&gt; 
+#&gt; time zone: America/New_York
+#&gt; tzcode source: internal
+#&gt; 
+#&gt; attached base packages:
+#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     
+#&gt; 
+#&gt; other attached packages:
+#&gt; [1] knitr_1.51    etwfe_0.5.0   did_2.1.2     fixest_0.12.1 ggplot2_4.0.1
+#&gt; [6] readr_2.1.5   dplyr_1.1.4  
+#&gt; 
+#&gt; loaded via a namespace (and not attached):
+#&gt;   [1] pROC_1.18.5            DRDID_1.2.0            sandwich_3.1-1        
+#&gt;   [4] rlang_1.2.0            magrittr_2.0.4         multcomp_1.4-26       
+#&gt;   [7] dreamerr_1.4.0         otel_0.2.0             compiler_4.4.2        
+#&gt;  [10] vctrs_0.6.5            reshape2_1.4.4         stringr_1.5.2         
+#&gt;  [13] pkgconfig_2.0.3        crayon_1.5.3           backports_1.5.0       
+#&gt;  [16] labeling_0.4.3         prodlim_2024.06.25     tzdb_0.5.0            
+#&gt;  [19] purrr_1.1.0            bit_4.6.0              xfun_0.61             
+#&gt;  [22] trust_0.1-8            recipes_1.1.0          stringmagic_1.1.2     
+#&gt;  [25] fastglm_0.0.3          uuid_1.2-1             broom_1.0.10          
+#&gt;  [28] parallel_4.4.2         R6_2.6.1               stringi_1.8.7         
+#&gt;  [31] RColorBrewer_1.1-3     parallelly_1.45.1      car_3.1-3             
+#&gt;  [34] rpart_4.1.24           lubridate_1.9.4        numDeriv_2016.8-1.1   
+#&gt;  [37] estimability_1.5.1     Rcpp_1.1.2             iterators_1.0.14      
+#&gt;  [40] BMisc_1.4.7            future.apply_1.11.3    zoo_1.8-14            
+#&gt;  [43] Matrix_1.7-1           splines_4.4.2          nnet_7.3-19           
+#&gt;  [46] timechange_0.3.0       tidyselect_1.2.1       abind_1.4-8           
+#&gt;  [49] timeDate_4041.110      codetools_0.2-20       listenv_0.9.1         
+#&gt;  [52] lattice_0.22-6         tibble_3.3.0           plyr_1.8.9            
+#&gt;  [55] withr_3.0.2            S7_0.2.1-1             coda_0.19-4.1         
+#&gt;  [58] evaluate_1.0.1         marginaleffects_0.32.0 future_1.67.0         
+#&gt;  [61] survival_3.7-0         pillar_1.11.1          ggpubr_0.6.1          
+#&gt;  [64] carData_3.0-5          checkmate_2.3.2        foreach_1.5.2         
+#&gt;  [67] stats4_4.4.2           insight_1.5.4          generics_0.1.4        
+#&gt;  [70] vroom_1.6.6            hms_1.1.3              scales_1.4.0          
+#&gt;  [73] globals_0.18.0         xtable_1.8-4           class_7.3-22          
+#&gt;  [76] glue_1.8.0             emmeans_1.11.1         tools_4.4.2           
+#&gt;  [79] data.table_1.16.4      ModelMetrics_1.2.2.2   gower_1.0.2           
+#&gt;  [82] ggsignif_0.6.4         mvtnorm_1.3-3          grid_4.4.2            
+#&gt;  [85] bigmemory_4.6.4        tidyr_1.3.1            ipred_0.9-15          
+#&gt;  [88] nlme_3.1-166           Formula_1.2-5          cli_3.6.5             
+#&gt;  [91] tinyplot_0.2.1         bigmemory.sri_0.1.8    lava_1.8.0            
+#&gt;  [94] gtable_0.3.6           rstatix_0.7.2          digest_0.6.37         
+#&gt;  [97] caret_7.0-1            TH.data_1.1-2          farver_2.1.2          
+#&gt; [100] lifecycle_1.0.4        hardhat_1.4.0          bit64_4.6.0-1         
+#&gt; [103] MASS_7.3-61</code></pre>
+</details>
+</article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

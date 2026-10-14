@@ -1,18 +1,10 @@
 variable,description
-district_id,Synthetic district identifier.
-school_id,Synthetic school identifier for the nested extension.
-school_numeric_id,Numeric school identifier for Stata compatibility.
-year,Study year coded 1 through 11.
-cohort,Treatment timing group.
-treatment_start_year,Year treatment begins; 0 for never-treated units.
-treated_ever,Indicator for ever-treated units.
-treated,Indicator for being treated in the current year.
-post,"Post-period indicator for the simple DID example, coded year >= 5."
-event_time,Years since treatment starts; never-treated units coded -99.
-pct_frl,Synthetic district share of students eligible for free/reduced-price lunch.
-untreated_outcome_std,"Potential outcome without the treatment effect, in standardized units."
-true_effect_std,"Known treatment effect added by the data-generating process, in standardized units."
-outcome_std,"Observed synthetic achievement outcome, in standardized units."
-untreated_outcome_raw,"Potential outcome without the treatment effect, rescaled to an interpretable achievement-score scale with mean about 50 and SD about 10."
-true_effect_raw,Known treatment effect in raw achievement-score points.
-outcome_raw,Observed synthetic achievement outcome in raw achievement-score points; equals 50 + 10 * outcome_std.
+district_id,Synthetic district identifier (1-160); repeated in each of seven years.
+year,"Study period 1-7, not a calendar date."
+cohort,"Treatment cohort: treated_year5, treated_year6, treated_year7, or never (as applicable)."
+treatment_start_year,First treated year; 0 means never treated. Constant within district.
+treated_ever,1 for a district eventually treated; 0 for never-treated districts.
+treated,1 from the district's first treated year onward; otherwise 0.
+event_time,"year minus treatment_start_year; missing (NA in CSV, . in Stata) for never-treated districts."
+outcome_std,Observed synthetic achievement on a common reference-SD scale. Untreated Years 1-4 pooled across districts define the reference mean and SD; observed outcomes are not restandardized after treatment.
+outcome_raw,"Same outcome in synthetic score points: 50 + 10 * outcome_std. Continuous, unbounded; not a real test scale or a 0-100 score."

@@ -9,6 +9,8 @@ website:
         text: Home
       - href: slides.qmd
         text: Slides
+      - href: workshop.Rmd
+        text: Workshop
       - href: code.qmd
         text: Code
       - href: data.qmd

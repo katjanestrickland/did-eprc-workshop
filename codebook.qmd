@@ -1,0 +1,79 @@
+---
+title: "Data Codebook"
+---
+
+# Data Codebook
+
+**Version: October 14, 2026.** Two balanced district-year panels; each contains 160
+districts, seven study years, 1,120 rows, and the same nine columns. District and year
+jointly identify a row. These are fully simulated data, not student records.
+
+## Variables
+
+| Variable | Meaning |
+|---|---|
+| `district_id` | Integer district identifier, 1-160. Repeated across seven years. |
+| `year` | Study year, 1-7; not an actual calendar year. |
+| `cohort` | `treated_year5`, `treated_year6`, `treated_year7`, or `never`, as applicable. |
+| `treatment_start_year` | First treated year. **0 means never treated.** |
+| `treated_ever` | 1 for an eventually treated district; otherwise 0. |
+| `treated` | 1 starting in the adoption year and in every subsequent year; otherwise 0. |
+| `event_time` | `year - treatment_start_year` for eventually treated districts. Negative before adoption, zero at adoption. Missing for never-treated districts: `NA` in CSV, system missing `.` in Stata. |
+| `outcome_std` | Continuous observed achievement on a common pre-treatment reference-SD scale. |
+| `outcome_raw` | The same outcome in synthetic score points: `50 + 10 * outcome_std`. |
+
+Only `event_time` has missing values, for never-treated districts. There are no
+adjustment covariates and no generic `outcome` column. True effects and untreated
+potential outcomes are kept separately for instructor validation.
+
+## Design
+
+| Dataset | Cohort | Districts | Post-treatment years |
+|---|---|---:|---|
+| Simulation 1 | Year 5 | 80 | 5, 6, 7 |
+| Simulation 1 | Never treated | 80 | None |
+| Simulation 2 | Year 5 | 40 | 5, 6, 7 |
+| Simulation 2 | Year 6 | 40 | 6, 7 |
+| Simulation 2 | Year 7 | 40 | 7 |
+| Simulation 2 | Never treated | 40 | None |
+
+Treatment is assigned at district level and never switches off. All districts are
+untreated in Years 1-4. The new panels retain that pre-treatment structure, not the
+exact numerical values of the previous 11-year version.
+
+## Outcome Scale and Generation
+
+The generator uses seed **20261014**, random district effects, a common year trend,
+and district errors with AR(1) correlation 0.6. Cohort assignment is randomized
+independently of these untreated outcomes. No district-specific slopes or covariates
+enter the outcome model. This creates parallel untreated trends in expectation;
+sample pre-trends need not coincide exactly. Treatment has no anticipation or spillovers.
+
+The untreated outcome's pooled Years 1-4 mean and sample SD define a single reference
+scale shared by both simulations. Treatment effects are added afterward. Thus the
+observed `outcome_std` need not have mean zero or SD one after treatment. A difference
+of 0.20 reference SD is exactly 2 raw score points.
+
+The raw scale is an affine transformation, not an observed test instrument. Values
+are continuous and unbounded; 50 is the pre-treatment reference mean and 10 its SD.
+
+Simulation 1 adds 0.20 reference SD (2 points) in every treated period. Simulation 2
+adds `0.10 + 0.10 * event_time + 0.05 * (treatment_start_year - 5)` reference SD
+in treated periods only. These chosen effects illustrate heterogeneous treatment
+effects; they are not estimates from a real education study.
+
+| Simulation 2 cell | True effect in raw points | Simple ATT weight |
+|---|---:|---|
+| ATT(5,5) | 1.00 | 1/6 |
+| ATT(5,6) | 2.00 | 1/6 |
+| ATT(5,7) | 3.00 | 1/6 |
+| ATT(6,6) | 1.50 | 1/6 |
+| ATT(6,7) | 2.50 | 1/6 |
+| ATT(7,7) | 2.00 | 1/6 |
+
+The true Simple ATT is 2 raw points. Sample estimates will differ because of
+sampling noise. Earlier cohorts receive more total weight because more of their
+post-treatment periods are observed. The late cohort has no observed effect beyond
+event time zero; longer-run dynamic estimates would involve fewer cohorts.
+
+[Download datasets](data.html) · [Return to the lab](workshop.html)

@@ -11,4 +11,4 @@ title: "Resources"
 - Roth, J. (2022). Pretest with caution: Event-study estimates after testing for parallel trends. *American Economic Review: Insights*, 4(3), 305-322.
 - Roth, J., Sant'Anna, P. H. C., Bilinski, A., & Poe, J. (2023). What's trending in difference-in-differences? A synthesis of the recent econometrics literature. *Journal of Econometrics*, 235(2), 2218-2244.
 - Sun, L., & Abraham, S. (2021). Estimating dynamic treatment effects in event studies with heterogeneous treatment effects. *Journal of Econometrics*, 225(2), 175-199.
-- Wooldridge, J. M. (2021). Two-way fixed effects, the two-way Mundlak regression, and difference-in-differences estimators.
+- Wooldridge, J. M. (2025). [Two-way fixed effects, the two-way Mundlak regression, and difference-in-differences estimators](https://doi.org/10.1007/s00181-025-02807-z). *Empirical Economics*, 69, 2545-2587.

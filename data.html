@@ -1,71 +1,66 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Data | DID EPRC Workshop</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header class="site-header">
-    <nav class="nav" aria-label="Main navigation">
-      <a class="brand" href="index.html"><span class="brand-mark">DID</span><span>EPRC Workshop</span></a>
-      <div class="nav-links">
-        <a href="index.html">Home</a>
-        <a href="slides.html">Slides</a>
-        <a href="code.html">Code</a>
-        <a href="data.html" aria-current="page">Data</a>
-        <a href="resources.html">Resources</a>
-      </div>
-    </nav>
-  </header>
-  <main>
-    <div class="page-title">
-      <p class="eyebrow">Synthetic workshop data</p>
-      <h1>Data Downloads</h1>
-      <p class="lead">Links to the simulated data files used in the workshop examples.</p>
-    </div>
-
-    <section class="section">
-      <p>
-        The district datasets include both outcome scales:
-        <code>outcome_std</code> for standardized-effect models and
-        <code>outcome_raw</code> for easier-to-read graphs. The raw score is a
-        rescaled version of the standardized outcome:
-        <code>outcome_raw = 50 + 10 * outcome_std</code>.
-      </p>
-      <h2>Files</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Dataset</th><th>Purpose</th><th>Downloads</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>simple_did_district</td>
-              <td>Traditional DID, TWFE, and event-study examples with one treatment cohort.</td>
-              <td><a href="assets/data/simple_did_district.csv">CSV</a> / <a href="assets/data/simple_did_district.dta">Stata</a></td>
-            </tr>
-            <tr>
-              <td>staggered_did_district</td>
-              <td>Preview dataset with early adopters, later adopters, and never-treated districts.</td>
-              <td><a href="assets/data/staggered_did_district.csv">CSV</a> / <a href="assets/data/staggered_did_district.dta">Stata</a></td>
-            </tr>
-            <tr>
-              <td>data_dictionary</td>
-              <td>Variable names and descriptions for the synthetic data.</td>
-              <td><a href="assets/data/data_dictionary.csv">CSV</a></td>
-            </tr>
-            <tr>
-              <td>workshop_estimates</td>
-              <td>Reference estimates from the generated examples.</td>
-              <td><a href="assets/data/workshop_estimates.csv">CSV</a></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-  <footer class="footer"><div class="footer-inner">Data page mockup.</div></footer>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data | EPRC DID Workshop</title><link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="syntax.css"><script src="workshop.js" defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><nav class="nav" aria-label="Main navigation">
+<a class="brand" href="index.html"><span class="brand-mark">DID</span><span>EPRC Workshop</span></a>
+<div class="nav-links"><a href="index.html">Home</a>
+<a href="slides.html">Slides</a>
+<a href="workshop.html">Workshop</a>
+<a href="code.html">Code</a>
+<a href="data.html" aria-current="page">Data</a>
+<a href="resources.html">Resources</a></div></nav></header>
+<main id="main" class="document ">
+<article><h1 id="data-downloads">Data Downloads</h1>
+<p><strong>Updated October 14, 2026.</strong> Both datasets have 160 districts observed for seven years (1,120 rows each). They are synthetic education-policy examples with no adjustment covariates. They replace the earlier 11-year workshop datasets.</p>
+<p>Both outcome columns represent the same outcome: <code>outcome_raw = 50 + 10 * outcome_std</code>. The lab uses raw score points for graphs and models. The standardized column uses a common pre-treatment reference scale, not separate standardization by group or year. These continuous synthetic scores have no fixed minimum or maximum.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Purpose</th>
+<th>Downloads</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>simple_did_district</code></td>
+<td>80 districts adopt in Year 5; 80 never treated. Constant treatment effect.</td>
+<td><a href="assets/data/simple_did_district.csv">CSV</a>, <a href="assets/data/simple_did_district.dta">Stata</a></td>
+</tr>
+<tr>
+<td><code>staggered_did_district</code></td>
+<td>40 districts each adopt in Years 5, 6, or 7, and 40 never treated. Effects vary across cohorts and time since adoption.</td>
+<td><a href="assets/data/staggered_did_district.csv">CSV</a>, <a href="assets/data/staggered_did_district.dta">Stata</a></td>
+</tr>
+<tr>
+<td><code>data_dictionary</code></td>
+<td>Variable names and descriptions.</td>
+<td><a href="assets/data/data_dictionary.csv">CSV</a></td>
+</tr>
+<tr>
+<td><code>workshop_estimates</code></td>
+<td>Model estimates and standard errors from the current R lab.</td>
+<td><a href="assets/data/workshop_estimates.csv">CSV</a></td>
+</tr>
+<tr>
+<td><code>csa_weighted_cells</code></td>
+<td>Six post-treatment estimates, weights, and contributions to Simple ATT.</td>
+<td><a href="assets/data/csa_weighted_cells.csv">CSV</a></td>
+</tr>
+<tr>
+<td><code>data_generation_summary</code></td>
+<td>District counts, years, and post-treatment periods by cohort.</td>
+<td><a href="assets/data/data_generation_summary.csv">CSV</a></td>
+</tr>
+</tbody>
+</table>
+<p><a href="codebook.html">Read the full codebook</a> · <a href="codebook.qmd">Download codebook text</a> · <a href="workshop.html">Follow the R lab</a></p>
+<p>The teaching files exclude simulation-only potential outcomes and true effects. The school-within-district extension is not part of this revised lab.</p>
+</article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

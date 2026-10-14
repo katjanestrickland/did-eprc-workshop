@@ -1,6 +1,7 @@
-# DID EPRC Workshop Site Mockup
+# EPRC DID Workshop
 
-This folder is a practice GitHub Pages-style workshop site for the DID EPRC workshop.
+October 22, 2026: Lecture 12-1 PM; Hands-on R lab 1-1:30 PM;
+Questions & discussion 1:30-2 PM Eastern. Data/lab revised October 14.
 
 Temporary public site:
 
@@ -10,29 +11,34 @@ https://katjanestrickland.github.io/did-eprc-workshop/
 
 ## Current Contents
 
-- Static HTML mockup: `index.html`, `slides.html`, `code.html`, `data.html`, `resources.html`
-- Quarto source skeleton: `_quarto.yml` plus matching `.qmd` pages
-- Student-facing starter scripts in `code/`
+- Static pages: Home, Slides, Workshop, Code, Data, Resources, and Codebook.
+- `.qmd` sources are rendered by Pandoc through `build-site.cjs`.
+- `workshop.Rmd` is the executable source for the guided lab and downloaded R script.
 - Synthetic workshop data in `assets/data/`
 - Figures generated from the simulated data in `assets/figures/`
 
-## Local Preview
+## Rebuild and Preview
 
-From this folder, run:
+Install R packages listed in the lab, plus Node and Pandoc. From this folder:
 
 ```bash
-python3 -m http.server 8765
+Rscript build-lab.R
+node build-site.cjs
 ```
 
-Then open:
+Then open `index.html` in a browser. No development server is required.
+The build executes all lab chunks and verifies manual calculations against TWFE/CSA.
+The R script is extracted from the R Markdown, so download code and page code agree.
 
-```text
-http://localhost:8765/index.html
-```
+Both teaching datasets contain 160 districts over seven years, without adjustment
+covariates. Models and figures use `outcome_raw`. See `codebook.qmd` for generation
+details, treatment schedules, missing values, and the exact outcome conversion.
 
 ## Later GitHub Pages Path
 
-For a quick static deployment, publish the HTML files and assets directly from this folder.
-For a Quarto deployment, install Quarto and render the `.qmd` pages before publishing.
+Publish the generated HTML and assets directly from this repository. The existing
+`_quarto.yml` is retained as a future migration scaffold; the current build uses
+R/knitr plus Pandoc and does not require Quarto. Historical data and instructor
+validation files are archived outside this public repository.
 
 See `GITHUB_PAGES_SETUP.md` for the recommended `lcds-lab/did-eprc-workshop` repository setup.

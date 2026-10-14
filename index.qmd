@@ -1,15 +1,51 @@
 ---
-title: "Difference-in-Differences for Education Policy"
-subtitle: "Practice GitHub Pages mockup for the EPRC workshop"
+title: "Difference-in-Differences in Education Research"
 ---
 
-This 45-minute lecture introduces traditional DID, TWFE, event studies, and a brief preview of staggered adoption designs using synthetic district-year data.
+<p class="eyebrow">EPRC Methods Workshop Series</p>
 
-## Talk Outline
+# Difference-in-Differences in Education Research
 
-| Time | Topic |
-|---|---|
-| 0-10 min | Policy question and data structure: introduce the education-policy example, simulated district-year panel, treatment timing, outcome, and comparison group. |
-| 10-25 min | Traditional DID: parallel trends, 2x2 DID, and the simple regression version. |
-| 25-38 min | TWFE and event study: district and year fixed effects, event-time indicators, and dynamic effects. |
-| 38-45 min | Staggered preview: year-5 and year-8 treatment groups as the transition to Wei's staggered DID section. |
+<p class="lead">A Practical Workshop on Traditional and Staggered DID, with Hands-on R Applications</p>
+
+**Thursday, October 22, 2026 · 12:00-2:00 PM Eastern**<br>
+In person: Norman Hall, Room 2707 · [Register for Zoom](https://ufl.zoom.us/meeting/register/OgvL9_Q2QK-zYuH9BGm9fA)
+
+Learn how to use difference-in-differences (DID) to evaluate education policies and
+programs. This hybrid workshop covers traditional and staggered DID designs,
+comparison groups, parallel trends, treatment-effect interpretation, and diagnostic
+checks. Education examples connect these concepts to an R lab using two-way fixed
+effects (TWFE) and staggered DID estimators.
+
+## Workshop Schedule
+
+| Time | Session | Focus |
+|---|---|---|
+| 12:00-1:00 PM | Lecture | Traditional and staggered DID methods. |
+| 1:00-1:30 PM | Hands-on R lab | TWFE and staggered DID estimators with guided practice. |
+| 1:30-2:00 PM | Questions & discussion | Interpretation and applications in education. |
+
+Open to graduate students, faculty, researchers, and staff. No prior DID programming
+experience is required. Bring a laptop to follow the demonstration and try the R code.
+
+## Workshop Materials
+
+[Start the hands-on R lab](workshop.html) · [Prepare R before the session](workshop.html#setup) ·
+[Download the data](data.html) · [Slides](slides.html)
+
+The lab uses two simulated district-year panels, with seven years and no adjustment
+covariates. The first has a common treatment start; the second has adoption in Years
+5, 6, and 7. All lab graphs and models use raw score points.
+
+## Facilitators
+
+**Wei Li**, Associate Professor · **Katherine J. Strickland**, Postdoctoral Scholar ·
+**Yaosheng Lou**, Postdoctoral Scholar<br>
+University of Florida
+
+Presented by the Education Policy Research Center and the
+[Longitudinal Causal Data Science Lab](https://lcds-lab.github.io/).
+Supported by the Education Policy Research Center and the National Science Foundation
+CAREER Award No. 2339353.
+
+[View the workshop flyer](assets/EPRC-DID-Workshop.pdf)

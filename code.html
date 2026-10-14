@@ -1,46 +1,41 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Code | DID EPRC Workshop</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header class="site-header">
-    <nav class="nav" aria-label="Main navigation">
-      <a class="brand" href="index.html"><span class="brand-mark">DID</span><span>EPRC Workshop</span></a>
-      <div class="nav-links">
-        <a href="index.html">Home</a>
-        <a href="slides.html">Slides</a>
-        <a href="code.html" aria-current="page">Code</a>
-        <a href="data.html">Data</a>
-        <a href="resources.html">Resources</a>
-      </div>
-    </nav>
-  </header>
-  <main>
-    <div class="page-title">
-      <p class="eyebrow">Student code</p>
-      <h1>Workshop Code</h1>
-      <p class="lead">Links to the draft student-facing code files.</p>
-    </div>
-
-    <section class="section">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>File</th><th>Purpose</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><a href="code/01_simple_did.R">01_simple_did.R</a></td><td>Simple 2x2 DID and TWFE example.</td></tr>
-            <tr><td><a href="code/02_event_study.R">02_event_study.R</a></td><td>Event-study version of the simple DID example.</td></tr>
-            <tr><td><a href="code/03_staggered_preview.R">03_staggered_preview.R</a></td><td>Staggered timing preview with year-5 and year-8 adopters.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-  <footer class="footer"><div class="footer-inner">Code page mockup.</div></footer>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code | EPRC DID Workshop</title><link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="syntax.css"><script src="workshop.js" defer></script></head>
+<body><a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><nav class="nav" aria-label="Main navigation">
+<a class="brand" href="index.html"><span class="brand-mark">DID</span><span>EPRC Workshop</span></a>
+<div class="nav-links"><a href="index.html">Home</a>
+<a href="slides.html">Slides</a>
+<a href="workshop.html">Workshop</a>
+<a href="code.html" aria-current="page">Code</a>
+<a href="data.html">Data</a>
+<a href="resources.html">Resources</a></div></nav></header>
+<main id="main" class="document ">
+<article><h1 id="workshop-code">Workshop Code</h1>
+<p>Run the complete lab in R or RStudio, or follow the <a href="workshop.html">guided Workshop page</a>. The examples use the October 14 seven-year datasets and no adjustment covariates.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="code/workshop_lab.R">Complete R script</a></td>
+<td>Import, descriptive statistics, plots, TWFE, CSA, manual Simple ATT, and optional extended TWFE and event study.</td>
+</tr>
+<tr>
+<td><a href="workshop.Rmd">R Markdown source</a></td>
+<td>The explanations and executable code that produce the Workshop page.</td>
+</tr>
+</tbody>
+</table>
+<p><a href="workshop.html#setup">Install the packages</a> before the session. The script loads local CSV files when present and otherwise downloads them from this website. All models and plots use <code>outcome_raw</code>; standard errors account for clustering by district.</p>
+<p>The optional extended-TWFE and event-study sections can be explored after the 30-minute lab. The page includes the R/package versions used for the displayed results.</p>
+</article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

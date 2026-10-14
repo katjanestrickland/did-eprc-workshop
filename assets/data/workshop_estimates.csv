@@ -1,4 +1,4 @@
-dataset,model,estimand,estimate,true_value
-simple_did_district,2x2 DID regression,Treated x Post,0.0869490703828679,0.09
-simple_did_district,District and year fixed effects,Treatment indicator,0.08694907038284992,0.09
-staggered_did_district,Naive TWFE preview,Treatment indicator,0.09880263328865228,0.09379310344827586
+simulation,method,outcome,estimate,std_error
+1,TWFE,outcome_raw,2.2870945500863793,0.34465115904484833
+2,CSA Simple ATT,outcome_raw,2.145896493350286,0.3347885031274231
+2,ETWFE Simple ATT,outcome_raw,2.145896493350365,0.34329828219160413

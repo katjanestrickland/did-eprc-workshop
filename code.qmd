@@ -2,8 +2,19 @@
 title: "Workshop Code"
 ---
 
-Links to the draft student-facing code files:
+# Workshop Code
 
-- [Part 1: Simple DID](code/01_simple_did.R)
-- [Part 2: Event Study](code/02_event_study.R)
-- [Part 3: Staggered DID Preview](code/03_staggered_preview.R)
+Run the complete lab in R or RStudio, or follow the [guided Workshop page](workshop.html).
+The examples use the October 14 seven-year datasets and no adjustment covariates.
+
+| File | Contents |
+|---|---|
+| [Complete R script](code/workshop_lab.R) | Import, descriptive statistics, plots, TWFE, CSA, manual Simple ATT, and optional extended TWFE and event study. |
+| [R Markdown source](workshop.Rmd) | The explanations and executable code that produce the Workshop page. |
+
+[Install the packages](workshop.html#setup) before the session. The script loads local
+CSV files when present and otherwise downloads them from this website. All models
+and plots use `outcome_raw`; standard errors account for clustering by district.
+
+The optional extended-TWFE and event-study sections can be explored after the
+30-minute lab. The page includes the R/package versions used for the displayed results.

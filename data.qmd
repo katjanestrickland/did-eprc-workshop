@@ -2,13 +2,28 @@
 title: "Data Downloads"
 ---
 
-Links to the simulated data files used in the workshop examples.
+# Data Downloads
 
-The district datasets now include both outcome scales: `outcome_std` for standardized-effect models and `outcome_raw` for easier-to-read graphs. The raw score is a rescaled version of the standardized outcome: `outcome_raw = 50 + 10 * outcome_std`.
+**Updated October 14, 2026.** Both datasets have 160 districts observed for seven
+years (1,120 rows each). They are synthetic education-policy examples with no
+adjustment covariates. They replace the earlier 11-year workshop datasets.
+
+Both outcome columns represent the same outcome: `outcome_raw = 50 + 10 * outcome_std`.
+The lab uses raw score points for graphs and models. The standardized column uses a
+common pre-treatment reference scale, not separate standardization by group or year.
+These continuous synthetic scores have no fixed minimum or maximum.
 
 | Dataset | Purpose | Downloads |
 |---|---|---|
-| `simple_did_district` | Traditional DID, TWFE, and event-study examples with one treatment cohort. | [CSV](assets/data/simple_did_district.csv), [Stata](assets/data/simple_did_district.dta) |
-| `staggered_did_district` | Preview dataset with early adopters, later adopters, and never-treated districts. | [CSV](assets/data/staggered_did_district.csv), [Stata](assets/data/staggered_did_district.dta) |
+| `simple_did_district` | 80 districts adopt in Year 5; 80 never treated. Constant treatment effect. | [CSV](assets/data/simple_did_district.csv), [Stata](assets/data/simple_did_district.dta) |
+| `staggered_did_district` | 40 districts each adopt in Years 5, 6, or 7, and 40 never treated. Effects vary across cohorts and time since adoption. | [CSV](assets/data/staggered_did_district.csv), [Stata](assets/data/staggered_did_district.dta) |
 | `data_dictionary` | Variable names and descriptions. | [CSV](assets/data/data_dictionary.csv) |
-| `workshop_estimates` | Reference estimates from generated examples. | [CSV](assets/data/workshop_estimates.csv) |
+| `workshop_estimates` | Model estimates and standard errors from the current R lab. | [CSV](assets/data/workshop_estimates.csv) |
+| `csa_weighted_cells` | Six post-treatment estimates, weights, and contributions to Simple ATT. | [CSV](assets/data/csa_weighted_cells.csv) |
+| `data_generation_summary` | District counts, years, and post-treatment periods by cohort. | [CSV](assets/data/data_generation_summary.csv) |
+
+[Read the full codebook](codebook.html) · [Download codebook text](codebook.qmd) ·
+[Follow the R lab](workshop.html)
+
+The teaching files exclude simulation-only potential outcomes and true effects.
+The school-within-district extension is not part of this revised lab.
