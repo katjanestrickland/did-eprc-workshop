@@ -408,6 +408,7 @@ tr:last-child td {
 .document p, .document li {max-width:78ch;}
 .document li {margin-bottom:10px;}
 .document img {max-width:100%; height:auto; display:block; margin:20px auto;}
+.document .equation {max-width:100%; overflow-x:auto; padding:12px 0; margin:16px 0;}
 .document .table-wrap {margin:20px 0; border-radius:4px;}
 .document article > table {display:block; max-width:100%; overflow-x:auto;}
 .document th {text-transform:none; font-size:13px;}

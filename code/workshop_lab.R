@@ -22,7 +22,7 @@ staggered <- read_workshop_data("staggered_did_district.csv")
 kable(head(simple), digits = 2)
 
 
-## ----descriptives-------------------------------------------------------------
+## ----descriptives, echo=FALSE-------------------------------------------------
 design <- bind_rows(
   mutate(simple, simulation = "1: Common start"),
   mutate(staggered, simulation = "2: Staggered start")
@@ -35,7 +35,7 @@ stopifnot(nrow(simple) == 1120, nrow(staggered) == 1120,
           all(table(simple$district_id) == 7), all(table(staggered$district_id) == 7))
 
 
-## ----simple-trends------------------------------------------------------------
+## ----simple-trends, echo=FALSE------------------------------------------------
 simple_means <- simple |>
   mutate(group = ifelse(treated_ever == 1, "Adopts in Year 5", "Never treated")) |>
   group_by(group, year) |>
@@ -50,8 +50,18 @@ ggplot(simple_means, aes(year, mean_score, color = group)) +
 
 
 ## ----twfe---------------------------------------------------------------------
-twfe <- feols(outcome_raw ~ treated | district_id + year,
-              data = simple, vcov = ~district_id)
+twfe <- feols(
+  outcome_raw ~ treated | district_id + year,
+  data = simple,
+  vcov = ~ district_id
+)
+
+
+## ----twfe-summary-------------------------------------------------------------
+summary(twfe)
+
+
+## ----twfe-table, echo=FALSE---------------------------------------------------
 twfe_ci <- confint(twfe, "treated")
 twfe_table <- data.frame(
   estimate = coef(twfe)["treated"], std_error = se(twfe)["treated"],
@@ -68,7 +78,7 @@ stopifnot(abs(manual_did - coef(twfe)["treated"]) < 1e-8)
 manual_did
 
 
-## ----timing-------------------------------------------------------------------
+## ----timing, echo=FALSE-------------------------------------------------------
 timing <- staggered |>
   distinct(cohort, treatment_start_year, year, treated)
 ggplot(timing, aes(year, reorder(cohort, -treatment_start_year), fill = factor(treated))) +
@@ -80,7 +90,7 @@ ggplot(timing, aes(year, reorder(cohort, -treatment_start_year), fill = factor(t
   theme(panel.grid = element_blank(), legend.position = "bottom")
 
 
-## ----staggered-trends---------------------------------------------------------
+## ----staggered-trends, echo=FALSE---------------------------------------------
 staggered_means <- staggered |>
   group_by(cohort, year) |>
   summarise(mean_score = mean(outcome_raw), .groups = "drop")
@@ -95,12 +105,29 @@ ggplot(staggered_means, aes(year, mean_score, color = cohort)) +
 ## ----csa----------------------------------------------------------------------
 set.seed(20261014)
 cs <- att_gt(
-  yname = "outcome_raw", tname = "year", idname = "district_id",
-  gname = "treatment_start_year", xformla = ~1, data = as.data.frame(staggered),
-  panel = TRUE, control_group = "nevertreated", base_period = "universal",
-  anticipation = 0, est_method = "reg", bstrap = TRUE, biters = 999,
-  clustervars = "district_id", cband = TRUE
+  yname = "outcome_raw",
+  tname = "year",
+  idname = "district_id",
+  gname = "treatment_start_year",
+  xformla = ~ 1,
+  data = as.data.frame(staggered),
+  panel = TRUE,
+  control_group = "nevertreated",
+  base_period = "universal",
+  anticipation = 0,
+  est_method = "reg",
+  bstrap = TRUE,
+  biters = 999,
+  clustervars = "district_id",
+  cband = TRUE
 )
+
+
+## ----csa-summary--------------------------------------------------------------
+summary(cs)
+
+
+## ----csa-table, echo=FALSE----------------------------------------------------
 cells <- tibble(cohort = cs$group, year = cs$t, ATT = cs$att, SE = cs$se) |>
   filter(year >= cohort)
 kable(cells, digits = 3)
@@ -108,6 +135,10 @@ kable(cells, digits = 3)
 
 ## ----aggregation--------------------------------------------------------------
 simple_att <- aggte(cs, type = "simple")
+summary(simple_att)
+
+
+## ----aggregation-table, echo=FALSE--------------------------------------------
 cohort_sizes <- staggered |>
   distinct(district_id, treatment_start_year) |>
   count(treatment_start_year, name = "districts")
@@ -117,7 +148,6 @@ weighted_cells <- cells |>
 kable(select(weighted_cells, cohort, year, districts, ATT, weight, contribution), digits = 3)
 manual_simple_att <- sum(weighted_cells$contribution)
 stopifnot(abs(manual_simple_att - simple_att$overall.att) < 1e-8)
-summary(simple_att)
 
 
 ## ----manual-cells-------------------------------------------------------------
@@ -143,6 +173,9 @@ kable(as.data.frame(extended_att)[, c("estimate", "std.error", "conf.low", "conf
 ## ----event-study--------------------------------------------------------------
 event_model <- feols(outcome_raw ~ i(year, treated_ever, ref = 4) | district_id + year,
                      data = simple, vcov = ~district_id)
+
+
+## ----event-study-plot, echo=FALSE---------------------------------------------
 iplot(event_model, xlab = "Study year (Year 4 reference)",
       ylab = "Effect relative to Year 4 (raw points)",
       main = "Simulation 1: common-start event study")
