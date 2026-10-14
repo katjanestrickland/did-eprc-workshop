@@ -4,6 +4,8 @@ title: "Data Downloads"
 
 Links to the simulated data files used in the workshop examples.
 
+The district datasets now include both outcome scales: `outcome_std` for standardized-effect models and `outcome_raw` for easier-to-read graphs. The raw score is a rescaled version of the standardized outcome: `outcome_raw = 50 + 10 * outcome_std`.
+
 | Dataset | Purpose | Downloads |
 |---|---|---|
 | `simple_did_district` | Traditional DID, TWFE, and event-study examples with one treatment cohort. | [CSV](assets/data/simple_did_district.csv), [Stata](assets/data/simple_did_district.dta) |

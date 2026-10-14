@@ -16,6 +16,12 @@ script_path <- if (length(script_arg)) {
 root_dir <- normalizePath(file.path(dirname(script_path), ".."), winslash = "/", mustWork = TRUE)
 data_dir <- file.path(root_dir, "data")
 figure_dir <- file.path(root_dir, "figures")
+if (!dir.exists(data_dir) && dir.exists(file.path(root_dir, "assets", "data"))) {
+  data_dir <- file.path(root_dir, "assets", "data")
+}
+if (!dir.exists(figure_dir) && dir.exists(file.path(root_dir, "assets", "figures"))) {
+  figure_dir <- file.path(root_dir, "assets", "figures")
+}
 dir.create(figure_dir, recursive = TRUE, showWarnings = FALSE)
 
 theme_workshop <- function() {
@@ -35,7 +41,7 @@ staggered_data <- read_csv(file.path(data_dir, "staggered_did_district.csv"), sh
 simple_means <- simple_data |>
   mutate(group = ifelse(cohort == "treated_year5", "Treated in year 5", "Never treated")) |>
   group_by(year, group) |>
-  summarise(mean_outcome = mean(outcome), .groups = "drop")
+  summarise(mean_outcome = mean(outcome_raw), .groups = "drop")
 
 p_parallel <- ggplot(simple_means, aes(x = year, y = mean_outcome, color = group)) +
   geom_vline(xintercept = 5, linetype = "dashed", color = "gray40") +
@@ -45,7 +51,7 @@ p_parallel <- ggplot(simple_means, aes(x = year, y = mean_outcome, color = group
   labs(
     title = "Simple DID Setup: One District Cohort Adopts in Year 5",
     x = "Year",
-    y = "Mean standardized math outcome",
+    y = "Mean achievement score",
     color = NULL
   ) +
   theme_workshop()
@@ -58,7 +64,7 @@ did_cells <- simple_data |>
     period = ifelse(year < 5, "Pre", "Post")
   ) |>
   group_by(group, period) |>
-  summarise(mean_outcome = mean(outcome), .groups = "drop") |>
+  summarise(mean_outcome = mean(outcome_raw), .groups = "drop") |>
   mutate(
     period = factor(period, levels = c("Pre", "Post")),
     group = factor(group, levels = c("Comparison", "Treated"))
@@ -67,11 +73,11 @@ did_cells <- simple_data |>
 p_did <- ggplot(did_cells, aes(x = period, y = mean_outcome, group = group, color = group)) +
   geom_line(linewidth = 1.2) +
   geom_point(size = 3) +
-  geom_text(aes(label = sprintf("%.2f", mean_outcome)), vjust = -0.9, show.legend = FALSE) +
+  geom_text(aes(label = sprintf("%.1f", mean_outcome)), vjust = -0.9, show.legend = FALSE) +
   labs(
     title = "DID Compares Changes, Not Just Levels",
     x = NULL,
-    y = "Mean standardized math outcome",
+    y = "Mean achievement score",
     color = NULL
   ) +
   scale_y_continuous(expand = expansion(mult = c(0.14, 0.24))) +
@@ -126,7 +132,7 @@ p_classic_did <- ggplot(classic_did_lines, aes(x = period, y = mean_outcome, gro
     color = "#B3435D"
   ) +
   annotate("text", x = 2.15, y = did_effect_label, label = "DID estimate", hjust = 0, size = 3.6, color = "#B3435D") +
-  annotate("text", x = 1.52, y = treated_counterfactual_post + 0.025, label = "counterfactual trend", size = 3.2, color = "gray30") +
+  annotate("text", x = 1.52, y = treated_counterfactual_post + 0.25, label = "counterfactual trend", size = 3.2, color = "gray30") +
   scale_color_manual(
     values = c(
       "Comparison observed" = "#2454A6",
@@ -145,7 +151,7 @@ p_classic_did <- ggplot(classic_did_lines, aes(x = period, y = mean_outcome, gro
   labs(
     title = "Classic DID Picture: Observed Treated Outcome vs Counterfactual",
     x = NULL,
-    y = "Mean standardized math outcome",
+    y = "Mean achievement score",
     color = NULL,
     linetype = NULL
   ) +
@@ -160,7 +166,7 @@ event_time_means <- simple_data |>
     event_time_plot = year - 5
   ) |>
   group_by(event_time_plot, group) |>
-  summarise(mean_outcome = mean(outcome), .groups = "drop") |>
+  summarise(mean_outcome = mean(outcome_raw), .groups = "drop") |>
   group_by(group) |>
   mutate(
     reference_outcome = mean_outcome[event_time_plot == -1],
@@ -187,7 +193,7 @@ p_event_time <- ggplot(event_time_means, aes(x = event_time_plot, y = outcome_re
   labs(
     title = "Event-Time View: Outcomes Centered at Year -1",
     x = "Years relative to treatment start (0 = year 5)",
-    y = "Mean outcome relative to year -1",
+    y = "Mean achievement points relative to year -1",
     color = NULL
   ) +
   coord_cartesian(clip = "off") +
@@ -258,31 +264,31 @@ staggered_means <- staggered_data |>
     group = factor(group, levels = c("Never treated", "Later entry: year 8", "Early entry: year 5"))
   ) |>
   group_by(year, group) |>
-  summarise(mean_outcome = mean(outcome), .groups = "drop")
+  summarise(mean_outcome = mean(outcome_raw), .groups = "drop")
 
 p_staggered_trends <- ggplot(staggered_means, aes(x = year, y = mean_outcome, color = group)) +
   geom_vline(xintercept = c(5, 8), linetype = "dashed", color = "gray40") +
   geom_line(linewidth = 1.1) +
   geom_point(size = 2.2) +
-  annotate("text", x = 5, y = max(staggered_means$mean_outcome) + 0.04, label = "year 5", size = 3.4, hjust = -0.1) +
-  annotate("text", x = 8, y = max(staggered_means$mean_outcome) + 0.04, label = "year 8", size = 3.4, hjust = -0.1) +
+  annotate("text", x = 5, y = max(staggered_means$mean_outcome) + 0.4, label = "year 5", size = 3.4, hjust = -0.1) +
+  annotate("text", x = 8, y = max(staggered_means$mean_outcome) + 0.4, label = "year 8", size = 3.4, hjust = -0.1) +
   scale_x_continuous(breaks = 1:11) +
   labs(
     title = "Staggered DID Preview: Early and Later Treatment Groups Over Time",
     x = "Year",
-    y = "Mean standardized achievement outcome",
+    y = "Mean achievement score",
     color = NULL
   ) +
   theme_workshop()
 
 ggsave(file.path(figure_dir, "staggered_group_trends.png"), p_staggered_trends, width = 8, height = 4.8, dpi = 300, bg = "white")
 
-simple_formula <- lm(outcome ~ treated_ever * post, data = simple_data)
-twfe_simple <- lm(outcome ~ treated + factor(district_id) + factor(year), data = simple_data)
-twfe_staggered <- lm(outcome ~ treated + factor(district_id) + factor(year), data = staggered_data)
+simple_formula <- lm(outcome_std ~ treated_ever * post, data = simple_data)
+twfe_simple <- lm(outcome_std ~ treated + factor(district_id) + factor(year), data = simple_data)
+twfe_staggered <- lm(outcome_std ~ treated + factor(district_id) + factor(year), data = staggered_data)
 
-true_simple_att <- simple_data |> filter(treated == 1) |> summarise(value = mean(true_effect)) |> pull(value)
-true_staggered_att <- staggered_data |> filter(treated == 1) |> summarise(value = mean(true_effect)) |> pull(value)
+true_simple_att <- simple_data |> filter(treated == 1) |> summarise(value = mean(true_effect_std)) |> pull(value)
+true_staggered_att <- staggered_data |> filter(treated == 1) |> summarise(value = mean(true_effect_std)) |> pull(value)
 
 estimate_rows <- tibble::tribble(
   ~dataset, ~model, ~estimand, ~estimate, ~true_value,

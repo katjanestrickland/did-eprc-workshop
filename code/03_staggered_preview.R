@@ -10,7 +10,7 @@ names(cohort_counts)[names(cohort_counts) == "district_id"] <- "n_districts"
 print(cohort_counts)
 
 twfe_staggered <- lm(
-  outcome ~ treated + factor(district_id) + factor(year),
+  outcome_std ~ treated + factor(district_id) + factor(year),
   data = staggered_data
 )
 

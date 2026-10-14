@@ -20,7 +20,7 @@ for (k in event_times) {
 
 event_terms <- vapply(event_times, make_event_name, character(1))
 event_formula <- as.formula(paste(
-  "outcome ~",
+  "outcome_std ~",
   paste(event_terms, collapse = " + "),
   "+ factor(district_id) + factor(year)"
 ))
