@@ -10,9 +10,6 @@ treated,Indicator for being treated in the current year.
 post,"Post-period indicator for the simple DID example, coded year >= 5."
 event_time,Years since treatment starts; never-treated units coded -99.
 pct_frl,Synthetic district share of students eligible for free/reduced-price lunch.
-untreated_outcome,"Potential outcome without the treatment effect, in standardized units. Kept as a legacy alias for untreated_outcome_std."
-true_effect,"Known treatment effect added by the data-generating process, in standardized units. Kept as a legacy alias for true_effect_std."
-outcome,"Observed synthetic achievement outcome, in standardized units. Kept as a legacy alias for outcome_std."
 untreated_outcome_std,"Potential outcome without the treatment effect, in standardized units."
 true_effect_std,"Known treatment effect added by the data-generating process, in standardized units."
 outcome_std,"Observed synthetic achievement outcome, in standardized units."
