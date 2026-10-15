@@ -1,7 +1,6 @@
 cohort,treatment_start_year,districts,dataset,years,rows,post_periods
 never,0,80,simple_did_district,7,560,0
 treated_year5,5,80,simple_did_district,7,560,3
-never,0,40,staggered_did_district,7,280,0
+never,0,80,staggered_did_district,7,560,0
 treated_year5,5,40,staggered_did_district,7,280,3
 treated_year6,6,40,staggered_did_district,7,280,2
-treated_year7,7,40,staggered_did_district,7,280,1

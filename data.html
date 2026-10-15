@@ -13,7 +13,8 @@
 <a href="resources.html">Resources</a></div></nav></header>
 <main id="main" class="document ">
 <article><h1 id="data-downloads">Data Downloads</h1>
-<p><strong>Updated October 14, 2026.</strong> Both datasets have 160 districts observed for seven years (1,120 rows each). They are synthetic education-policy examples with no adjustment covariates. They replace the earlier 11-year workshop datasets.</p>
+<p><strong>Updated October 15, 2026.</strong> Both datasets have 160 districts observed for seven years (1,120 rows each). They are synthetic education-policy examples with no adjustment covariates. They replace the earlier 11-year workshop datasets.</p>
+<p><strong>Data correction:</strong> Simulation 2 now has two treated cohorts, adopting in Years 5 and 6, plus never-treated districts. Year 7 is a follow-up year, not an adoption cohort. Simulation 1 is unchanged. The Workshop walkthrough, figures, slides, and downloadable model results have not yet been revised for this correction; their staggered examples still reflect the previous three-cohort dataset.</p>
 <p>Both outcome columns represent the same outcome: <code>outcome_raw = 50 + 10 * outcome_std</code>. The lab uses raw score points for graphs and models. The standardized column uses a common pre-treatment reference scale, not separate standardization by group or year. These continuous synthetic scores have no fixed minimum or maximum.</p>
 <table>
 <colgroup>
@@ -36,7 +37,7 @@
 </tr>
 <tr>
 <td><code>staggered_did_district</code></td>
-<td>40 districts each adopt in Years 5, 6, or 7, and 40 never treated. Effects vary across cohorts and time since adoption.</td>
+<td>40 districts adopt in Year 5, 40 in Year 6, and 80 are never treated. Effects vary across cohorts and time since adoption.</td>
 <td><a href="assets/data/staggered_did_district.csv">CSV</a>, <a href="assets/data/staggered_did_district.dta">Stata</a></td>
 </tr>
 <tr>
@@ -46,12 +47,12 @@
 </tr>
 <tr>
 <td><code>workshop_estimates</code></td>
-<td>Model estimates and standard errors from the current R lab.</td>
+<td>Previous-version model results; staggered estimates do not correspond to the corrected data.</td>
 <td><a href="assets/data/workshop_estimates.csv">CSV</a></td>
 </tr>
 <tr>
 <td><code>csa_weighted_cells</code></td>
-<td>Six post-treatment estimates, weights, and contributions to Simple ATT.</td>
+<td>Previous-version six-cell results; not applicable to the corrected two-cohort data.</td>
 <td><a href="assets/data/csa_weighted_cells.csv">CSV</a></td>
 </tr>
 <tr>

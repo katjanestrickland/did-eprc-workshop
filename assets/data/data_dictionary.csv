@@ -1,7 +1,7 @@
 variable,description
 district_id,Synthetic district identifier (1-160); repeated in each of seven years.
 year,"Study period 1-7, not a calendar date."
-cohort,"Treatment cohort: treated_year5, treated_year6, treated_year7, or never (as applicable)."
+cohort,"Treatment cohort: treated_year5, treated_year6, or never (as applicable). No Year 7 adoption cohort."
 treatment_start_year,First treated year; 0 means never treated. Constant within district.
 treated_ever,1 for a district eventually treated; 0 for never-treated districts.
 treated,1 from the district's first treated year onward; otherwise 0.

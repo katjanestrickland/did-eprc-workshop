@@ -4,7 +4,7 @@ title: "Data Codebook"
 
 # Data Codebook
 
-**Version: October 14, 2026.** Two balanced district-year panels; each contains 160
+**Version: October 15, 2026.** Two balanced district-year panels; each contains 160
 districts, seven study years, 1,120 rows, and the same nine columns. District and year
 jointly identify a row. These are fully simulated data, not student records.
 
@@ -14,7 +14,7 @@ jointly identify a row. These are fully simulated data, not student records.
 |---|---|
 | `district_id` | Integer district identifier, 1-160. Repeated across seven years. |
 | `year` | Study year, 1-7; not an actual calendar year. |
-| `cohort` | `treated_year5`, `treated_year6`, `treated_year7`, or `never`, as applicable. |
+| `cohort` | `treated_year5`, `treated_year6`, or `never`, as applicable. |
 | `treatment_start_year` | First treated year. **0 means never treated.** |
 | `treated_ever` | 1 for an eventually treated district; otherwise 0. |
 | `treated` | 1 starting in the adoption year and in every subsequent year; otherwise 0. |
@@ -34,8 +34,12 @@ potential outcomes are kept separately for instructor validation.
 | Simulation 1 | Never treated | 80 | None |
 | Simulation 2 | Year 5 | 40 | 5, 6, 7 |
 | Simulation 2 | Year 6 | 40 | 6, 7 |
-| Simulation 2 | Year 7 | 40 | 7 |
-| Simulation 2 | Never treated | 40 | None |
+| Simulation 2 | Never treated | 80 | None |
+
+The October 15 correction changes the former Year 7 adopters to never-treated
+districts. The Year 5 and Year 6 assignments, untreated outcomes, and all seven
+observation years are preserved. Simulation 1 is unchanged. There are no
+student-level records or school-level rows in these teaching files.
 
 Treatment is assigned at district level and never switches off. All districts are
 untreated in Years 1-4. The new panels retain that pre-treatment structure, not the
@@ -64,16 +68,17 @@ effects; they are not estimates from a real education study.
 
 | Simulation 2 cell | True effect in raw points | Simple ATT weight |
 |---|---:|---|
-| ATT(5,5) | 1.00 | 1/6 |
-| ATT(5,6) | 2.00 | 1/6 |
-| ATT(5,7) | 3.00 | 1/6 |
-| ATT(6,6) | 1.50 | 1/6 |
-| ATT(6,7) | 2.50 | 1/6 |
-| ATT(7,7) | 2.00 | 1/6 |
+| ATT(5,5) | 1.00 | 1/5 |
+| ATT(5,6) | 2.00 | 1/5 |
+| ATT(5,7) | 3.00 | 1/5 |
+| ATT(6,6) | 1.50 | 1/5 |
+| ATT(6,7) | 2.50 | 1/5 |
 
 The true Simple ATT is 2 raw points. Sample estimates will differ because of
 sampling noise. Earlier cohorts receive more total weight because more of their
-post-treatment periods are observed. The late cohort has no observed effect beyond
-event time zero; longer-run dynamic estimates would involve fewer cohorts.
+post-treatment periods are observed. The Year 6 cohort is observed through event
+time 1; only the Year 5 cohort contributes an effect at event time 2. These are
+data-generating effects, not re-estimated model results. The existing lab outputs
+have not yet been updated for this data correction.
 
 [Download datasets](data.html) · [Return to the lab](workshop.html)
