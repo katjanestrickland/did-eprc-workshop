@@ -6,12 +6,10 @@ title: "Workshop Slides"
 
 **Current draft · October 15, 2026**
 
-[View or download the draft slides (PDF)](slides/slides.pdf)
+[View or download the draft slides (PDF)](slides/slides_eprc_template.pdf)
 
-Compiled from the current `slides.tex` in the Overleaf DID EPRC Workshop Talk
+The current `slides_eprc_template.pdf` from the Overleaf DID EPRC Workshop Talk
 project. These are working lecture slides, not the previous placeholder deck.
 The slides may still contain examples awaiting revision; the [Workshop lab](workshop.html)
 and [Data downloads](data.html) use the corrected two-cohort district-level design.
 
-[Download the LaTeX source](slides/slides.tex) ·
-[Download the source and figures (ZIP)](slides/eprc_workshop_slides_source.zip)
