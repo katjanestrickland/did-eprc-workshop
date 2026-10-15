@@ -33,6 +33,10 @@ design <- bind_rows(
 kable(design, digits = 2)
 stopifnot(nrow(simple) == 1120, nrow(staggered) == 1120,
           all(table(simple$district_id) == 7), all(table(staggered$district_id) == 7))
+# Require the corrected two-cohort dataset, not the earlier three-cohort release.
+adoption_counts <- table(staggered$treatment_start_year[staggered$year == 1])
+stopifnot(identical(names(adoption_counts), c("0", "5", "6")),
+          all(as.integer(adoption_counts) == c(80, 40, 40)))
 
 
 ## ----simple-trends, echo=FALSE------------------------------------------------
@@ -148,6 +152,8 @@ weighted_cells <- cells |>
 kable(select(weighted_cells, cohort, year, districts, ATT, weight, contribution), digits = 3)
 manual_simple_att <- sum(weighted_cells$contribution)
 stopifnot(abs(manual_simple_att - simple_att$overall.att) < 1e-8)
+stopifnot(nrow(weighted_cells) == 5,
+          all(abs(weighted_cells$weight - 1/5) < 1e-12))
 
 
 ## ----manual-cells-------------------------------------------------------------

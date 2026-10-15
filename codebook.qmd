@@ -78,7 +78,7 @@ The true Simple ATT is 2 raw points. Sample estimates will differ because of
 sampling noise. Earlier cohorts receive more total weight because more of their
 post-treatment periods are observed. The Year 6 cohort is observed through event
 time 1; only the Year 5 cohort contributes an effect at event time 2. These are
-data-generating effects, not re-estimated model results. The existing lab outputs
-have not yet been updated for this data correction.
+data-generating effects, not estimated model results. The Workshop page and
+downloadable lab results use this corrected two-cohort design.
 
 [Download datasets](data.html) · [Return to the lab](workshop.html)

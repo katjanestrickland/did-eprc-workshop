@@ -1,7 +1,17 @@
 ---
-title: "Slides and Talk Outline"
+title: "Workshop Slides"
 ---
 
-Download a simple mock PowerPoint deck for the workshop. It includes a polished title slide and five blank placeholder slides for the main sections.
+# Workshop Slides
 
-[Download mock slide deck](slides/eprc_did_workshop_mock_deck.pptx)
+**Current draft · October 15, 2026**
+
+[View or download the draft slides (PDF)](slides/slides.pdf)
+
+Compiled from the current `slides.tex` in the Overleaf DID EPRC Workshop Talk
+project. These are working lecture slides, not the previous placeholder deck.
+The slides may still contain examples awaiting revision; the [Workshop lab](workshop.html)
+and [Data downloads](data.html) use the corrected two-cohort district-level design.
+
+[Download the LaTeX source](slides/slides.tex) ·
+[Download the source and figures (ZIP)](slides/eprc_workshop_slides_source.zip)

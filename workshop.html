@@ -182,10 +182,10 @@ Install packages (run once before the lab)
 <tr>
 <td style="text-align: left;">2: Staggered start</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">40</td>
-<td style="text-align: right;">280</td>
-<td style="text-align: right;">52.51</td>
-<td style="text-align: right;">11.22</td>
+<td style="text-align: right;">80</td>
+<td style="text-align: right;">560</td>
+<td style="text-align: right;">51.85</td>
+<td style="text-align: right;">10.96</td>
 </tr>
 <tr>
 <td style="text-align: left;">2: Staggered start</td>
@@ -202,14 +202,6 @@ Install packages (run once before the lab)
 <td style="text-align: right;">280</td>
 <td style="text-align: right;">51.94</td>
 <td style="text-align: right;">9.14</td>
-</tr>
-<tr>
-<td style="text-align: left;">2: Staggered start</td>
-<td style="text-align: right;">7</td>
-<td style="text-align: right;">40</td>
-<td style="text-align: right;">280</td>
-<td style="text-align: right;">51.48</td>
-<td style="text-align: right;">10.79</td>
 </tr>
 </tbody>
 </table>
@@ -360,7 +352,7 @@ Optional: verify the before-after contrast in R
 <pre><code>#&gt; [1] 2.287095</code></pre>
 </details>
 <h2 id="staggered">4. Staggered DID</h2>
-<p>Simulation 2 has <strong>40 districts in each cohort: Year 5, Year 6, Year 7, and never treated</strong>. Effects vary across cohorts and with time since adoption. The earlier cohort contributes three post-treatment years, the next contributes two, and the last contributes one. A single TWFE coefficient can mix comparisons with already-treated groups when effects vary.</p>
+<p>Simulation 2 has <strong>40 districts adopting in Year 5, 40 adopting in Year 6, and 80 never-treated districts</strong>. All 160 districts are observed over seven years; Year 7 is a follow-up year, not a new adoption cohort. Effects vary across cohorts and with time since adoption. The Year 5 cohort contributes three post-treatment years and the Year 6 cohort contributes two. A single TWFE coefficient can mix comparisons with already-treated groups when effects vary.</p>
 <figure>
 <img src="assets/figures/lab-timing-1.png" alt="plot of chunk timing" />
 <figcaption aria-hidden="true">plot of chunk timing</figcaption>
@@ -462,34 +454,27 @@ ATT(g,t) = E[Y_{it}(1)-Y_{it}(0) \mid G_i=g], \qquad t\geq g
 #&gt;
 #&gt; Group-Time Average Treatment Effects:
 #&gt;  Group Time ATT(g,t) Std. Error [95% Simult.  Conf. Band]
-#&gt;      5    1   0.4387     0.5919       -1.2985      2.1758
-#&gt;      5    2  -0.1524     0.5909       -1.8867      1.5819
-#&gt;      5    3   0.0557     0.5129       -1.4498      1.5613
+#&gt;      5    1   0.5600     0.5291       -0.9339      2.0540
+#&gt;      5    2   0.0087     0.5484       -1.5395      1.5569
+#&gt;      5    3   0.1562     0.4157       -1.0174      1.3299
 #&gt;      5    4   0.0000         NA            NA          NA
-#&gt;      5    5   1.3217     0.4136        0.1078      2.5356 *
-#&gt;      5    6   2.7205     0.5873        0.9968      4.4442 *
-#&gt;      5    7   3.7677     0.6542        1.8476      5.6878 *
-#&gt;      6    1  -0.1335     0.5801       -1.8362      1.5692
-#&gt;      6    2  -0.9707     0.6604       -2.9089      0.9675
-#&gt;      6    3  -0.5628     0.6312       -2.4153      1.2896
-#&gt;      6    4  -0.0786     0.4458       -1.3871      1.2300
+#&gt;      5    5   1.4827     0.3656        0.4504      2.5150 *
+#&gt;      5    6   2.8591     0.4873        1.4834      4.2348 *
+#&gt;      5    7   4.0173     0.5904        2.3503      5.6843 *
+#&gt;      6    1  -0.1731     0.5322       -1.6758      1.3296
+#&gt;      6    2  -0.9705     0.5419       -2.5005      0.5594
+#&gt;      6    3  -0.6233     0.5690       -2.2297      0.9831
+#&gt;      6    4  -0.2395     0.4235       -1.4351      0.9561
 #&gt;      6    5   0.0000         NA            NA          NA
-#&gt;      6    6   1.8053     0.5239        0.2676      3.3429 *
-#&gt;      6    7   1.4822     0.5960       -0.2672      3.2316
-#&gt;      7    1   0.0344     0.6902       -1.9914      2.0602
-#&gt;      7    2  -0.0451     0.6554       -1.9686      1.8784
-#&gt;      7    3   0.0762     0.7152       -2.0230      2.1754
-#&gt;      7    4   0.2771     0.5904       -1.4558      2.0100
-#&gt;      7    5  -0.0448     0.4458       -1.3532      1.2636
-#&gt;      7    6   0.0000         NA            NA          NA
-#&gt;      7    7   1.7780     0.5595        0.1359      3.4200 *
+#&gt;      6    6   1.7829     0.4205        0.5956      2.9701 *
+#&gt;      6    7   1.5708     0.4946        0.1744      2.9672 *
 #&gt; ---
 #&gt; Signif. codes: `*&#39; confidence band does not cover 0
 #&gt;
-#&gt; P-value for pre-test of parallel trends assumption:  0.82696
+#&gt; P-value for pre-test of parallel trends assumption:  0.52303
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Outcome Regression</code></pre>
-<p>The summary includes pre-treatment comparisons as well as post-treatment effects. The following table selects just the six post-treatment cells, where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>≥</mo><mi>g</mi></mrow><annotation encoding="application/x-tex">t\geq g</annotation></semantics></math>. Read each row as an effect for <strong>one cohort in one year</strong>, in raw outcome points.</p>
+<p>The summary includes pre-treatment comparisons as well as post-treatment effects. The following table selects just the five post-treatment cells, where <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>≥</mo><mi>g</mi></mrow><annotation encoding="application/x-tex">t\geq g</annotation></semantics></math>. Read each row as an effect for <strong>one cohort in one year</strong>, in raw outcome points.</p>
 <table>
 <thead>
 <tr>
@@ -503,38 +488,32 @@ ATT(g,t) = E[Y_{it}(1)-Y_{it}(0) \mid G_i=g], \qquad t\geq g
 <tr>
 <td style="text-align: right;">5</td>
 <td style="text-align: right;">5</td>
-<td style="text-align: right;">1.322</td>
-<td style="text-align: right;">0.414</td>
+<td style="text-align: right;">1.483</td>
+<td style="text-align: right;">0.366</td>
 </tr>
 <tr>
 <td style="text-align: right;">5</td>
 <td style="text-align: right;">6</td>
-<td style="text-align: right;">2.720</td>
-<td style="text-align: right;">0.587</td>
+<td style="text-align: right;">2.859</td>
+<td style="text-align: right;">0.487</td>
 </tr>
 <tr>
 <td style="text-align: right;">5</td>
 <td style="text-align: right;">7</td>
-<td style="text-align: right;">3.768</td>
-<td style="text-align: right;">0.654</td>
+<td style="text-align: right;">4.017</td>
+<td style="text-align: right;">0.590</td>
 </tr>
 <tr>
 <td style="text-align: right;">6</td>
 <td style="text-align: right;">6</td>
-<td style="text-align: right;">1.805</td>
-<td style="text-align: right;">0.524</td>
+<td style="text-align: right;">1.783</td>
+<td style="text-align: right;">0.421</td>
 </tr>
 <tr>
 <td style="text-align: right;">6</td>
 <td style="text-align: right;">7</td>
-<td style="text-align: right;">1.482</td>
-<td style="text-align: right;">0.596</td>
-</tr>
-<tr>
-<td style="text-align: right;">7</td>
-<td style="text-align: right;">7</td>
-<td style="text-align: right;">1.778</td>
-<td style="text-align: right;">0.559</td>
+<td style="text-align: right;">1.571</td>
+<td style="text-align: right;">0.495</td>
 </tr>
 </tbody>
 </table>
@@ -548,7 +527,7 @@ ATT(g,t) = E[Y_{it}(1)-Y_{it}(0) \mid G_i=g], \qquad t\geq g
 w_{gt}=\frac{N_g}{\sum_{(h,s)\in\mathcal P}N_h}
 </annotation></semantics></math></div>
 <p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="script">𝒫</mi><annotation encoding="application/x-tex">\mathcal P</annotation></semantics></math> is the set of observed post-treatment cohort-year cells and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> is the number of districts in cohort <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>. Each weight multiplies its cell’s estimated effect; adding those contributions gives the summary estimate.</p>
-<p>The Simple ATT averages the cohort-period effects with cohort-size weights. There are six observed post-treatment cells. All cohort sizes are 40, so each cell receives weight 1/6. Cohort 5 contributes 3/6 of the total weight, cohort 6 contributes 2/6, and cohort 7 contributes 1/6. This is not an equal-weight average of the three cohort averages.</p>
+<p>The Simple ATT averages the cohort-period effects with cohort-size weights. There are five observed post-treatment cells. Both treated cohorts contain 40 districts, so each cell receives weight 1/5. Cohort 5 contributes 3/5 of the total weight and cohort 6 contributes 2/5. This is not an equal-weight average of the two cohort averages. The 80 never-treated districts supply the comparison group; they do not receive treatment-effect weights in this aggregation.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>simple_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(cs, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(simple_att)</span></code></pre></div>
 <pre><code>#&gt;
@@ -559,7 +538,7 @@ w_{gt}=\frac{N_g}{\sum_{(h,s)\in\mathcal P}N_h}
 #&gt;
 #&gt;
 #&gt;     ATT    Std. Error     [ 95%  Conf. Int.]
-#&gt;  2.1459        0.3348     1.4897      2.8021 *
+#&gt;  2.3425        0.3275     1.7007      2.9844 *
 #&gt;
 #&gt;
 #&gt; ---
@@ -584,56 +563,48 @@ w_{gt}=\frac{N_g}{\sum_{(h,s)\in\mathcal P}N_h}
 <td style="text-align: right;">5</td>
 <td style="text-align: right;">5</td>
 <td style="text-align: right;">40</td>
-<td style="text-align: right;">1.322</td>
-<td style="text-align: right;">0.167</td>
-<td style="text-align: right;">0.220</td>
+<td style="text-align: right;">1.483</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.297</td>
 </tr>
 <tr>
 <td style="text-align: right;">5</td>
 <td style="text-align: right;">6</td>
 <td style="text-align: right;">40</td>
-<td style="text-align: right;">2.720</td>
-<td style="text-align: right;">0.167</td>
-<td style="text-align: right;">0.453</td>
+<td style="text-align: right;">2.859</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.572</td>
 </tr>
 <tr>
 <td style="text-align: right;">5</td>
 <td style="text-align: right;">7</td>
 <td style="text-align: right;">40</td>
-<td style="text-align: right;">3.768</td>
-<td style="text-align: right;">0.167</td>
-<td style="text-align: right;">0.628</td>
+<td style="text-align: right;">4.017</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.803</td>
 </tr>
 <tr>
 <td style="text-align: right;">6</td>
 <td style="text-align: right;">6</td>
 <td style="text-align: right;">40</td>
-<td style="text-align: right;">1.805</td>
-<td style="text-align: right;">0.167</td>
-<td style="text-align: right;">0.301</td>
+<td style="text-align: right;">1.783</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.357</td>
 </tr>
 <tr>
 <td style="text-align: right;">6</td>
 <td style="text-align: right;">7</td>
 <td style="text-align: right;">40</td>
-<td style="text-align: right;">1.482</td>
-<td style="text-align: right;">0.167</td>
-<td style="text-align: right;">0.247</td>
-</tr>
-<tr>
-<td style="text-align: right;">7</td>
-<td style="text-align: right;">7</td>
-<td style="text-align: right;">40</td>
-<td style="text-align: right;">1.778</td>
-<td style="text-align: right;">0.167</td>
-<td style="text-align: right;">0.296</td>
+<td style="text-align: right;">1.571</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.314</td>
 </tr>
 </tbody>
 </table>
-<p>The Simple ATT is <strong>2.15 raw score points</strong>. The calculation uses unrounded values. The package computes uncertainty using the joint estimation structure; do not average the six standard errors.</p>
+<p>The Simple ATT is <strong>2.34 raw score points</strong>. The calculation uses unrounded values. The package computes uncertainty using the joint estimation structure; do not average the five standard errors.</p>
 <details>
 <summary>
-Optional: verify the six DID contrasts directly in R
+Optional: verify the five DID contrasts directly in R
 </summary>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>manual_cell <span class="ot">&lt;-</span> <span class="cf">function</span>(g, t) {</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  treated_change <span class="ot">&lt;-</span> <span class="fu">with</span>(staggered, <span class="fu">mean</span>(outcome_raw[treatment_start_year <span class="sc">==</span> g <span class="sc">&amp;</span> year <span class="sc">==</span> t]) <span class="sc">-</span></span>
@@ -646,7 +617,7 @@ Optional: verify the six DID contrasts directly in R
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">max</span>(<span class="fu">abs</span>(manual_effects <span class="sc">-</span> cells<span class="sc">$</span>ATT)) <span class="sc">&lt;</span> <span class="fl">1e-8</span>)</span></code></pre></div>
 </details>
 <h2 id="etwfe">7. Extended TWFE (Optional)</h2>
-<p>Extended TWFE allows cohort and time interactions rather than imposing one constant treatment coefficient. Use the same never-treated comparison group and raw outcome. <code>emfx(type = "simple")</code> summarizes post-treatment effects across treated observations. In this balanced panel, those observations give the same 1/6 weights to the six cells. Estimates can still differ because the estimation methods use time periods differently; matching the estimand does not guarantee identical finite-sample results.</p>
+<p>Extended TWFE allows cohort and time interactions rather than imposing one constant treatment coefficient. Use the same never-treated comparison group and raw outcome. <code>emfx(type = "simple")</code> summarizes post-treatment effects across treated observations. In this balanced panel, those observations give the same 1/5 weights to the five cells. Estimates can still differ because the estimation methods use time periods differently; matching the estimand does not guarantee identical finite-sample results.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>extended <span class="ot">&lt;-</span> <span class="fu">etwfe</span>(outcome_raw <span class="sc">~</span> <span class="dv">0</span>, <span class="at">tvar =</span> year, <span class="at">gvar =</span> treatment_start_year,</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data =</span> staggered, <span class="at">cgroup =</span> <span class="st">&quot;never&quot;</span>, <span class="at">gref =</span> <span class="dv">0</span>,</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">vcov =</span> <span class="sc">~</span>district_id)</span>
@@ -663,10 +634,10 @@ Optional: verify the six DID contrasts directly in R
 </thead>
 <tbody>
 <tr>
-<td style="text-align: right;">2.146</td>
-<td style="text-align: right;">0.343</td>
-<td style="text-align: right;">1.473</td>
-<td style="text-align: right;">2.819</td>
+<td style="text-align: right;">2.343</td>
+<td style="text-align: right;">0.33</td>
+<td style="text-align: right;">1.695</td>
+<td style="text-align: right;">2.99</td>
 </tr>
 </tbody>
 </table>

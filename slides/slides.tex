@@ -1,0 +1,474 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+% Dropbox/Overleaf sync test comment.
+
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{xcolor}
+
+\graphicspath{{../figures/}{figures/}}
+
+\definecolor{UFBlue}{HTML}{0021A5}
+\definecolor{UFOrange}{HTML}{FA4616}
+\definecolor{DeepInk}{HTML}{17202A}
+\definecolor{SoftGray}{HTML}{F4F6F8}
+\definecolor{MidGray}{HTML}{5B6773}
+\definecolor{Teal}{HTML}{117C78}
+\definecolor{Rose}{HTML}{B3435D}
+\definecolor{Gold}{HTML}{956F18}
+
+\usetheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\setbeamercolor{normal text}{fg=DeepInk,bg=white}
+\setbeamercolor{frametitle}{fg=UFBlue,bg=white}
+\setbeamercolor{title}{fg=UFBlue}
+\setbeamercolor{structure}{fg=UFBlue}
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+\setbeamerfont{title}{size=\Huge,series=\bfseries}
+\setbeamerfont{subtitle}{size=\large}
+\setlength{\parskip}{4pt}
+\renewcommand{\arraystretch}{1.2}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\takeaway}[1]{%
+  \vspace{0.25em}
+  \begin{beamercolorbox}[rounded=true,sep=0.55em,wd=\textwidth]{block body}
+  \textbf{#1}
+  \end{beamercolorbox}
+}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\ATT}{\operatorname{ATT}}
+\newcommand{\smallnote}[1]{\vspace{0.25em}{\footnotesize\color{MidGray}#1}}
+\newcommand{\accentline}{\vspace{0.15em}{\color{UFOrange}\rule{\textwidth}{1.2pt}}\vspace{0.25em}}
+
+\title{Difference-in-Differences in Education Research}
+\author{Wei Li \quad Yaosheng Lou \quad Katherine Strickland}
+\date{October 2026}
+
+\begin{document}
+
+{
+\setbeamertemplate{footline}{}
+\begin{frame}[t]
+  \vspace*{0.6cm}
+  {\color{UFOrange}\rule{0.18\textwidth}{5pt}}
+  \par\vspace{0.65cm}
+
+  {\usebeamerfont{title}\color{UFBlue} Difference-in-Differences\\ in Education Research\par}
+
+  \vspace{0.55cm}
+  {\large\color{DeepInk} Wei Li \quad Yaosheng Lou \quad Katherine Strickland\par}
+
+  \vfill
+  \noindent
+  \begin{minipage}[c]{6.2cm}
+    \includegraphics[width=\linewidth]{uf_eprc_logo.png}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[c]{1.1cm}
+    \includegraphics[width=\linewidth]{lcds_lab_icon.png}
+  \end{minipage}\hspace{0.2cm}%
+  \begin{minipage}[c]{4.25cm}
+    {\color[HTML]{00529B}\bfseries\small Longitudinal Causal\\Data Science Lab}
+  \end{minipage}
+  \par\vspace{0.45cm}
+
+\end{frame}
+}
+
+\begin{frame}[t]{Importance of Difference-in-Differences}
+\vspace{0.35em}
+\begin{columns}[T,onlytextwidth]
+  \begin{column}{0.40\textwidth}
+    \small
+    \setlength{\leftmargini}{1.2em}
+    \begin{itemize}
+      \setlength{\itemsep}{0.9em}
+      \item The availability of richer datasets and advances in computational
+            power have transformed education research.
+      \item A common goal of empirical DiD research is to identify the causal
+            effects of educational policies and interventions on student outcomes.
+      \item DiD is useful when random assignment to treatment is not feasible.
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.57\textwidth}
+    \centering
+    \sbox0{\includegraphics[width=\linewidth,height=0.52\textheight,keepaspectratio]{publications_dual_axis_2010_2025_simple_labels.png}}
+    \begin{minipage}[t]{\wd0}
+    \usebox0
+    \par\vspace{0.25em}
+    \raggedright\color{MidGray}\fontsize{6.5}{7.8}\selectfont
+    \setlength{\parskip}{0pt}
+    Figure 1. Annual Number of Publications, 2010--2025
+    \par\vspace{0.35em}
+    \fontsize{6}{7.2}\selectfont
+    \textit{Note.} Annual publication counts were obtained from Web of Science
+    using the following search query: ``difference-in-difference'' OR
+    ``difference in difference'' OR ``difference-in-differences'' OR
+    ``difference in differences'' OR ``differences-in-differences'' OR
+    ``differences in differences''.
+    \par
+    \end{minipage}
+  \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[t]{Popularity of Difference-in-Differences Methods}
+\small
+\setlength{\parskip}{2pt}
+Currie et al. (2020)
+\par\vspace{0.3em}
+{\centering
+% Crop the original DiD and event-study panels; retain their shared legend.
+\includegraphics[trim={84bp 144bp 280bp 73bp},clip,width=0.485\textwidth]{currie_2020_quasi_experimental_methods_reference.png}%
+\hfill
+\includegraphics[trim={84bp 48bp 280bp 169bp},clip,width=0.485\textwidth]{currie_2020_quasi_experimental_methods_reference.png}
+\par\vspace{0.35em}
+\includegraphics[trim={204bp 29bp 194bp 269bp},clip,width=0.40\textwidth]{currie_2020_quasi_experimental_methods_reference.png}
+\par\vspace{0.2em}
+{\footnotesize\color{MidGray}\textbf{Figure 2.} Quasi-Experimental Methods in Applied Microeconomics Papers\par}
+}
+\end{frame}
+
+\begin{frame}[t]{DiD Example: Gifted and Talented Programs}
+\small
+\setlength{\parskip}{2pt}
+\textbf{Research question:} Does participation in New York City's Gifted and
+Talented (G\&T) program improve student attendance and academic achievement?
+\par\vspace{0.6em}
+\textbf{Design:} Longitudinal student-level data and staggered DiD, following
+students who entered G\&T in Grades 1--3.
+\par\vspace{0.6em}
+\textbf{Main findings:}
+\begin{itemize}
+  \setlength{\itemsep}{0.35em}
+  \item Modest, sustained improvements in attendance and academic achievement,
+        including middle-school mathematics and English Language Arts proficiency.
+  \item Benefits accumulated over time, with effects reaching 0.11--0.18 standard
+        deviations for students entering in Grade 3.
+\end{itemize}
+\vfill
+{\scriptsize\color{MidGray}Strickland, K., Chan, W., \& Gottfried, M. A. (2026).
+\textit{Longitudinal Effects of NYC's Gifted and Talented Program: Evidence From
+a Staggered Difference-in-Differences Approach.} Educational Evaluation and Policy Analysis.
+\href{https://doi.org/10.3102/01623737261438146}{doi:10.3102/01623737261438146}\par}
+\end{frame}
+
+\begin{frame}[t]{The Classic $2\times2$ DiD Design}
+Let's start with the simplest DiD setup: \textbf{two groups and two time periods.}
+\begin{itemize}
+  \item \textbf{Two groups:} Treatment and comparison
+  \item \textbf{Two periods:} Before and after treatment
+\end{itemize}
+\vspace{0.2em}
+{\centering
+\includegraphics[width=0.94\textwidth,height=0.60\textheight,keepaspectratio]{did_intro_2x2_observed_raw_v2_integer.png}
+\par}
+\end{frame}
+
+\begin{frame}[t]{The Parallel Trends Assumption}
+In the absence of treatment, the treated and control groups would have experienced
+the same average changes in outcomes over time.
+\par\vspace{0.4em}
+{\centering
+\includegraphics[width=0.94\textwidth,height=0.60\textheight,keepaspectratio]{did_parallel_trends_classic_style_v2_integer_axis.png}
+\par}
+\end{frame}
+
+\begin{frame}[t]{The Parallel Trends Assumption}
+In the absence of treatment, the treated and control groups would have experienced
+the same average changes in outcomes over time.
+\par\vspace{0.4em}
+{\centering
+\includegraphics[width=0.94\textwidth,height=0.60\textheight,keepaspectratio]{did_parallel_trends_classic_effect_right_v2_integer_axis.png}
+\par}
+\end{frame}
+
+\begin{frame}[t]{DiD with Multiple Periods}
+The standard $2\times2$ DiD design can be extended to multiple periods.
+
+{\centering
+\includegraphics[width=0.94\textwidth,height=0.62\textheight,keepaspectratio]{did_multiple_periods_absence_label_v8.png}
+\par}
+\end{frame}
+
+\begin{frame}{The TWFE Model}
+\setlength{\abovedisplayskip}{3pt}
+\setlength{\belowdisplayskip}{2pt}
+\accentline
+\par
+TWFE is widely used to estimate treatment effects.
+\[
+Y_{it}
+=
+\alpha_i
++ \lambda_t
++ \beta D_{it}
++ u_{it}
+\]
+\begin{center}
+\small
+\begin{tabular}{L{0.22\textwidth}L{0.58\textwidth}}
+\toprule
+\textbf{Model Piece} & \textbf{Interpretation} \\
+\midrule
+$\alpha_i$ & Unit fixed effects \\
+$\lambda_t$ & Time fixed effects \\
+$D_{it}$ & Treatment indicator, equal to 1 if unit $i$ is treated at time $t$, and 0 otherwise \\
+$\beta$ & Treatment effect \\
+$u_{it}$ & Error term \\
+\bottomrule
+\end{tabular}
+\end{center}
+The coefficient from the TWFE model equals
+\[
+\beta
+= \left(\overline Y_{G,\mathrm{post}}-\overline Y_{G,\mathrm{pre}}\right)
+- \left(\overline Y_{C,\mathrm{post}}-\overline Y_{C,\mathrm{pre}}\right)
+\]
+\end{frame}
+
+\begin{frame}[t]{TWFE event study}
+\small
+\setlength{\parskip}{2pt}
+\setlength{\abovedisplayskip}{4pt}
+\setlength{\belowdisplayskip}{2pt}
+\accentline
+\par
+Event-study models estimate separate coefficients for periods before and after
+treatment.
+\[
+Y_{it}=\alpha_i+\lambda_t
++\sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g=k\}+u_{it}
+\]
+{\centering
+\begin{minipage}{0.98\textwidth}
+\centering
+\includegraphics[width=\linewidth]{did_twfe_formula_map_absence_label_v8.png}
+\par\vspace{-0.5em}
+\begin{tikzpicture}[x=\linewidth,y=1cm]
+\path[use as bounding box] (0,-0.60) rectangle (1,0.05);
+\node[anchor=west,inner sep=0,font=\scriptsize] at (0.02,-0.12) {Year};
+\node[anchor=west,inner sep=0,font=\scriptsize] at (0.02,-0.43) {Coefficient};
+% Column centers match the corresponding year ticks in the figure above.
+\foreach \year/\x/\coefficient in {
+  1/0.18609/{$\beta_{-4}$},
+  2/0.30638/{$\beta_{-3}$},
+  3/0.42667/{$\beta_{-2}$},
+  4/0.54696/{0 (ref.)},
+  5/0.66725/{$\beta_0$},
+  6/0.78754/{$\beta_1$},
+  7/0.90783/{$\beta_2$}} {
+  \ifnum\year>4
+    \def\mapcolor{Rose}
+  \else
+    \def\mapcolor{MidGray}
+  \fi
+  \node[inner sep=0,font=\scriptsize,text=\mapcolor] at (\x,-0.12) {\year};
+  \node[inner sep=0,font=\scriptsize,text=\mapcolor] at (\x,-0.43) {\coefficient};
+}
+\end{tikzpicture}
+\par\vspace{0.15em}
+{\scriptsize\color{DeepInk}Treatment begins in Year 5, so $g=5$.\par}
+{\scriptsize\color{MidGray}Treated outcomes in Years 5--7 are illustrative.\par}
+\end{minipage}
+\par}
+\end{frame}
+
+\begin{frame}[t]{Staggered DiD}
+\vspace{0.15em}
+Units enter treatment at different times.
+\par\vspace{1.0em}
+Staggered DiD designs are widely used in empirical research.
+\begin{itemize}
+  \item Baker et al. (2022) document that \textbf{54.7\%} of DiD studies in
+        leading finance and accounting journals (2000--2019) use staggered
+        DiD designs.
+\end{itemize}
+\par\vspace{0.5em}
+{\centering
+\definecolor{timingtreated}{HTML}{1F5A85}
+\definecolor{timinguntreated}{HTML}{D8DEE4}
+\begin{tikzpicture}[x=0.10\textwidth,y=0.52cm]
+\path[use as bounding box] (-2.30,-0.65) rectangle (7.15,3.95);
+\node[anchor=east,font=\scriptsize,text=MidGray] at (-0.15,3.60) {Period};
+\foreach \period in {1,...,7} {
+  \node[font=\scriptsize,text=MidGray] at ({\period-0.5},3.60) {\period};
+}
+\foreach \start/\row/\labeltext in {
+  5/2.45/{Year-5 adopters},
+  6/1.45/{Year-6 adopters},
+  0/0.45/{Never-treated}} {
+  \node[anchor=east,inner sep=0,font=\footnotesize]
+    at (-0.15,{\row+0.35}) {\labeltext};
+  \foreach \period in {1,...,7} {
+    \ifnum\start=0
+      \def\timingfill{timinguntreated}
+    \else
+      \ifnum\period<\start
+        \def\timingfill{timinguntreated}
+      \else
+        \def\timingfill{timingtreated}
+      \fi
+    \fi
+    \fill[\timingfill] ({\period-1+0.025},\row)
+      rectangle ({\period-0.025},{\row+0.7});
+  }
+}
+\fill[timinguntreated] (3.05,-0.45) rectangle (3.30,-0.15);
+\node[anchor=west,inner sep=0,font=\scriptsize] at (3.43,-0.30) {Untreated};
+\fill[timingtreated] (5.35,-0.45) rectangle (5.60,-0.15);
+\node[anchor=west,inner sep=0,font=\scriptsize] at (5.73,-0.30) {Treated};
+\end{tikzpicture}
+\par}
+\end{frame}
+
+\begin{frame}[t]{TWFE Can Be Biased in Staggered DiD}
+In staggered DiD, units receive treatment at different times.
+\par\vspace{0.25em}
+{\centering
+\definecolor{timingtreated}{HTML}{1F5A85}
+\definecolor{timinguntreated}{HTML}{D8DEE4}
+\begin{tikzpicture}[x=0.10\textwidth,y=0.52cm]
+\path[use as bounding box] (-2.30,-0.65) rectangle (7.15,3.95);
+\node[anchor=east,font=\scriptsize,text=MidGray] at (-0.15,3.60) {Period};
+\foreach \period in {1,...,7} {
+  \node[font=\scriptsize,text=MidGray] at ({\period-0.5},3.60) {\period};
+}
+\foreach \start/\row/\labeltext in {
+  5/2.45/{Year-5 adopters},
+  6/1.45/{Year-6 adopters},
+  0/0.45/{Never-treated}} {
+  \node[anchor=east,inner sep=0,font=\footnotesize]
+    at (-0.15,{\row+0.35}) {\labeltext};
+  \foreach \period in {1,...,7} {
+    \ifnum\start=0
+      \def\timingfill{timinguntreated}
+    \else
+      \ifnum\period<\start
+        \def\timingfill{timinguntreated}
+      \else
+        \def\timingfill{timingtreated}
+      \fi
+    \fi
+    \fill[\timingfill] ({\period-1+0.025},\row)
+      rectangle ({\period-0.025},{\row+0.7});
+  }
+}
+\fill[timinguntreated] (3.05,-0.45) rectangle (3.30,-0.15);
+\node[anchor=west,inner sep=0,font=\scriptsize] at (3.43,-0.30) {Untreated};
+\fill[timingtreated] (5.35,-0.45) rectangle (5.60,-0.15);
+\node[anchor=west,inner sep=0,font=\scriptsize] at (5.73,-0.30) {Treated};
+\end{tikzpicture}
+\par}
+\vspace{0.3em}
+TWFE combines multiple $2\times2$ DiD comparisons (Goodman-Bacon, 2021).
+\begin{itemize}
+  \setlength{\itemsep}{0.4em}
+  \item Some comparisons use already-treated units as controls for
+        later-treated units.
+  \item If treatment effects change over time, these comparisons can distort
+        the TWFE estimate.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Staggered DiD Estimator}
+\setlength{\parskip}{2pt}
+\setlength{\abovedisplayskip}{6pt}
+\setlength{\belowdisplayskip}{6pt}
+Callaway and Sant'Anna (2021) estimate treatment effects separately for each
+cohort and period.
+\par\vspace{0.25em}
+{\color{UFBlue}\textbf{Group-Time ATT:}}
+\[
+\ATT(g,t)=\E\!\left[Y_t(g)-Y_t(0)\mid G_i=g\right]
+\]
+\par\vspace{0.25em}
+{\color{UFBlue}\textbf{Estimation:}}
+\[
+\widehat{\ATT}(g,t)
+=\left(\overline Y_{g,t}-\overline Y_{g,g-1}\right)
+-\left(\overline Y_{C,t}-\overline Y_{C,g-1}\right)
+\]
+\par\vspace{0.25em}
+\textbf{Example:} For units first treated in Period 5, we compare outcome
+changes from Period 4 to Period 7 with those of never-treated units.
+\end{frame}
+
+\begin{frame}[t]{Weighted Averages: Summarizing Treatment Effects}
+\setlength{\parskip}{2pt}
+After estimating $\ATT(g,t)$, we can aggregate treatment effects to answer
+different research questions.
+\par\vspace{0.35em}
+\begingroup
+\small
+\setlength{\parskip}{0pt}
+\setlength{\aboverulesep}{1pt}
+\setlength{\belowrulesep}{1.5pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{@{}L{0.40\textwidth}@{\hspace{0.025\textwidth}}L{0.575\textwidth}@{}}
+\toprule
+\textbf{Method \& Research Question} & \textbf{How Effects Are Averaged} \\
+\midrule
+\textbf{Simple ATT}\par
+What is the overall average treatment effect? &
+Average all post-treatment $\ATT(g,t)$ values. Cohorts with more units or
+more post-treatment periods receive greater weight. \\
+\midrule
+\textbf{Group ATT}\par
+How do treatment effects differ across cohorts? &
+First average treatment effects over time within each cohort. Then combine
+the cohort averages, weighting by the number of units in each cohort. \\
+\midrule
+\textbf{Dynamic ATT}\par
+How do treatment effects evolve over time since treatment? &
+Average effects across cohorts at the same event time ($e=t-g$), weighted
+by cohort size. \\
+\midrule
+\textbf{Calendar ATT}\par
+How do treatment effects vary across calendar periods? &
+Average effects across treated cohorts in the same calendar period,
+weighted by cohort size. \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{frame}
+
+\begin{frame}[t]{Statistical Inference}
+Work in Progress
+\end{frame}
+
+\begin{frame}[t]{Alternative Methods for Staggered DiD}
+Beyond Callaway and Sant'Anna (2021), several alternative methods have been
+developed for staggered DiD settings.
+\par\vspace{0.45em}
+\begingroup
+\small
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{@{}L{0.50\textwidth}@{\hspace{0.025\textwidth}}L{0.475\textwidth}@{}}
+\toprule
+\textbf{Method} & \textbf{Reference} \\
+\midrule
+Interaction-Weighted Event Study & Sun \& Abraham (2021) \\
+Imputation Estimator & Borusyak et al. (2024) \\
+Two-Stage DiD & Gardner (2022) \\
+Extended TWFE (ETWFE) & Wooldridge (2025) \\
+Alternative DiD Estimators & de Chaisemartin \& D'Haultfoeuille (2022) \\
+Stacked DiD & Wing et al. (2024) \\
+\bottomrule
+\end{tabular}
+\endgroup
+\par\vspace{0.65em}
+\textit{These methods will be discussed in more detail in our reading group.}
+\end{frame}
+
+\begin{frame}[t]{Wooldridge - Pooled OLS and ETWFE}
+Work in Progress
+\end{frame}
+
+\end{document}
