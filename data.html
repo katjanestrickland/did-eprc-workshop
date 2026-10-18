@@ -12,10 +12,9 @@
 <a href="data.html" aria-current="page">Data</a>
 <a href="resources.html">Resources</a></div></nav></header>
 <main id="main" class="document ">
-<article><h1 id="data-downloads">Data Downloads</h1>
-<p><strong>Updated October 15, 2026.</strong> Both datasets have 160 districts observed for seven years (1,120 rows each). They are synthetic education-policy examples with no adjustment covariates. They replace the earlier 11-year workshop datasets.</p>
-<p><strong>Data correction:</strong> Simulation 2 now has two treated cohorts, adopting in Years 5 and 6, plus never-treated districts. Year 7 is a follow-up year, not an adoption cohort. Simulation 1 is unchanged. The Workshop walkthrough, code, figures, and downloadable model results now use this corrected design. The lecture slides are a separate working draft.</p>
-<p>Both outcome columns represent the same outcome: <code>outcome_raw = 50 + 10 * outcome_std</code>. The lab uses raw score points for graphs and models. The standardized column uses a common pre-treatment reference scale, not separate standardization by group or year. These continuous synthetic scores have no fixed minimum or maximum.</p>
+<article><h1 id="data">Data</h1>
+<p>These simulated datasets represent <strong>832 districts observed over seven years</strong>, using parameters estimated from Texas SEDA achievement data. They are teaching examples, not actual Texas district records. Neither dataset includes covariates.</p>
+<h2 id="download-the-data">Download the Data</h2>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -25,43 +24,85 @@
 <thead>
 <tr>
 <th>Dataset</th>
-<th>Purpose</th>
-<th>Downloads</th>
+<th>Description</th>
+<th>Download</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>simple_did_district</code></td>
-<td>80 districts adopt in Year 5; 80 never treated. Constant treatment effect.</td>
-<td><a href="assets/data/simple_did_district.csv">CSV</a>, <a href="assets/data/simple_did_district.dta">Stata</a></td>
+<td><strong>Traditional DID</strong></td>
+<td>416 districts adopt in Year 5; 416 remain untreated. Constant effect after adoption.</td>
+<td><a href="assets/data/simple_did_district.csv">CSV</a> · <a href="assets/data/simple_did_district.dta">Stata</a></td>
 </tr>
 <tr>
-<td><code>staggered_did_district</code></td>
-<td>40 districts adopt in Year 5, 40 in Year 6, and 80 are never treated. Effects vary across cohorts and time since adoption.</td>
-<td><a href="assets/data/staggered_did_district.csv">CSV</a>, <a href="assets/data/staggered_did_district.dta">Stata</a></td>
+<td><strong>Staggered DID</strong></td>
+<td>208 districts adopt in Year 5, 208 in Year 6, and 416 remain untreated. Effects differ by cohort and increase with time since adoption.</td>
+<td><a href="assets/data/staggered_did_district.csv">CSV</a> · <a href="assets/data/staggered_did_district.dta">Stata</a></td>
 </tr>
 <tr>
-<td><code>data_dictionary</code></td>
-<td>Variable names and descriptions.</td>
+<td><strong>Data dictionary</strong></td>
+<td>Variable definitions for both datasets.</td>
 <td><a href="assets/data/data_dictionary.csv">CSV</a></td>
-</tr>
-<tr>
-<td><code>workshop_estimates</code></td>
-<td>Model estimates and standard errors using the current datasets.</td>
-<td><a href="assets/data/workshop_estimates.csv">CSV</a></td>
-</tr>
-<tr>
-<td><code>csa_weighted_cells</code></td>
-<td>Five post-treatment estimates, weights, and contributions to Simple ATT.</td>
-<td><a href="assets/data/csa_weighted_cells.csv">CSV</a></td>
-</tr>
-<tr>
-<td><code>data_generation_summary</code></td>
-<td>District counts, years, and post-treatment periods by cohort.</td>
-<td><a href="assets/data/data_generation_summary.csv">CSV</a></td>
 </tr>
 </tbody>
 </table>
-<p><a href="codebook.html">Read the full codebook</a> · <a href="codebook.qmd">Download codebook text</a> · <a href="workshop.html">Follow the R lab</a></p>
-<p>The teaching files exclude simulation-only potential outcomes and true effects. The school-within-district extension is not part of this revised lab.</p>
+<h2 id="codebook">Codebook</h2>
+<p>Both datasets use the same ten variables. Each contains <strong>5,824 district-year observations</strong>. District and year jointly identify a row.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state</code></td>
+<td>State whose SEDA-derived parameters calibrate the simulation: TX.</td>
+</tr>
+<tr>
+<td><code>district_id</code></td>
+<td>Synthetic district identifier, 1-832. Does not identify an actual district.</td>
+</tr>
+<tr>
+<td><code>year</code></td>
+<td>Study year, 1-7; not a calendar year.</td>
+</tr>
+<tr>
+<td><code>cohort</code></td>
+<td>Adoption group: treated_year5, treated_year6, or never. The traditional dataset has no Year 6 cohort.</td>
+</tr>
+<tr>
+<td><code>treatment_start_year</code></td>
+<td>First treated year: 5 or 6. Zero means never treated.</td>
+</tr>
+<tr>
+<td><code>treated_ever</code></td>
+<td>1 if the district receives treatment during the study; otherwise 0.</td>
+</tr>
+<tr>
+<td><code>treated</code></td>
+<td>1 from adoption onward; 0 before adoption and for never-treated districts.</td>
+</tr>
+<tr>
+<td><code>event_time</code></td>
+<td>Year minus adoption year: -1 is the year before adoption, 0 is the first treated year. Missing for never-treated districts.</td>
+</tr>
+<tr>
+<td><code>outcome_std</code></td>
+<td>Continuous simulated achievement relative to the mean and SD of the full untreated Texas panel. Effects are added after standardization.</td>
+</tr>
+<tr>
+<td><code>outcome_raw</code></td>
+<td>Same outcome in illustrative score points: <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>50</mn><mo>+</mo><mn>10</mn><mo>×</mo><mi>o</mi><mi>u</mi><mi>t</mi><mi>c</mi><mi>o</mi><mi>m</mi><mi>e</mi><mi>_</mi><mi>s</mi><mi>t</mi><mi>d</mi></mrow><annotation encoding="application/x-tex">50+10\times outcome\_std</annotation></semantics></math>. Not a real test scale; no fixed minimum or maximum.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Outcome scales:</strong> An effect of 0.20 on outcome_std equals 2 points on outcome_raw. The Hands-on R Lab uses outcome_raw. Observed outcomes are not restandardized after treatment.</p>
+<p>Only event_time has missing values, for never-treated districts (NA in CSV and system missing in Stata). There are no adjustment covariates. True effects and untreated counterfactuals are retained separately for instructor validation.</p>
+<p><a href="workshop.html">Continue to the Hands-on R Lab</a></p>
 </article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

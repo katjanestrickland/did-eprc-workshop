@@ -17,8 +17,6 @@ These are simulated teaching examples, not estimates from the actual gifted educ
 
 [Download the R script](code/workshop_lab.R) · [Download the R Markdown](workshop.Rmd) · [Data and codebook](data.html)
 
-**Dataset transition:** The Texas revision described below is planned. Current downloads still contain
-160 districts over seven years. Results below use those current files, not the planned 832-district data.
 
 ## 1. Set Up R
 
@@ -35,7 +33,7 @@ R performs calculations; RStudio provides an interface for code and results.
 **fixest is the package; feols() is its linear-regression function.**
 See the [function documentation](https://lrberge.github.io/fixest/reference/feols.html).
 
-```{r install, eval=FALSE}
+```{r install, eval=FALSE, purl=FALSE}
 # Install once.
 install.packages(c("readr", "dplyr", "fixest", "did"))
 ```
@@ -55,7 +53,7 @@ calibrated to Stanford Education Data Archive (SEDA) district achievement data**
 empirical-data simulations assess how sample size, outcome variability, serial correlation,
 and treatment design affect our ability to detect effects.
 
-The planned lab adapts the pure-data approach using **Texas's parameters: 832 simulated districts
+This lab adapts the pure-data approach using **Texas's parameters: 832 simulated districts
 over seven years**, without adjustment covariates. These are generated outcomes, not actual
 Texas district records. The simulation manuscript is a working draft; a public link is not yet included.
 
@@ -69,6 +67,7 @@ staggered <- read_csv("staggered_did_district.csv")
 **read_csv() comes from readr.** Each row is one district in one year.
 We use outcome_raw, measured in illustrative score points.
 It equals 50 + 10 times outcome_std; a 0.20-SD effect equals 2 score points.
+The full untreated Texas panel defines the reference mean and SD before treatment effects are added.
 
 ## 3. Check Treatment Timing
 
@@ -86,8 +85,8 @@ staggered %>%
 **distinct()** keeps one record per district and adoption year; **count()** counts districts in
 each group. Read **%>%** as "then." Zero codes never treated; treatment stays on after adoption.
 
-The planned Texas traditional panel will have 416 adopting and 416 never-treated districts.
-The staggered panel will have 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.
+The Texas traditional panel has 416 adopting and 416 never-treated districts.
+The staggered panel has 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.
 
 ## 4. Estimate the Classic Two-by-Two DID
 
@@ -221,7 +220,7 @@ treatment starts in $g$; $Y_{it}(0)$ is the outcome without treatment.
 | 6 | 6 | 1.50 |
 | 6 | 7 | 2.50 |
 
-These schedules apply to both the current and planned data.
+These schedules are known effects added to the simulated untreated outcomes.
 A single TWFE coefficient can mix never-treated, not-yet-treated, and already-treated comparisons.
 Already-treated controls can be problematic when effects change over time.
 

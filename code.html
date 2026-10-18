@@ -13,7 +13,7 @@
 <a href="resources.html">Resources</a></div></nav></header>
 <main id="main" class="document ">
 <article><h1 id="workshop-code">Workshop Code</h1>
-<p>Run the complete lab in R or RStudio, or follow the <a href="workshop.html">guided Workshop page</a>. The examples use the October 14 seven-year datasets and no adjustment covariates.</p>
+<p>Use the Texas-calibrated datasets from the <a href="data.html">Data page</a> with the <a href="workshop.html">Hands-on R Lab</a>. All models use illustrative raw score points and district-level inference.</p>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -22,20 +22,30 @@
 <thead>
 <tr>
 <th>File</th>
-<th>Contents</th>
+<th>Purpose</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="code/workshop_lab.R">Complete R script</a></td>
-<td>Import, descriptive statistics, plots, TWFE, CSA, manual Simple ATT, and optional extended TWFE and event study.</td>
+<td><a href="code/workshop_lab.R">Lab R script</a></td>
+<td>Local CSV imports, two-by-two DID, TWFE, event study, cohort-time effects, and Simple ATT.</td>
 </tr>
 <tr>
 <td><a href="workshop.Rmd">R Markdown source</a></td>
-<td>The explanations and executable code that produce the Workshop page.</td>
+<td>Explanations and executable code for the Workshop page.</td>
+</tr>
+<tr>
+<td><a href="code/01_generate_workshop_data.R">Data-generation R script</a></td>
+<td>Generate the two Texas-calibrated teaching datasets and instructor validation files.</td>
+</tr>
+<tr>
+<td><a href="data/texas_calibration.csv">Texas calibration inputs</a></td>
+<td>State-specific inputs extracted from the original simulation parameter file; needed only to regenerate data.</td>
 </tr>
 </tbody>
 </table>
-<p><a href="workshop.html#setup">Install the packages</a> before the session. The script loads local CSV files when present and otherwise downloads them from this website. All models and plots use <code>outcome_raw</code>; standard errors account for clustering by district.</p>
-<p>The optional extended-TWFE and event-study sections can be explored after the 30-minute lab. The page includes the R/package versions used for the displayed results.</p>
+<h2 id="run-the-lab">Run the Lab</h2>
+<p><a href="workshop.html#set-up-r">Install R and the packages</a> before the session. Place both dataset CSVs in your R project folder, then run the lab script. No plotting packages are needed. ETWFE remains a lecture-only extension.</p>
+<h2 id="regenerate-the-data">Regenerate the Data</h2>
+<p>Put the generator in a folder named code and the calibration CSV in a sibling folder named data. Install dplyr, readr, and haven, then run the script with Rscript. It writes the teaching CSV and Stata files to data, and the known effects and untreated outcomes to validation. Seed 20261014 reproduces the datasets in the same R environment.</p>
 </article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

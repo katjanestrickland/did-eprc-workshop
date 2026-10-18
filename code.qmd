@@ -4,17 +4,25 @@ title: "Workshop Code"
 
 # Workshop Code
 
-Run the complete lab in R or RStudio, or follow the [guided Workshop page](workshop.html).
-The examples use the October 14 seven-year datasets and no adjustment covariates.
+Use the Texas-calibrated datasets from the [Data page](data.html) with the
+[Hands-on R Lab](workshop.html). All models use illustrative raw score points and district-level inference.
 
-| File | Contents |
+| File | Purpose |
 |---|---|
-| [Complete R script](code/workshop_lab.R) | Import, descriptive statistics, plots, TWFE, CSA, manual Simple ATT, and optional extended TWFE and event study. |
-| [R Markdown source](workshop.Rmd) | The explanations and executable code that produce the Workshop page. |
+| [Lab R script](code/workshop_lab.R) | Local CSV imports, two-by-two DID, TWFE, event study, cohort-time effects, and Simple ATT. |
+| [R Markdown source](workshop.Rmd) | Explanations and executable code for the Workshop page. |
+| [Data-generation R script](code/01_generate_workshop_data.R) | Generate the two Texas-calibrated teaching datasets and instructor validation files. |
+| [Texas calibration inputs](data/texas_calibration.csv) | State-specific inputs extracted from the original simulation parameter file; needed only to regenerate data. |
 
-[Install the packages](workshop.html#setup) before the session. The script loads local
-CSV files when present and otherwise downloads them from this website. All models
-and plots use `outcome_raw`; standard errors account for clustering by district.
+## Run the Lab
 
-The optional extended-TWFE and event-study sections can be explored after the
-30-minute lab. The page includes the R/package versions used for the displayed results.
+[Install R and the packages](workshop.html#set-up-r) before the session.
+Place both dataset CSVs in your R project folder, then run the lab script.
+No plotting packages are needed. ETWFE remains a lecture-only extension.
+
+## Regenerate the Data
+
+Put the generator in a folder named code and the calibration CSV in a sibling folder named data.
+Install dplyr, readr, and haven, then run the script with Rscript.
+It writes the teaching CSV and Stata files to data, and the known effects and untreated outcomes
+to validation. Seed 20261014 reproduces the datasets in the same R environment.

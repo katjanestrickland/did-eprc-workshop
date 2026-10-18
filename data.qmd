@@ -1,35 +1,44 @@
 ---
-title: "Data Downloads"
+title: "Data"
 ---
 
-# Data Downloads
+# Data
 
-**Updated October 15, 2026.** Both datasets have 160 districts observed for seven
-years (1,120 rows each). They are synthetic education-policy examples with no
-adjustment covariates. They replace the earlier 11-year workshop datasets.
+These simulated datasets represent **832 districts observed over seven years**, using parameters
+estimated from Texas SEDA achievement data. They are teaching examples, not actual Texas district
+records. Neither dataset includes covariates.
 
-**Data correction:** Simulation 2 now has two treated cohorts, adopting in Years
-5 and 6, plus never-treated districts. Year 7 is a follow-up year, not an adoption
-cohort. Simulation 1 is unchanged. The Workshop walkthrough, code, figures, and
-downloadable model results now use this corrected design. The lecture slides
-are a separate working draft.
+## Download the Data
 
-Both outcome columns represent the same outcome: `outcome_raw = 50 + 10 * outcome_std`.
-The lab uses raw score points for graphs and models. The standardized column uses a
-common pre-treatment reference scale, not separate standardization by group or year.
-These continuous synthetic scores have no fixed minimum or maximum.
-
-| Dataset | Purpose | Downloads |
+| Dataset | Description | Download |
 |---|---|---|
-| `simple_did_district` | 80 districts adopt in Year 5; 80 never treated. Constant treatment effect. | [CSV](assets/data/simple_did_district.csv), [Stata](assets/data/simple_did_district.dta) |
-| `staggered_did_district` | 40 districts adopt in Year 5, 40 in Year 6, and 80 are never treated. Effects vary across cohorts and time since adoption. | [CSV](assets/data/staggered_did_district.csv), [Stata](assets/data/staggered_did_district.dta) |
-| `data_dictionary` | Variable names and descriptions. | [CSV](assets/data/data_dictionary.csv) |
-| `workshop_estimates` | Model estimates and standard errors using the current datasets. | [CSV](assets/data/workshop_estimates.csv) |
-| `csa_weighted_cells` | Five post-treatment estimates, weights, and contributions to Simple ATT. | [CSV](assets/data/csa_weighted_cells.csv) |
-| `data_generation_summary` | District counts, years, and post-treatment periods by cohort. | [CSV](assets/data/data_generation_summary.csv) |
+| **Traditional DID** | 416 districts adopt in Year 5; 416 remain untreated. Constant effect after adoption. | [CSV](assets/data/simple_did_district.csv) · [Stata](assets/data/simple_did_district.dta) |
+| **Staggered DID** | 208 districts adopt in Year 5, 208 in Year 6, and 416 remain untreated. Effects differ by cohort and increase with time since adoption. | [CSV](assets/data/staggered_did_district.csv) · [Stata](assets/data/staggered_did_district.dta) |
+| **Data dictionary** | Variable definitions for both datasets. | [CSV](assets/data/data_dictionary.csv) |
 
-[Read the full codebook](codebook.html) · [Download codebook text](codebook.qmd) ·
-[Follow the R lab](workshop.html)
+## Codebook
 
-The teaching files exclude simulation-only potential outcomes and true effects.
-The school-within-district extension is not part of this revised lab.
+Both datasets use the same ten variables. Each contains **5,824 district-year observations**.
+District and year jointly identify a row.
+
+| Variable | Definition |
+|---|---|
+| `state` | State whose SEDA-derived parameters calibrate the simulation: TX. |
+| `district_id` | Synthetic district identifier, 1-832. Does not identify an actual district. |
+| `year` | Study year, 1-7; not a calendar year. |
+| `cohort` | Adoption group: treated_year5, treated_year6, or never. The traditional dataset has no Year 6 cohort. |
+| `treatment_start_year` | First treated year: 5 or 6. Zero means never treated. |
+| `treated_ever` | 1 if the district receives treatment during the study; otherwise 0. |
+| `treated` | 1 from adoption onward; 0 before adoption and for never-treated districts. |
+| `event_time` | Year minus adoption year: -1 is the year before adoption, 0 is the first treated year. Missing for never-treated districts. |
+| `outcome_std` | Continuous simulated achievement relative to the mean and SD of the full untreated Texas panel. Effects are added after standardization. |
+| `outcome_raw` | Same outcome in illustrative score points: $50+10\times outcome\_std$. Not a real test scale; no fixed minimum or maximum. |
+
+**Outcome scales:** An effect of 0.20 on outcome_std equals 2 points on outcome_raw.
+The Hands-on R Lab uses outcome_raw. Observed outcomes are not restandardized after treatment.
+
+Only event_time has missing values, for never-treated districts (NA in CSV and system missing in Stata).
+There are no adjustment covariates. True effects and untreated counterfactuals are retained separately
+for instructor validation.
+
+[Continue to the Hands-on R Lab](workshop.html)

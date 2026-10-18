@@ -1,7 +1,7 @@
 # EPRC DID Workshop
 
 October 22, 2026: Lecture 12-1 PM; Hands-on R lab 1-1:30 PM;
-Questions & discussion 1:30-2 PM Eastern. Data/lab revised October 14.
+Questions & discussion 1:30-2 PM Eastern. Texas data/lab revision October 18.
 
 Temporary public site:
 
@@ -30,7 +30,7 @@ Then open `index.html` in a browser. No development server is required.
 The build executes all lab chunks and verifies manual calculations against TWFE/CSA.
 The R script is extracted from the R Markdown, so download code and page code agree.
 
-Both teaching datasets contain 160 districts over seven years, without adjustment
+Both teaching datasets contain 832 Texas-calibrated districts over seven years, without adjustment
 covariates. Models and figures use `outcome_raw`. See `codebook.qmd` for generation
 details, treatment schedules, missing values, and the exact outcome conversion.
 

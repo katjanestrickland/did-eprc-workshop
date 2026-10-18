@@ -1,8 +1,3 @@
-## ----install, eval=FALSE------------------------------------------------------
-# # Install once.
-# install.packages(c("readr", "dplyr", "fixest", "did"))
-
-
 ## ----packages-----------------------------------------------------------------
 # Load for each session.
 library(readr)

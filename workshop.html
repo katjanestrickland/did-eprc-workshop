@@ -16,7 +16,6 @@
 <p><strong>October 22, 2026 | 1:00-1:30 PM Eastern</strong></p>
 <p>What is the effect of district adoption of a gifted education program on district-level achievement? These are simulated teaching examples, not estimates from the actual gifted education study.</p>
 <p><a href="code/workshop_lab.R">Download the R script</a> · <a href="workshop.Rmd">Download the R Markdown</a> · <a href="data.html">Data and codebook</a></p>
-<p><strong>Dataset transition:</strong> The Texas revision described below is planned. Current downloads still contain 160 districts over seven years. Results below use those current files, not the planned 832-district data.</p>
 <h2 id="set-up-r">1. Set Up R</h2>
 <p>For help installing R and RStudio, see <a href="https://posit.co/download/rstudio-desktop/">Posit’s setup page</a>. R performs calculations; RStudio provides an interface for code and results.</p>
 <table>
@@ -55,11 +54,11 @@
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(did)</span></code></pre></div>
 <h2 id="load-the-data">2. Load the Data</h2>
 <p>Our simulation study examines statistical power and estimator performance using <strong>27 state panels calibrated to Stanford Education Data Archive (SEDA) district achievement data</strong>. Pure-data and empirical-data simulations assess how sample size, outcome variability, serial correlation, and treatment design affect our ability to detect effects.</p>
-<p>The planned lab adapts the pure-data approach using <strong>Texas’s parameters: 832 simulated districts over seven years</strong>, without adjustment covariates. These are generated outcomes, not actual Texas district records. The simulation manuscript is a working draft; a public link is not yet included.</p>
+<p>This lab adapts the pure-data approach using <strong>Texas’s parameters: 832 simulated districts over seven years</strong>, without adjustment covariates. These are generated outcomes, not actual Texas district records. The simulation manuscript is a working draft; a public link is not yet included.</p>
 <p>Place the downloaded CSV files in your R project folder:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;simple_did_district.csv&quot;</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>staggered <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;staggered_did_district.csv&quot;</span>)</span></code></pre></div>
-<p><strong>read_csv() comes from readr.</strong> Each row is one district in one year. We use outcome_raw, measured in illustrative score points. It equals 50 + 10 times outcome_std; a 0.20-SD effect equals 2 score points.</p>
+<p><strong>read_csv() comes from readr.</strong> Each row is one district in one year. We use outcome_raw, measured in illustrative score points. It equals 50 + 10 times outcome_std; a 0.20-SD effect equals 2 score points. The full untreated Texas panel defines the reference mean and SD before treatment effects are added.</p>
 <h2 id="check-treatment-timing">3. Check Treatment Timing</h2>
 <p>Use <strong>dplyr</strong> to count districts by first treatment year:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>simple <span class="sc">%&gt;%</span></span>
@@ -68,19 +67,19 @@
 <pre><code>#&gt; # A tibble: 2 × 2
 #&gt;   treatment_start_year districts
 #&gt;                  &lt;dbl&gt;     &lt;int&gt;
-#&gt; 1                    0        80
-#&gt; 2                    5        80</code></pre>
+#&gt; 1                    0       416
+#&gt; 2                    5       416</code></pre>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>staggered <span class="sc">%&gt;%</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(district_id, treatment_start_year) <span class="sc">%&gt;%</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(treatment_start_year, <span class="at">name =</span> <span class="st">&quot;districts&quot;</span>)</span></code></pre></div>
 <pre><code>#&gt; # A tibble: 3 × 2
 #&gt;   treatment_start_year districts
 #&gt;                  &lt;dbl&gt;     &lt;int&gt;
-#&gt; 1                    0        80
-#&gt; 2                    5        40
-#&gt; 3                    6        40</code></pre>
+#&gt; 1                    0       416
+#&gt; 2                    5       208
+#&gt; 3                    6       208</code></pre>
 <p><strong>distinct()</strong> keeps one record per district and adoption year; <strong>count()</strong> counts districts in each group. Read <strong>%&gt;%</strong> as “then.” Zero codes never treated; treatment stays on after adoption.</p>
-<p>The planned Texas traditional panel will have 416 adopting and 416 never-treated districts. The staggered panel will have 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.</p>
+<p>The Texas traditional panel has 416 adopting and 416 never-treated districts. The staggered panel has 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.</p>
 <h2 id="estimate-the-classic-two-by-two-did">4. Estimate the Classic Two-by-Two DID</h2>
 <p>Use Year 4, immediately before adoption, and Year 5, the first treated year. Following the slides:</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mn>2</mn><mo>×</mo><mn>2</mn></mrow></msub><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>G</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>G</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
@@ -101,15 +100,15 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_2x2)</span></code></pre></div>
 <pre><code>#&gt; OLS estimation, Dep. Var.: outcome_raw
-#&gt; Observations: 320
-#&gt; Fixed-effects: district_id: 160,  year: 2
+#&gt; Observations: 1,664
+#&gt; Fixed-effects: district_id: 832,  year: 2
 #&gt; Standard-errors: Clustered (district_id)
 #&gt;         Estimate Std. Error t value   Pr(&gt;|t|)
-#&gt; treated   2.3687   0.315437 7.50927 4.0184e-12 ***
+#&gt; treated  2.12487   0.309686 6.86138 1.3326e-11 ***
 #&gt; ---
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-#&gt; RMSE: 0.991256     Adj. R2: 0.98045
-#&gt;                  Within R2: 0.263018</code></pre>
+#&gt; RMSE: 2.23049     Adj. R2: 0.888779
+#&gt;                 Within R2: 0.053677</code></pre>
 <p><strong>filter() comes from dplyr; feols() comes from fixest.</strong></p>
 <table>
 <colgroup>
@@ -170,15 +169,15 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_twfe)</span></code></pre></div>
 <pre><code>#&gt; OLS estimation, Dep. Var.: outcome_raw
-#&gt; Observations: 1,120
-#&gt; Fixed-effects: district_id: 160,  year: 7
+#&gt; Observations: 5,824
+#&gt; Fixed-effects: district_id: 832,  year: 7
 #&gt; Standard-errors: Clustered (district_id)
-#&gt;         Estimate Std. Error t value   Pr(&gt;|t|)
-#&gt; treated  2.28709   0.344651 6.63597 4.8105e-10 ***
+#&gt;         Estimate Std. Error t value  Pr(&gt;|t|)
+#&gt; treated  2.27288    0.32668  6.9575 7.022e-12 ***
 #&gt; ---
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-#&gt; RMSE: 1.83285     Adj. R2: 0.963675
-#&gt;                 Within R2: 0.087035</code></pre>
+#&gt; RMSE: 3.95699     Adj. R2: 0.814441
+#&gt;                 Within R2: 0.0198</code></pre>
 <p>Only <strong>data = simple</strong> changes: we now use all seven years. District effects account for persistent differences; year effects account for common shocks. In this balanced common-adoption design, the coefficient equals the treated group’s average pre-to-post change minus the control group’s average change. The true effect is <strong>2 points in each post-treatment year</strong>. The time-constant treated_ever variable would be absorbed by district effects; use treated, which switches on at adoption.</p>
 <h2 id="estimate-an-event-study">6. Estimate an Event Study</h2>
 <p>Following the slides:</p>
@@ -223,20 +222,20 @@ Y_{it}=\alpha_i+\lambda_t+
 <span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_event)</span></code></pre></div>
 <pre><code>#&gt; OLS estimation, Dep. Var.: outcome_raw
-#&gt; Observations: 1,120
-#&gt; Fixed-effects: district_id: 160,  year: 7
+#&gt; Observations: 5,824
+#&gt; Fixed-effects: district_id: 832,  year: 7
 #&gt; Standard-errors: Clustered (district_id)
-#&gt;                                Estimate Std. Error  t value   Pr(&gt;|t|)
-#&gt; relative_year::-4:treated_ever 0.654689   0.464234 1.410258 1.6042e-01
-#&gt; relative_year::-3:treated_ever 0.125903   0.449171 0.280302 7.7961e-01
-#&gt; relative_year::-2:treated_ever 0.037773   0.369471 0.102236 9.1870e-01
-#&gt; relative_year::0:treated_ever  2.368703   0.316147 7.492419 4.4186e-12 ***
-#&gt; relative_year::1:treated_ever  2.683063   0.434587 6.173824 5.3385e-09 ***
-#&gt; relative_year::2:treated_ever  2.423292   0.504302 4.805243 3.5507e-06 ***
+#&gt;                                 Estimate Std. Error  t value   Pr(&gt;|t|)
+#&gt; relative_year::-4:treated_ever -0.475615   0.460162 -1.03358 3.0163e-01
+#&gt; relative_year::-3:treated_ever -0.594305   0.406472 -1.46211 1.4409e-01
+#&gt; relative_year::-2:treated_ever -0.338698   0.330419 -1.02506 3.0563e-01
+#&gt; relative_year::0:treated_ever   2.124871   0.309819  6.85843 1.3589e-11 ***
+#&gt; relative_year::1:treated_ever   1.690084   0.409895  4.12321 4.1115e-05 ***
+#&gt; relative_year::2:treated_ever   1.947215   0.462685  4.20852 2.8505e-05 ***
 #&gt; ---
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-#&gt; RMSE: 1.82959     Adj. R2: 0.963613
-#&gt;                 Within R2: 0.090285</code></pre>
+#&gt; RMSE: 3.95566     Adj. R2: 0.814379
+#&gt;                 Within R2: 0.020456</code></pre>
 <p><strong>mutate() is from dplyr.</strong> This relative-year index is defined for every observation; the existing event_time is missing for never-treated districts. <strong>i() from fixest</strong> interacts relative-year indicators with treated_ever; <strong>ref = -1</strong> omits Year 4.</p>
 <p>Each <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mi>k</mi></msub><annotation encoding="application/x-tex">\beta_k</annotation></semantics></math> measures how the treated-control gap differs from its Year 4 value. Pre-treatment coefficients are diagnostics, not proof of parallel trends. Under parallel trends and no anticipation, post-treatment coefficients estimate effects relative to Year 4. Their true values are all <strong>2 points</strong> here. Do not carry this common-adoption model mechanically into staggered adoption.</p>
 <h2 id="move-to-staggered-adoption">7. Move to Staggered Adoption</h2>
@@ -282,7 +281,7 @@ Y_{it}=\alpha_i+\lambda_t+
 </tr>
 </tbody>
 </table>
-<p>These schedules apply to both the current and planned data. A single TWFE coefficient can mix never-treated, not-yet-treated, and already-treated comparisons. Already-treated controls can be problematic when effects change over time.</p>
+<p>These schedules are known effects added to the simulated untreated outcomes. A single TWFE coefficient can mix never-treated, not-yet-treated, and already-treated comparisons. Already-treated controls can be problematic when effects change over time.</p>
 <h2 id="estimate-cohort-time-treatment-effects">8. Estimate Cohort-Time Treatment Effects</h2>
 <p>Use <strong>att_gt() from did</strong>, implementing <a href="https://doi.org/10.1016/j.jeconom.2020.12.001">Callaway and Sant’Anna (2021)</a>. With never-treated controls:</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>g</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mi>g</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
@@ -321,24 +320,24 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt;
 #&gt; Group-Time Average Treatment Effects:
 #&gt;  Group Time ATT(g,t) Std. Error [95% Simult.  Conf. Band]
-#&gt;      5    1   0.5600     0.5276       -0.9256      2.0457
-#&gt;      5    2   0.0087     0.5438       -1.5227      1.5400
-#&gt;      5    3   0.1562     0.4162       -1.0157      1.3282
+#&gt;      5    1   0.8717     0.5569       -0.6939      2.4374
+#&gt;      5    2   0.0399     0.4908       -1.3401      1.4198
+#&gt;      5    3  -0.1382     0.4004       -1.2639      0.9876
 #&gt;      5    4   0.0000         NA            NA          NA
-#&gt;      5    5   1.4827     0.3656        0.4531      2.5123 *
-#&gt;      5    6   2.8591     0.4873        1.4870      4.2311 *
-#&gt;      5    7   4.0173     0.5904        2.3547      5.6799 *
-#&gt;      6    1  -0.1731     0.5320       -1.6712      1.3250
-#&gt;      6    2  -0.9705     0.5414       -2.4952      0.5541
-#&gt;      6    3  -0.6233     0.5681       -2.2229      0.9763
-#&gt;      6    4  -0.2395     0.4235       -1.4320      0.9529
+#&gt;      5    5   1.5008     0.3747        0.4474      2.5542 *
+#&gt;      5    6   2.0824     0.4949        0.6910      3.4738 *
+#&gt;      5    7   3.9324     0.5957        2.2576      5.6072 *
+#&gt;      6    1   0.0401     0.5814       -1.5945      1.6747
+#&gt;      6    2  -0.2654     0.5619       -1.8450      1.3143
+#&gt;      6    3  -0.7413     0.5234       -2.2129      0.7302
+#&gt;      6    4  -0.7173     0.3974       -1.8346      0.4001
 #&gt;      6    5   0.0000         NA            NA          NA
-#&gt;      6    6   1.7829     0.4205        0.5987      2.9670 *
-#&gt;      6    7   1.5708     0.4946        0.1781      2.9635 *
+#&gt;      6    6   1.9260     0.4159        0.7568      3.0951 *
+#&gt;      6    7   2.9028     0.4910        1.5223      4.2832 *
 #&gt; ---
 #&gt; Signif. codes: `*&#39; confidence band does not cover 0
 #&gt;
-#&gt; P-value for pre-test of parallel trends assumption:  0.52303
+#&gt; P-value for pre-test of parallel trends assumption:  0.23306
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
 <table>
@@ -410,7 +409,7 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt;
 #&gt;
 #&gt;     ATT    Std. Error     [ 95%  Conf. Int.]
-#&gt;  2.3425        0.3267     1.7022      2.9829 *
+#&gt;  2.4689         0.315     1.8516      3.0862 *
 #&gt;
 #&gt;
 #&gt; ---

@@ -13,8 +13,9 @@
 <a href="resources.html">Resources</a></div></nav></header>
 <main id="main" class="document ">
 <article><h1 id="data-codebook">Data Codebook</h1>
-<p><strong>Version: October 15, 2026.</strong> Two balanced district-year panels; each contains 160 districts, seven study years, 1,120 rows, and the same nine columns. District and year jointly identify a row. These are fully simulated data, not student records.</p>
-<h2 id="variables">Variables</h2>
+<p>Texas-calibrated pure simulation: 832 districts, seven years, no adjustment covariates. The codebook is also available directly on the <a href="data.html#codebook">Data page</a>.</p>
+<h2 id="codebook">Codebook</h2>
+<p>Both datasets use the same ten variables. Each contains <strong>5,824 district-year observations</strong>. District and year jointly identify a row.</p>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -23,135 +24,56 @@
 <thead>
 <tr>
 <th>Variable</th>
-<th>Meaning</th>
+<th>Definition</th>
 </tr>
 </thead>
 <tbody>
 <tr>
+<td><code>state</code></td>
+<td>State whose SEDA-derived parameters calibrate the simulation: TX.</td>
+</tr>
+<tr>
 <td><code>district_id</code></td>
-<td>Integer district identifier, 1-160. Repeated across seven years.</td>
+<td>Synthetic district identifier, 1-832. Does not identify an actual district.</td>
 </tr>
 <tr>
 <td><code>year</code></td>
-<td>Study year, 1-7; not an actual calendar year.</td>
+<td>Study year, 1-7; not a calendar year.</td>
 </tr>
 <tr>
 <td><code>cohort</code></td>
-<td><code>treated_year5</code>, <code>treated_year6</code>, or <code>never</code>, as applicable.</td>
+<td>Adoption group: treated_year5, treated_year6, or never. The traditional dataset has no Year 6 cohort.</td>
 </tr>
 <tr>
 <td><code>treatment_start_year</code></td>
-<td>First treated year. <strong>0 means never treated.</strong></td>
+<td>First treated year: 5 or 6. Zero means never treated.</td>
 </tr>
 <tr>
 <td><code>treated_ever</code></td>
-<td>1 for an eventually treated district; otherwise 0.</td>
+<td>1 if the district receives treatment during the study; otherwise 0.</td>
 </tr>
 <tr>
 <td><code>treated</code></td>
-<td>1 starting in the adoption year and in every subsequent year; otherwise 0.</td>
+<td>1 from adoption onward; 0 before adoption and for never-treated districts.</td>
 </tr>
 <tr>
 <td><code>event_time</code></td>
-<td><code>year - treatment_start_year</code> for eventually treated districts. Negative before adoption, zero at adoption. Missing for never-treated districts: <code>NA</code> in CSV, system missing <code>.</code> in Stata.</td>
+<td>Year minus adoption year: -1 is the year before adoption, 0 is the first treated year. Missing for never-treated districts.</td>
 </tr>
 <tr>
 <td><code>outcome_std</code></td>
-<td>Continuous observed achievement on a common pre-treatment reference-SD scale.</td>
+<td>Continuous simulated achievement relative to the mean and SD of the full untreated Texas panel. Effects are added after standardization.</td>
 </tr>
 <tr>
 <td><code>outcome_raw</code></td>
-<td>The same outcome in synthetic score points: <code>50 + 10 * outcome_std</code>.</td>
+<td>Same outcome in illustrative score points: <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>50</mn><mo>+</mo><mn>10</mn><mo>×</mo><mi>o</mi><mi>u</mi><mi>t</mi><mi>c</mi><mi>o</mi><mi>m</mi><mi>e</mi><mi>_</mi><mi>s</mi><mi>t</mi><mi>d</mi></mrow><annotation encoding="application/x-tex">50+10\times outcome\_std</annotation></semantics></math>. Not a real test scale; no fixed minimum or maximum.</td>
 </tr>
 </tbody>
 </table>
-<p>Only <code>event_time</code> has missing values, for never-treated districts. There are no adjustment covariates and no generic <code>outcome</code> column. True effects and untreated potential outcomes are kept separately for instructor validation.</p>
-<h2 id="design">Design</h2>
-<table>
-<thead>
-<tr>
-<th>Dataset</th>
-<th>Cohort</th>
-<th style="text-align: right;">Districts</th>
-<th>Post-treatment years</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Simulation 1</td>
-<td>Year 5</td>
-<td style="text-align: right;">80</td>
-<td>5, 6, 7</td>
-</tr>
-<tr>
-<td>Simulation 1</td>
-<td>Never treated</td>
-<td style="text-align: right;">80</td>
-<td>None</td>
-</tr>
-<tr>
-<td>Simulation 2</td>
-<td>Year 5</td>
-<td style="text-align: right;">40</td>
-<td>5, 6, 7</td>
-</tr>
-<tr>
-<td>Simulation 2</td>
-<td>Year 6</td>
-<td style="text-align: right;">40</td>
-<td>6, 7</td>
-</tr>
-<tr>
-<td>Simulation 2</td>
-<td>Never treated</td>
-<td style="text-align: right;">80</td>
-<td>None</td>
-</tr>
-</tbody>
-</table>
-<p>The October 15 correction changes the former Year 7 adopters to never-treated districts. The Year 5 and Year 6 assignments, untreated outcomes, and all seven observation years are preserved. Simulation 1 is unchanged. There are no student-level records or school-level rows in these teaching files.</p>
-<p>Treatment is assigned at district level and never switches off. All districts are untreated in Years 1-4. The new panels retain that pre-treatment structure, not the exact numerical values of the previous 11-year version.</p>
-<h2 id="outcome-scale-and-generation">Outcome Scale and Generation</h2>
-<p>The generator uses seed <strong>20261014</strong>, random district effects, a common year trend, and district errors with AR(1) correlation 0.6. Cohort assignment is randomized independently of these untreated outcomes. No district-specific slopes or covariates enter the outcome model. This creates parallel untreated trends in expectation; sample pre-trends need not coincide exactly. Treatment has no anticipation or spillovers.</p>
-<p>The untreated outcome’s pooled Years 1-4 mean and sample SD define a single reference scale shared by both simulations. Treatment effects are added afterward. Thus the observed <code>outcome_std</code> need not have mean zero or SD one after treatment. A difference of 0.20 reference SD is exactly 2 raw score points.</p>
-<p>The raw scale is an affine transformation, not an observed test instrument. Values are continuous and unbounded; 50 is the pre-treatment reference mean and 10 its SD.</p>
-<p>Simulation 1 adds 0.20 reference SD (2 points) in every treated period. Simulation 2 adds <code>0.10 + 0.10 * event_time + 0.05 * (treatment_start_year - 5)</code> reference SD in treated periods only. These chosen effects illustrate heterogeneous treatment effects; they are not estimates from a real education study.</p>
-<table>
-<thead>
-<tr>
-<th>Simulation 2 cell</th>
-<th style="text-align: right;">True effect in raw points</th>
-<th>Simple ATT weight</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>ATT(5,5)</td>
-<td style="text-align: right;">1.00</td>
-<td>1/5</td>
-</tr>
-<tr>
-<td>ATT(5,6)</td>
-<td style="text-align: right;">2.00</td>
-<td>1/5</td>
-</tr>
-<tr>
-<td>ATT(5,7)</td>
-<td style="text-align: right;">3.00</td>
-<td>1/5</td>
-</tr>
-<tr>
-<td>ATT(6,6)</td>
-<td style="text-align: right;">1.50</td>
-<td>1/5</td>
-</tr>
-<tr>
-<td>ATT(6,7)</td>
-<td style="text-align: right;">2.50</td>
-<td>1/5</td>
-</tr>
-</tbody>
-</table>
-<p>The true Simple ATT is 2 raw points. Sample estimates will differ because of sampling noise. Earlier cohorts receive more total weight because more of their post-treatment periods are observed. The Year 6 cohort is observed through event time 1; only the Year 5 cohort contributes an effect at event time 2. These are data-generating effects, not estimated model results. The Workshop page and downloadable lab results use this corrected two-cohort design.</p>
-<p><a href="data.html">Download datasets</a> · <a href="workshop.html">Return to the lab</a></p>
+<p><strong>Outcome scales:</strong> An effect of 0.20 on outcome_std equals 2 points on outcome_raw. The Hands-on R Lab uses outcome_raw. Observed outcomes are not restandardized after treatment.</p>
+<p>Only event_time has missing values, for never-treated districts (NA in CSV and system missing in Stata). There are no adjustment covariates. True effects and untreated counterfactuals are retained separately for instructor validation.</p>
+<h2 id="generation">Generation</h2>
+<p>Seed: 20261014. Between-district variance: 0.52442729; year-effect variance: 0.22445925; residual variance: 0.26817536; AR(1) correlation: 0.60983771. The generator draws a baseline per district, one shared shock per year, and an independent stationary AR(1) error path per district. It standardizes the full untreated panel, then randomly assigns cohorts and adds effects. The two datasets share the same untreated panel. This gives parallel untreated trends in expectation, not exactly equal sample trends.</p>
+<p>Traditional effects are 0.20 SD in all treated periods. Staggered effects are 0.10, 0.20, and 0.30 SD for the Year 5 cohort, and 0.15 and 0.25 SD for the Year 6 cohort. Both true Simple ATTs are 2 raw points. Seven years, workshop cohort shares, and effect schedules are adaptations of the original pure simulation, not an exact replication of the paper’s scenarios.</p>
+<p><a href="data.html">Download the data</a> · <a href="workshop.html">Follow the lab</a></p>
 </article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>
