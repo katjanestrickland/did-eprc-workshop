@@ -10,19 +10,10 @@ Use the Texas-calibrated datasets from the [Data page](data.html) with the
 | File | Purpose |
 |---|---|
 | [Lab R script](code/workshop_lab.R) | Local CSV imports, two-by-two DID, TWFE, event study, cohort-time effects, and Simple ATT. |
-| [R Markdown source](workshop.Rmd) | Explanations and executable code for the Workshop page. |
-| [Data-generation R script](code/01_generate_workshop_data.R) | Generate the two Texas-calibrated teaching datasets and instructor validation files. |
-| [Texas calibration inputs](data/texas_calibration.csv) | State-specific inputs extracted from the original simulation parameter file; needed only to regenerate data. |
+| [R Markdown source](workshop.Rmd) | Optional download with the explanations and executable code for the Workshop page. |
 
 ## Run the Lab
 
 [Install R and the packages](workshop.html#set-up-r) before the session.
-Place both dataset CSVs in your R project folder, then run the lab script.
-No plotting packages are needed. ETWFE remains a lecture-only extension.
-
-## Regenerate the Data
-
-Put the generator in a folder named code and the calibration CSV in a sibling folder named data.
-Install dplyr, readr, and haven, then run the script with Rscript.
-It writes the teaching CSV and Stata files to data, and the known effects and untreated outcomes
-to validation. Seed 20261014 reproduces the datasets in the same R environment.
+Download both dataset CSVs from the [Data page](data.html) into your R project folder,
+then run the Lab R script from that folder.
