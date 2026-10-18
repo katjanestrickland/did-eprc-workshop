@@ -65,8 +65,7 @@ staggered <- read_csv("staggered_did_district.csv")
 ```
 
 **read_csv() comes from readr.** Each row is one district in one year.
-We use outcome_raw, measured in illustrative score points.
-It equals 50 + 10 times outcome_std; a 0.20-SD effect equals 2 score points.
+We use outcome_std, measured in standard-deviation (SD) units.
 The full untreated Texas panel defines the reference mean and SD before treatment effects are added.
 
 ## 3. Check Treatment Timing
@@ -111,7 +110,7 @@ $$
 two_period <- simple %>%
   filter(year %in% c(4, 5))
 model_2x2 <- feols(
-  outcome_raw ~ treated | district_id + year,
+  outcome_std ~ treated | district_id + year,
   data = two_period,
   vcov = ~ district_id
 )
@@ -122,7 +121,7 @@ summary(model_2x2)
 
 | Equation | R variable | Meaning |
 |---|---|---|
-| $Y_{it}$ | outcome_raw | District achievement outcome |
+| $Y_{it}$ | outcome_std | District achievement outcome |
 | $D_{it}$ | treated | 1 when treatment is active; otherwise 0 |
 | $\alpha_i$ | district_id | Identifies districts for district fixed effects |
 | $\lambda_t$ | year | Identifies years for year fixed effects |
@@ -132,7 +131,7 @@ summary(model_2x2)
 Variables after the vertical bar specify fixed effects, not ordinary numeric predictors.
 **data** selects the dataset; **vcov = ~ district_id** requests district-clustered standard errors.
 The coefficient on treated equals the two-by-two contrast.
-The true simulated effect is **2 points**, not necessarily the estimated value.
+The true simulated effect is **0.20 SD**, not necessarily the estimated value.
 
 ## 5. Estimate TWFE Using All Seven Years
 
@@ -144,7 +143,7 @@ $$
 
 ```{r twfe}
 model_twfe <- feols(
-  outcome_raw ~ treated | district_id + year,
+  outcome_std ~ treated | district_id + year,
   data = simple,
   vcov = ~ district_id
 )
@@ -155,7 +154,7 @@ Only **data = simple** changes: we now use all seven years.
 District effects account for persistent differences; year effects account for common shocks.
 In this balanced common-adoption design, the coefficient equals the treated group's average
 pre-to-post change minus the control group's average change.
-The true effect is **2 points in each post-treatment year**.
+The true effect is **0.20 SD in each post-treatment year**.
 The time-constant treated_ever variable would be absorbed by district effects;
 use treated, which switches on at adoption.
 
@@ -181,7 +180,7 @@ treated districts, not the never-treated comparison group. Our code makes this r
 simple <- simple %>%
   mutate(relative_year = year - 5)
 model_event <- feols(
-  outcome_raw ~ i(relative_year, treated_ever, ref = -1) |
+  outcome_std ~ i(relative_year, treated_ever, ref = -1) |
     district_id + year,
   data = simple,
   vcov = ~ district_id
@@ -197,7 +196,7 @@ the existing event_time is missing for never-treated districts.
 Each $\beta_k$ measures how the treated-control gap differs from its Year 4 value.
 Pre-treatment coefficients are diagnostics, not proof of parallel trends.
 Under parallel trends and no anticipation, post-treatment coefficients estimate effects relative
-to Year 4. Their true values are all **2 points** here.
+to Year 4. Their true values are all **0.20 SD** here.
 Do not carry this common-adoption model mechanically into staggered adoption.
 
 ## 7. Move to Staggered Adoption
@@ -212,13 +211,13 @@ $$
 $G_g$ is the cohort first treated in $g$; $Y_{it}(g)$ is the potential outcome when
 treatment starts in $g$; $Y_{it}(0)$ is the outcome without treatment.
 
-| Cohort $g$ | Year $t$ | True effect (points) |
+| Cohort $g$ | Year $t$ | True effect (SD) |
 |---|---|---|
-| 5 | 5 | 1.00 |
-| 5 | 6 | 2.00 |
-| 5 | 7 | 3.00 |
-| 6 | 6 | 1.50 |
-| 6 | 7 | 2.50 |
+| 5 | 5 | 0.10 |
+| 5 | 6 | 0.20 |
+| 5 | 7 | 0.30 |
+| 6 | 6 | 0.15 |
+| 6 | 7 | 0.25 |
 
 These schedules are known effects added to the simulated untreated outcomes.
 A single TWFE coefficient can mix never-treated, not-yet-treated, and already-treated comparisons.
@@ -242,7 +241,7 @@ with the control group's change over those same years.
 ```{r csa}
 set.seed(20261014)
 model_csa <- att_gt(
-  yname = "outcome_raw",
+  yname = "outcome_std",
   tname = "year",
   idname = "district_id",
   gname = "treatment_start_year",
@@ -275,7 +274,7 @@ See the [att_gt() documentation](https://bcallaway11.github.io/did/reference/att
 ## 9. Read the Estimates and Uncertainty
 
 **Group** identifies adoption cohort and **Time** identifies outcome year.
-Group 5 and Time 7 identify ATT(5,7), whose true value is **3 points**.
+Group 5 and Time 7 identify ATT(5,7), whose true value is **0.30 SD**.
 Pre-treatment comparisons are diagnostics, not effects of an already-active treatment.
 
 **bstrap = TRUE** uses a multiplier bootstrap; **biters = 1000** selects 1,000 iterations.
@@ -303,7 +302,7 @@ The true summary is:
 
 $$
 \operatorname{ATT}_{\mathrm{simple}}
-=\frac{1.00+2.00+3.00+1.50+2.50}{5}=2.00
+=\frac{0.10+0.20+0.30+0.15+0.25}{5}=0.20
 $$
 
 ```{r aggregation}

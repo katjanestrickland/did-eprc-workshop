@@ -441,3 +441,11 @@ article a {overflow-wrap:anywhere;}
   .document th, .document td {padding:9px 10px;}
   pre {font-size:12px;}
 }
+
+/* Cohort labels supplement text without relying on color alone. */
+.cohort-label { padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+.cohort-label.early { color: #174675; background: #e8f0fb; }
+.cohort-label.late { color: #075b54; background: #e1f2ed; }
+.cohort-label.never { color: #414951; background: #eceff1; }
+td ul { margin: 0; padding-left: 1.15em; }
+td li + li { margin-top: 0.35em; }

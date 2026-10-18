@@ -5,7 +5,7 @@ title: "Workshop Code"
 # Workshop Code
 
 Use the Texas-calibrated datasets from the [Data page](data.html) with the
-[Hands-on R Lab](workshop.html). All models use illustrative raw score points and district-level inference.
+[Hands-on R Lab](workshop.html). All models use standard-deviation units and district-level inference.
 
 | File | Purpose |
 |---|---|

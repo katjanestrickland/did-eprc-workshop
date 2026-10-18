@@ -4,46 +4,40 @@ title: "Data Codebook"
 
 # Data Codebook
 
-Texas-calibrated pure simulation: 832 districts, seven years, no adjustment covariates.
-The codebook is also available directly on the [Data page](data.html#codebook).
+832 simulated districts representing Texas, observed over seven years
+
+The codebook is also on the [Data page](data.html#codebook)
 
 ## Codebook
 
-Both datasets use the same ten variables. Each contains **5,824 district-year observations**.
-District and year jointly identify a row.
+**Each row represents one district in one year**
 
-| Variable | Definition |
-|---|---|
-| `state` | State whose SEDA-derived parameters calibrate the simulation: TX. |
-| `district_id` | Synthetic district identifier, 1-832. Does not identify an actual district. |
-| `year` | Study year, 1-7; not a calendar year. |
-| `cohort` | Adoption group: treated_year5, treated_year6, or never. The traditional dataset has no Year 6 cohort. |
-| `treatment_start_year` | First treated year: 5 or 6. Zero means never treated. |
-| `treated_ever` | 1 if the district receives treatment during the study; otherwise 0. |
-| `treated` | 1 from adoption onward; 0 before adoption and for never-treated districts. |
-| `event_time` | Year minus adoption year: -1 is the year before adoption, 0 is the first treated year. Missing for never-treated districts. |
-| `outcome_std` | Continuous simulated achievement relative to the mean and SD of the full untreated Texas panel. Effects are added after standardization. |
-| `outcome_raw` | Same outcome in illustrative score points: $50+10\times outcome\_std$. Not a real test scale; no fixed minimum or maximum. |
+<table>
+<thead><tr><th>Variable</th><th>Definition</th></tr></thead>
+<tbody>
+<tr><td><code>state</code></td><td><ul><li>TX identifies the state represented by the simulation</li></ul></td></tr>
+<tr><td><code>district_id</code></td><td><ul><li>Synthetic district identifier from 1 to 832</li><li>The same identifier follows a district across all seven years</li></ul></td></tr>
+<tr><td><code>year</code></td><td><ul><li>Study year from 1 to 7</li><li>Not a calendar year</li></ul></td></tr>
+<tr><td><code>cohort</code></td><td><ul><li>treated_year5, treated_year6, or never</li><li>The traditional DID dataset has no Year 6 cohort</li></ul></td></tr>
+<tr><td><code>treatment_start_year</code></td><td><ul><li>First treated year is 5 or 6</li><li>0 means never treated</li></ul></td></tr>
+<tr><td><code>treated_ever</code></td><td><ul><li>1 for a district that receives treatment during the study</li><li>0 for a never-treated district</li></ul></td></tr>
+<tr><td><code>treated</code></td><td><ul><li>1 from the adoption year onward</li><li>0 before adoption and for never-treated districts</li></ul></td></tr>
+<tr><td><code>event_time</code></td><td><ul><li>Study year minus adoption year</li><li>-1 is the year before adoption and 0 is the first treated year</li><li>Missing for never-treated districts</li></ul></td></tr>
+<tr><td><code>outcome_std</code></td><td><ul><li>Simulated achievement measured in SD units</li><li>The full untreated Texas panel defines the reference mean and SD</li><li>Treatment effects are added after standardization</li><li>The observed outcome is not standardized again after treatment</li></ul></td></tr>
+</tbody>
+</table>
 
-**Outcome scales:** An effect of 0.20 on outcome_std equals 2 points on outcome_raw.
-The Hands-on R Lab uses outcome_raw. Observed outcomes are not restandardized after treatment.
-
-Only event_time has missing values, for never-treated districts (NA in CSV and system missing in Stata).
-There are no adjustment covariates. True effects and untreated counterfactuals are retained separately
-for instructor validation.
+An effect of **0.20 SD** means an increase equal to one fifth of the reference standard deviation
 
 ## Generation
 
-Seed: 20261014. Between-district variance: 0.52442729; year-effect variance: 0.22445925;
-residual variance: 0.26817536; AR(1) correlation: 0.60983771.
-The generator draws a baseline per district, one shared shock per year, and an independent
-stationary AR(1) error path per district. It standardizes the full untreated panel, then randomly
-assigns cohorts and adds effects. The two datasets share the same untreated panel.
-This gives parallel untreated trends in expectation, not exactly equal sample trends.
+The generator follows the pure-data mechanism from our simulation paper using Texas's
+SEDA-derived variance components and serial correlation. It adds a district baseline,
+a shared year shock, and correlated district-year errors, standardizes the full untreated
+panel, then assigns cohorts and adds effects. The seed is 20261014.
 
-Traditional effects are 0.20 SD in all treated periods. Staggered effects are 0.10, 0.20, and
-0.30 SD for the Year 5 cohort, and 0.15 and 0.25 SD for the Year 6 cohort.
-Both true Simple ATTs are 2 raw points. Seven years, workshop cohort shares, and effect schedules
-are adaptations of the original pure simulation, not an exact replication of the paper's scenarios.
+The traditional effect is 0.20 SD in every treated period. Early staggered adopters receive
+0.10, 0.20, and 0.30 SD in Years 5-7. Late adopters receive 0.15 and 0.25 SD in Years 6-7.
+The true Simple ATT is 0.20 SD in both datasets. Observed estimates will differ.
 
 [Download the data](data.html) · [Follow the lab](workshop.html)

@@ -37,8 +37,7 @@ make_panel <- function(starts, dynamic = FALSE) {
       event_time = ifelse(treated_ever == 1, year - treatment_start_year, NA_integer_),
       true_effect_std = ifelse(treated == 0, 0,
         if (dynamic) 0.10 + 0.10 * event_time + 0.05 * (treatment_start_year - 5) else 0.20),
-      outcome_std = y0 + true_effect_std,
-      outcome_raw = 50 + 10 * outcome_std
+      outcome_std = y0 + true_effect_std
     )
 }
 panels <- list(
@@ -59,10 +58,10 @@ for (name in names(panels)) {
             abs(mean(p$true_effect_std[p$treated == 1]) - 0.20) < 1e-12,
             all(p$state == "TX"))
   teaching <- select(p, state, district_id, year, cohort, treatment_start_year,
-                     treated_ever, treated, event_time, outcome_std, outcome_raw)
+                     treated_ever, treated, event_time, outcome_std)
   stopifnot(nrow(teaching) == 5824, !anyDuplicated(teaching[c("district_id", "year")]),
-            all(table(teaching$district_id) == 7), !anyNA(teaching$outcome_raw),
-            max(abs(teaching$outcome_raw - 50 - 10*teaching$outcome_std)) < 1e-12)
+            all(table(teaching$district_id) == 7), !anyNA(teaching$outcome_std),
+            ncol(teaching) == 9, !("outcome_raw" %in% names(teaching)))
   expected <- if (name == "simple_did_district") c(`0`=416L, `5`=416L) else c(`0`=416L, `5`=208L, `6`=208L)
   counts <- table(teaching$treatment_start_year[teaching$year == 1])
   stopifnot(identical(names(counts), names(expected)), all(as.integer(counts) == expected),
@@ -77,8 +76,7 @@ for (name in names(panels)) {
   check <- read_dta(file.path(root, "data", paste0(name, ".dta")))
   stopifnot(isTRUE(all.equal(as.data.frame(teaching), as.data.frame(check), check.attributes=FALSE)))
   truth <- transmute(p, district_id, year, untreated_outcome_std = y0,
-                     untreated_outcome_raw = 50+10*y0, true_effect_std,
-                     true_effect_raw = 10*true_effect_std)
+                     true_effect_std)
   write_csv(truth, file.path(root, "validation", paste0(name, "_truth.csv")))
   summaries[[name]] <- teaching %>% distinct(district_id, cohort, treatment_start_year) %>%
     count(cohort, treatment_start_year, name="districts") %>%
@@ -96,11 +94,10 @@ dictionary <- tibble::tribble(
   "treated_ever", "1 for a district eventually treated; 0 for never-treated districts.",
   "treated", "1 from the district's first treated year onward; otherwise 0.",
   "event_time", "year minus treatment_start_year; missing (NA in CSV, . in Stata) for never-treated districts.",
-  "outcome_std", "Observed synthetic achievement on a common reference-SD scale. The full untreated seven-year Texas panel defines the reference mean and SD; observed outcomes are not restandardized after treatment.",
-  "outcome_raw", "Same outcome in synthetic score points: 50 + 10 * outcome_std. Continuous, unbounded; not a real test scale or a 0-100 score."
+  "outcome_std", "Observed synthetic achievement on a common reference-SD scale. The full untreated seven-year Texas panel defines the reference mean and SD; observed outcomes are not restandardized after treatment."
 )
 write_csv(dictionary, file.path(root, "data", "data_dictionary.csv"))
 write_csv(tibble(seed=20261014, reference_mean, reference_sd,
-                 simple_true_ATT_raw=2, staggered_true_simple_ATT_raw=2),
+                 simple_true_ATT_std=0.20, staggered_true_simple_ATT_std=0.20),
           file.path(root, "validation", "generation_parameters.csv"))
 cat("Generated and checked two seven-year panels: 832 districts / 5824 rows each.\n")

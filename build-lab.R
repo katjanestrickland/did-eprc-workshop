@@ -10,10 +10,10 @@ cat("Lab executed and aggregation check passed.\n")
 stopifnot(nrow(lab$simple) == 5824, nrow(lab$staggered) == 5824,
           length(unique(lab$simple$district_id)) == 832)
 contrast <- function(d, g, t, baseline) {
-  mean(d$outcome_raw[d$treatment_start_year == g & d$year == t]) -
-    mean(d$outcome_raw[d$treatment_start_year == g & d$year == baseline]) -
-    mean(d$outcome_raw[d$treatment_start_year == 0 & d$year == t]) +
-    mean(d$outcome_raw[d$treatment_start_year == 0 & d$year == baseline])
+  mean(d$outcome_std[d$treatment_start_year == g & d$year == t]) -
+    mean(d$outcome_std[d$treatment_start_year == g & d$year == baseline]) -
+    mean(d$outcome_std[d$treatment_start_year == 0 & d$year == t]) +
+    mean(d$outcome_std[d$treatment_start_year == 0 & d$year == baseline])
 }
 stopifnot(abs(contrast(lab$simple, 5, 5, 4) - coef(lab$model_2x2)["treated"]) < 1e-8)
 manual <- mapply(function(g,t) contrast(lab$staggered,g,t,g-1), post$cohort, post$year)

@@ -58,7 +58,7 @@
 <p>Place the downloaded CSV files in your R project folder:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;simple_did_district.csv&quot;</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>staggered <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;staggered_did_district.csv&quot;</span>)</span></code></pre></div>
-<p><strong>read_csv() comes from readr.</strong> Each row is one district in one year. We use outcome_raw, measured in illustrative score points. It equals 50 + 10 times outcome_std; a 0.20-SD effect equals 2 score points. The full untreated Texas panel defines the reference mean and SD before treatment effects are added.</p>
+<p><strong>read_csv() comes from readr.</strong> Each row is one district in one year. We use outcome_std, measured in standard-deviation (SD) units. The full untreated Texas panel defines the reference mean and SD before treatment effects are added.</p>
 <h2 id="check-treatment-timing">3. Check Treatment Timing</h2>
 <p>Use <strong>dplyr</strong> to count districts by first treatment year:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>simple <span class="sc">%&gt;%</span></span>
@@ -94,21 +94,21 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>two_period <span class="ot">&lt;-</span> simple <span class="sc">%&gt;%</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">5</span>))</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>model_2x2 <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  outcome_raw <span class="sc">~</span> treated <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> treated <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> two_period,</span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_2x2)</span></code></pre></div>
-<pre><code>#&gt; OLS estimation, Dep. Var.: outcome_raw
+<pre><code>#&gt; OLS estimation, Dep. Var.: outcome_std
 #&gt; Observations: 1,664
 #&gt; Fixed-effects: district_id: 832,  year: 2
 #&gt; Standard-errors: Clustered (district_id)
 #&gt;         Estimate Std. Error t value   Pr(&gt;|t|)
-#&gt; treated  2.12487   0.309686 6.86138 1.3326e-11 ***
+#&gt; treated 0.212487   0.030969 6.86138 1.3326e-11 ***
 #&gt; ---
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-#&gt; RMSE: 2.23049     Adj. R2: 0.888779
-#&gt;                 Within R2: 0.053677</code></pre>
+#&gt; RMSE: 0.223049     Adj. R2: 0.888779
+#&gt;                  Within R2: 0.053677</code></pre>
 <p><strong>filter() comes from dplyr; feols() comes from fixest.</strong></p>
 <table>
 <colgroup>
@@ -126,7 +126,7 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 <tbody>
 <tr>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">Y_{it}</annotation></semantics></math></td>
-<td>outcome_raw</td>
+<td>outcome_std</td>
 <td>District achievement outcome</td>
 </tr>
 <tr>
@@ -156,29 +156,29 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 </tr>
 </tbody>
 </table>
-<p>Variables after the vertical bar specify fixed effects, not ordinary numeric predictors. <strong>data</strong> selects the dataset; <strong>vcov = ~ district_id</strong> requests district-clustered standard errors. The coefficient on treated equals the two-by-two contrast. The true simulated effect is <strong>2 points</strong>, not necessarily the estimated value.</p>
+<p>Variables after the vertical bar specify fixed effects, not ordinary numeric predictors. <strong>data</strong> selects the dataset; <strong>vcov = ~ district_id</strong> requests district-clustered standard errors. The coefficient on treated equals the two-by-two contrast. The true simulated effect is <strong>0.20 SD</strong>, not necessarily the estimated value.</p>
 <h2 id="estimate-twfe-using-all-seven-years">5. Estimate TWFE Using All Seven Years</h2>
 <p>The equation stays the same:</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><mo>+</mo><mi>β</mi><msub><mi>D</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 </annotation></semantics></math></div>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>model_twfe <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  outcome_raw <span class="sc">~</span> treated <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> treated <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simple,</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_twfe)</span></code></pre></div>
-<pre><code>#&gt; OLS estimation, Dep. Var.: outcome_raw
+<pre><code>#&gt; OLS estimation, Dep. Var.: outcome_std
 #&gt; Observations: 5,824
 #&gt; Fixed-effects: district_id: 832,  year: 7
 #&gt; Standard-errors: Clustered (district_id)
 #&gt;         Estimate Std. Error t value  Pr(&gt;|t|)
-#&gt; treated  2.27288    0.32668  6.9575 7.022e-12 ***
+#&gt; treated 0.227288   0.032668  6.9575 7.022e-12 ***
 #&gt; ---
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-#&gt; RMSE: 3.95699     Adj. R2: 0.814441
-#&gt;                 Within R2: 0.0198</code></pre>
-<p>Only <strong>data = simple</strong> changes: we now use all seven years. District effects account for persistent differences; year effects account for common shocks. In this balanced common-adoption design, the coefficient equals the treated group’s average pre-to-post change minus the control group’s average change. The true effect is <strong>2 points in each post-treatment year</strong>. The time-constant treated_ever variable would be absorbed by district effects; use treated, which switches on at adoption.</p>
+#&gt; RMSE: 0.395699     Adj. R2: 0.814441
+#&gt;                  Within R2: 0.0198</code></pre>
+<p>Only <strong>data = simple</strong> changes: we now use all seven years. District effects account for persistent differences; year effects account for common shocks. In this balanced common-adoption design, the coefficient equals the treated group’s average pre-to-post change minus the control group’s average change. The true effect is <strong>0.20 SD in each post-treatment year</strong>. The time-constant treated_ever variable would be absorbed by district effects; use treated, which switches on at adoption.</p>
 <h2 id="estimate-an-event-study">6. Estimate an Event Study</h2>
 <p>Following the slides:</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><mo>+</mo><munder><mo>∑</mo><mrow><mi>k</mi><mo>≠</mo><mi>−</mi><mn>1</mn></mrow></munder><msub><mi>β</mi><mi>k</mi></msub><mspace width="0.167em"></mspace><mn mathvariant="bold">𝟏</mn><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mo>−</mo><mi>g</mi><mo>=</mo><mi>k</mi><mo stretchy="false" form="postfix">}</mo><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
@@ -215,29 +215,29 @@ Y_{it}=\alpha_i+\lambda_t+
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> simple <span class="sc">%&gt;%</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">relative_year =</span> year <span class="sc">-</span> <span class="dv">5</span>)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>model_event <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  outcome_raw <span class="sc">~</span> <span class="fu">i</span>(relative_year, treated_ever, <span class="at">ref =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">|</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> <span class="fu">i</span>(relative_year, treated_ever, <span class="at">ref =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">|</span></span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    district_id <span class="sc">+</span> year,</span>
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simple,</span>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
 <span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_event)</span></code></pre></div>
-<pre><code>#&gt; OLS estimation, Dep. Var.: outcome_raw
+<pre><code>#&gt; OLS estimation, Dep. Var.: outcome_std
 #&gt; Observations: 5,824
 #&gt; Fixed-effects: district_id: 832,  year: 7
 #&gt; Standard-errors: Clustered (district_id)
 #&gt;                                 Estimate Std. Error  t value   Pr(&gt;|t|)
-#&gt; relative_year::-4:treated_ever -0.475615   0.460162 -1.03358 3.0163e-01
-#&gt; relative_year::-3:treated_ever -0.594305   0.406472 -1.46211 1.4409e-01
-#&gt; relative_year::-2:treated_ever -0.338698   0.330419 -1.02506 3.0563e-01
-#&gt; relative_year::0:treated_ever   2.124871   0.309819  6.85843 1.3589e-11 ***
-#&gt; relative_year::1:treated_ever   1.690084   0.409895  4.12321 4.1115e-05 ***
-#&gt; relative_year::2:treated_ever   1.947215   0.462685  4.20852 2.8505e-05 ***
+#&gt; relative_year::-4:treated_ever -0.047562   0.046016 -1.03358 3.0163e-01
+#&gt; relative_year::-3:treated_ever -0.059430   0.040647 -1.46211 1.4409e-01
+#&gt; relative_year::-2:treated_ever -0.033870   0.033042 -1.02506 3.0563e-01
+#&gt; relative_year::0:treated_ever   0.212487   0.030982  6.85843 1.3589e-11 ***
+#&gt; relative_year::1:treated_ever   0.169008   0.040990  4.12321 4.1115e-05 ***
+#&gt; relative_year::2:treated_ever   0.194722   0.046268  4.20852 2.8505e-05 ***
 #&gt; ---
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-#&gt; RMSE: 3.95566     Adj. R2: 0.814379
-#&gt;                 Within R2: 0.020456</code></pre>
+#&gt; RMSE: 0.395566     Adj. R2: 0.814379
+#&gt;                  Within R2: 0.020456</code></pre>
 <p><strong>mutate() is from dplyr.</strong> This relative-year index is defined for every observation; the existing event_time is missing for never-treated districts. <strong>i() from fixest</strong> interacts relative-year indicators with treated_ever; <strong>ref = -1</strong> omits Year 4.</p>
-<p>Each <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mi>k</mi></msub><annotation encoding="application/x-tex">\beta_k</annotation></semantics></math> measures how the treated-control gap differs from its Year 4 value. Pre-treatment coefficients are diagnostics, not proof of parallel trends. Under parallel trends and no anticipation, post-treatment coefficients estimate effects relative to Year 4. Their true values are all <strong>2 points</strong> here. Do not carry this common-adoption model mechanically into staggered adoption.</p>
+<p>Each <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mi>k</mi></msub><annotation encoding="application/x-tex">\beta_k</annotation></semantics></math> measures how the treated-control gap differs from its Year 4 value. Pre-treatment coefficients are diagnostics, not proof of parallel trends. Under parallel trends and no anticipation, post-treatment coefficients estimate effects relative to Year 4. Their true values are all <strong>0.20 SD</strong> here. Do not carry this common-adoption model mechanically into staggered adoption.</p>
 <h2 id="move-to-staggered-adoption">7. Move to Staggered Adoption</h2>
 <p>Effects now depend on cohort and year:</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ATT</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi mathvariant="double-struck">𝔼</mi><mo stretchy="false" form="prefix">[</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo><mo>∣</mo><mi>i</mi><mo>∈</mo><msub><mi>G</mi><mi>g</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>t</mi><mo>≥</mo><mi>g</mi></mrow><annotation encoding="application/x-tex">
@@ -250,34 +250,34 @@ Y_{it}=\alpha_i+\lambda_t+
 <tr>
 <th>Cohort <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math></th>
 <th>Year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math></th>
-<th>True effect (points)</th>
+<th>True effect (SD)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>5</td>
 <td>5</td>
-<td>1.00</td>
+<td>0.10</td>
 </tr>
 <tr>
 <td>5</td>
 <td>6</td>
-<td>2.00</td>
+<td>0.20</td>
 </tr>
 <tr>
 <td>5</td>
 <td>7</td>
-<td>3.00</td>
+<td>0.30</td>
 </tr>
 <tr>
 <td>6</td>
 <td>6</td>
-<td>1.50</td>
+<td>0.15</td>
 </tr>
 <tr>
 <td>6</td>
 <td>7</td>
-<td>2.50</td>
+<td>0.25</td>
 </tr>
 </tbody>
 </table>
@@ -292,7 +292,7 @@ Y_{it}=\alpha_i+\lambda_t+
 <p>ATT(6,7) compares the Year 6 cohort’s change from Year 5 to Year 7 with the control group’s change over those same years.</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20261014</span>)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>model_csa <span class="ot">&lt;-</span> <span class="fu">att_gt</span>(</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">yname =</span> <span class="st">&quot;outcome_raw&quot;</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">yname =</span> <span class="st">&quot;outcome_std&quot;</span>,</span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">tname =</span> <span class="st">&quot;year&quot;</span>,</span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">idname =</span> <span class="st">&quot;district_id&quot;</span>,</span>
 <span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">gname =</span> <span class="st">&quot;treatment_start_year&quot;</span>,</span>
@@ -310,7 +310,7 @@ Y_{it}=\alpha_i+\lambda_t+
 <span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_csa)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
-#&gt; att_gt(yname = &quot;outcome_raw&quot;, tname = &quot;year&quot;, idname = &quot;district_id&quot;,
+#&gt; att_gt(yname = &quot;outcome_std&quot;, tname = &quot;year&quot;, idname = &quot;district_id&quot;,
 #&gt;     gname = &quot;treatment_start_year&quot;, xformla = ~1, data = staggered,
 #&gt;     panel = TRUE, control_group = &quot;nevertreated&quot;, anticipation = 0,
 #&gt;     bstrap = TRUE, cband = TRUE, biters = 1000, clustervars = &quot;district_id&quot;,
@@ -320,20 +320,20 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt;
 #&gt; Group-Time Average Treatment Effects:
 #&gt;  Group Time ATT(g,t) Std. Error [95% Simult.  Conf. Band]
-#&gt;      5    1   0.8717     0.5569       -0.6939      2.4374
-#&gt;      5    2   0.0399     0.4908       -1.3401      1.4198
-#&gt;      5    3  -0.1382     0.4004       -1.2639      0.9876
+#&gt;      5    1   0.0872     0.0557       -0.0694      0.2437
+#&gt;      5    2   0.0040     0.0491       -0.1340      0.1420
+#&gt;      5    3  -0.0138     0.0400       -0.1264      0.0988
 #&gt;      5    4   0.0000         NA            NA          NA
-#&gt;      5    5   1.5008     0.3747        0.4474      2.5542 *
-#&gt;      5    6   2.0824     0.4949        0.6910      3.4738 *
-#&gt;      5    7   3.9324     0.5957        2.2576      5.6072 *
-#&gt;      6    1   0.0401     0.5814       -1.5945      1.6747
-#&gt;      6    2  -0.2654     0.5619       -1.8450      1.3143
-#&gt;      6    3  -0.7413     0.5234       -2.2129      0.7302
-#&gt;      6    4  -0.7173     0.3974       -1.8346      0.4001
+#&gt;      5    5   0.1501     0.0375        0.0447      0.2554 *
+#&gt;      5    6   0.2082     0.0495        0.0691      0.3474 *
+#&gt;      5    7   0.3932     0.0596        0.2258      0.5607 *
+#&gt;      6    1   0.0040     0.0581       -0.1595      0.1675
+#&gt;      6    2  -0.0265     0.0562       -0.1845      0.1314
+#&gt;      6    3  -0.0741     0.0523       -0.2213      0.0730
+#&gt;      6    4  -0.0717     0.0397       -0.1835      0.0400
 #&gt;      6    5   0.0000         NA            NA          NA
-#&gt;      6    6   1.9260     0.4159        0.7568      3.0951 *
-#&gt;      6    7   2.9028     0.4910        1.5223      4.2832 *
+#&gt;      6    6   0.1926     0.0416        0.0757      0.3095 *
+#&gt;      6    7   0.2903     0.0491        0.1522      0.4283 *
 #&gt; ---
 #&gt; Signif. codes: `*&#39; confidence band does not cover 0
 #&gt;
@@ -384,7 +384,7 @@ Y_{it}=\alpha_i+\lambda_t+
 </table>
 <p>See the <a href="https://bcallaway11.github.io/did/reference/att_gt.html">att_gt() documentation</a>.</p>
 <h2 id="read-the-estimates-and-uncertainty">9. Read the Estimates and Uncertainty</h2>
-<p><strong>Group</strong> identifies adoption cohort and <strong>Time</strong> identifies outcome year. Group 5 and Time 7 identify ATT(5,7), whose true value is <strong>3 points</strong>. Pre-treatment comparisons are diagnostics, not effects of an already-active treatment.</p>
+<p><strong>Group</strong> identifies adoption cohort and <strong>Time</strong> identifies outcome year. Group 5 and Time 7 identify ATT(5,7), whose true value is <strong>0.30 SD</strong>. Pre-treatment comparisons are diagnostics, not effects of an already-active treatment.</p>
 <p><strong>bstrap = TRUE</strong> uses a multiplier bootstrap; <strong>biters = 1000</strong> selects 1,000 iterations. <strong>clustervars = “district_id”</strong> allows within-district dependence over time. <strong>set.seed()</strong> makes the bootstrap reproducible in the same computing setup.</p>
 <p><strong>cband = TRUE</strong> requests simultaneous confidence bands across cohort-time estimates, rather than separate pointwise intervals. See the <a href="https://bcallaway11.github.io/did/reference/att_gt.html">did inference options</a>.</p>
 <h2 id="aggregate-the-cohort-time-effects">10. Aggregate the Cohort-Time Effects</h2>
@@ -395,9 +395,9 @@ Y_{it}=\alpha_i+\lambda_t+
 \qquad w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 </annotation></semantics></math></div>
 <p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> is cohort size and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">T=7</annotation></semantics></math> is the final year. This formula applies to our balanced panel without sampling weights. The treated cohorts have equal size, so each of the five cells receives weight 1/5. The true summary is:</p>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mrow><mi mathvariant="normal">ATT</mi><mo>&#8289;</mo></mrow><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>=</mo><mfrac><mrow><mn>1.00</mn><mo>+</mo><mn>2.00</mn><mo>+</mo><mn>3.00</mn><mo>+</mo><mn>1.50</mn><mo>+</mo><mn>2.50</mn></mrow><mn>5</mn></mfrac><mo>=</mo><mn>2.00</mn></mrow><annotation encoding="application/x-tex">
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mrow><mi mathvariant="normal">ATT</mi><mo>&#8289;</mo></mrow><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>=</mo><mfrac><mrow><mn>0.10</mn><mo>+</mo><mn>0.20</mn><mo>+</mo><mn>0.30</mn><mo>+</mo><mn>0.15</mn><mo>+</mo><mn>0.25</mn></mrow><mn>5</mn></mfrac><mo>=</mo><mn>0.20</mn></mrow><annotation encoding="application/x-tex">
 \operatorname{ATT}_{\mathrm{simple}}
-=\frac{1.00+2.00+3.00+1.50+2.50}{5}=2.00
+=\frac{0.10+0.20+0.30+0.15+0.25}{5}=0.20
 </annotation></semantics></math></div>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>overall_csa <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(overall_csa)</span></code></pre></div>
@@ -409,7 +409,7 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt;
 #&gt;
 #&gt;     ATT    Std. Error     [ 95%  Conf. Int.]
-#&gt;  2.4689         0.315     1.8516      3.0862 *
+#&gt;  0.2469        0.0315     0.1852      0.3086 *
 #&gt;
 #&gt;
 #&gt; ---

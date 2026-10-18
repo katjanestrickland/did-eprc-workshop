@@ -31,7 +31,7 @@ The build executes all lab chunks and verifies manual calculations against TWFE/
 The R script is extracted from the R Markdown, so download code and page code agree.
 
 Both teaching datasets contain 832 Texas-calibrated districts over seven years, without adjustment
-covariates. Models and figures use `outcome_raw`. See `codebook.qmd` for generation
+covariates. Models and figures use `outcome_std`. See `codebook.qmd` for generation
 details, treatment schedules, missing values, and the exact outcome conversion.
 
 ## Later GitHub Pages Path

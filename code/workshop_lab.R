@@ -24,7 +24,7 @@ staggered %>%
 two_period <- simple %>%
   filter(year %in% c(4, 5))
 model_2x2 <- feols(
-  outcome_raw ~ treated | district_id + year,
+  outcome_std ~ treated | district_id + year,
   data = two_period,
   vcov = ~ district_id
 )
@@ -33,7 +33,7 @@ summary(model_2x2)
 
 ## ----twfe---------------------------------------------------------------------
 model_twfe <- feols(
-  outcome_raw ~ treated | district_id + year,
+  outcome_std ~ treated | district_id + year,
   data = simple,
   vcov = ~ district_id
 )
@@ -44,7 +44,7 @@ summary(model_twfe)
 simple <- simple %>%
   mutate(relative_year = year - 5)
 model_event <- feols(
-  outcome_raw ~ i(relative_year, treated_ever, ref = -1) |
+  outcome_std ~ i(relative_year, treated_ever, ref = -1) |
     district_id + year,
   data = simple,
   vcov = ~ district_id
@@ -55,7 +55,7 @@ summary(model_event)
 ## ----csa----------------------------------------------------------------------
 set.seed(20261014)
 model_csa <- att_gt(
-  yname = "outcome_raw",
+  yname = "outcome_std",
   tname = "year",
   idname = "district_id",
   gname = "treatment_start_year",
