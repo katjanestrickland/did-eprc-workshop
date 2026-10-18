@@ -17,7 +17,7 @@
 <p>What is the effect of district adoption of a gifted education program on district-level achievement? These are simulated teaching examples, not estimates from the actual gifted education study.</p>
 <p><a href="code/workshop_lab.R">Download the R script</a> · <a href="workshop.Rmd">Download the R Markdown</a> · <a href="data.html">Data and codebook</a></p>
 <h2 id="set-up-r">1. Set Up R</h2>
-<p>For help installing R and RStudio, see <a href="https://posit.co/download/rstudio-desktop/">Posit’s setup page</a>. R performs calculations; RStudio provides an interface for code and results.</p>
+<p>For help installing R and RStudio, see <a href="https://posit.co/download/rstudio-desktop/">Posit’s setup page</a>. R performs calculations. RStudio provides an interface for code and results.</p>
 <table>
 <thead>
 <tr>
@@ -44,7 +44,7 @@
 </tr>
 </tbody>
 </table>
-<p><strong>fixest is the package; feols() is its linear-regression function.</strong> See the <a href="https://lrberge.github.io/fixest/reference/feols.html">function documentation</a>.</p>
+<p><strong>fixest is the package and feols() is its linear-regression function.</strong> See the <a href="https://lrberge.github.io/fixest/reference/feols.html">function documentation</a>.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install once.</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;readr&quot;</span>, <span class="st">&quot;dplyr&quot;</span>, <span class="st">&quot;fixest&quot;</span>, <span class="st">&quot;did&quot;</span>))</span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load for each session.</span></span>
@@ -54,13 +54,13 @@
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(did)</span></code></pre></div>
 <h2 id="load-the-data">2. Load the Data</h2>
 <p>Our simulation study examines statistical power and estimator performance using <strong>27 state panels calibrated to Stanford Education Data Archive (SEDA) district achievement data</strong>. Pure-data and empirical-data simulations assess how sample size, outcome variability, serial correlation, and treatment design affect our ability to detect effects.</p>
-<p>This lab adapts the pure-data approach using <strong>Texas’s parameters: 832 simulated districts over seven years</strong>, without adjustment covariates. These are generated outcomes, not actual Texas district records. The simulation manuscript is a working draft; a public link is not yet included.</p>
-<p>Place the downloaded CSV files in your R project folder:</p>
+<p>This lab adapts the pure-data approach using <strong>Texas’s parameters for 832 simulated districts over seven years</strong>, without adjustment covariates. These are generated outcomes, not actual Texas district records.</p>
+<p>Place the downloaded CSV files in your R project folder</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;simple_did_district.csv&quot;</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>staggered <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;staggered_did_district.csv&quot;</span>)</span></code></pre></div>
 <p><strong>read_csv() comes from readr.</strong> Each row is one district in one year. We use outcome_std, measured in standard-deviation (SD) units. The full untreated Texas panel defines the reference mean and SD before treatment effects are added.</p>
 <h2 id="check-treatment-timing">3. Check Treatment Timing</h2>
-<p>Use <strong>dplyr</strong> to count districts by first treatment year:</p>
+<p>Use <strong>dplyr</strong> to count districts by first treatment year</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>simple <span class="sc">%&gt;%</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(district_id, treatment_start_year) <span class="sc">%&gt;%</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(treatment_start_year, <span class="at">name =</span> <span class="st">&quot;districts&quot;</span>)</span></code></pre></div>
@@ -78,16 +78,16 @@
 #&gt; 1                    0       416
 #&gt; 2                    5       208
 #&gt; 3                    6       208</code></pre>
-<p><strong>distinct()</strong> keeps one record per district and adoption year; <strong>count()</strong> counts districts in each group. Read <strong>%&gt;%</strong> as “then.” Zero codes never treated; treatment stays on after adoption.</p>
+<p><strong>distinct()</strong> keeps one record per district and adoption year. <strong>count()</strong> counts districts in each group. Read <strong>%&gt;%</strong> as “then.” Zero codes never treated. Treatment stays on after adoption.</p>
 <p>The Texas traditional panel has 416 adopting and 416 never-treated districts. The staggered panel has 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.</p>
 <h2 id="estimate-the-classic-two-by-two-did">4. Estimate the Classic Two-by-Two DID</h2>
-<p>Use Year 4, immediately before adoption, and Year 5, the first treated year. Following the slides:</p>
+<p>Use Year 4, immediately before adoption, and Year 5, the first treated year. We use the same equation as the slides</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mn>2</mn><mo>×</mo><mn>2</mn></mrow></msub><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>G</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>G</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{2\times2}
 =(\overline Y_{G,\mathrm{post}}-\overline Y_{G,\mathrm{pre}})
 -(\overline Y_{C,\mathrm{post}}-\overline Y_{C,\mathrm{pre}})
 </annotation></semantics></math></div>
-<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>G</mi><annotation encoding="application/x-tex">G</annotation></semantics></math> is the treated group, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math> the control group, and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>Y</mi><mo accent="true">¯</mo></mover><annotation encoding="application/x-tex">\overline Y</annotation></semantics></math> a group mean. Under parallel trends and no anticipation, the control change supplies the untreated change for the treated group. Estimate the contrast using the slides’ TWFE equation:</p>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>G</mi><annotation encoding="application/x-tex">G</annotation></semantics></math> is the treated group, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math> the control group, and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>Y</mi><mo accent="true">¯</mo></mover><annotation encoding="application/x-tex">\overline Y</annotation></semantics></math> a group mean. Under parallel trends and no anticipation, the control change supplies the untreated change for the treated group. Estimate the contrast using the slides’ TWFE equation</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><mo>+</mo><mi>β</mi><msub><mi>D</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 </annotation></semantics></math></div>
@@ -109,7 +109,7 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 #&gt; RMSE: 0.223049     Adj. R2: 0.888779
 #&gt;                  Within R2: 0.053677</code></pre>
-<p><strong>filter() comes from dplyr; feols() comes from fixest.</strong></p>
+<p><strong>filter() comes from dplyr and feols() comes from fixest.</strong></p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -132,7 +132,7 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 <tr>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>D</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">D_{it}</annotation></semantics></math></td>
 <td>treated</td>
-<td>1 when treatment is active; otherwise 0</td>
+<td>1 when treatment is active and 0 otherwise</td>
 </tr>
 <tr>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>α</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\alpha_i</annotation></semantics></math></td>
@@ -156,9 +156,9 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 </tr>
 </tbody>
 </table>
-<p>Variables after the vertical bar specify fixed effects, not ordinary numeric predictors. <strong>data</strong> selects the dataset; <strong>vcov = ~ district_id</strong> requests district-clustered standard errors. The coefficient on treated equals the two-by-two contrast. The true simulated effect is <strong>0.20 SD</strong>, not necessarily the estimated value.</p>
+<p>Variables after the vertical bar specify fixed effects, not ordinary numeric predictors. <strong>data</strong> selects the dataset. <strong>vcov = ~ district_id</strong> requests district-clustered standard errors. The coefficient on treated equals the two-by-two contrast. The true simulated effect is <strong>0.20 SD</strong>, not necessarily the estimated value.</p>
 <h2 id="estimate-twfe-using-all-seven-years">5. Estimate TWFE Using All Seven Years</h2>
-<p>The equation stays the same:</p>
+<p>The equation stays the same</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><mo>+</mo><mi>β</mi><msub><mi>D</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 </annotation></semantics></math></div>
@@ -178,14 +178,14 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 #&gt; RMSE: 0.395699     Adj. R2: 0.814441
 #&gt;                  Within R2: 0.0198</code></pre>
-<p>Only <strong>data = simple</strong> changes: we now use all seven years. District effects account for persistent differences; year effects account for common shocks. In this balanced common-adoption design, the coefficient equals the treated group’s average pre-to-post change minus the control group’s average change. The true effect is <strong>0.20 SD in each post-treatment year</strong>. The time-constant treated_ever variable would be absorbed by district effects; use treated, which switches on at adoption.</p>
+<p>Only <strong>data = simple</strong> changes. We now use all seven years. District effects account for persistent differences. Year effects account for common shocks. In this balanced common-adoption design, the coefficient equals the treated group’s average pre-to-post change minus the control group’s average change. We added a treatment effect of <strong>0.20 SD in each post-treatment year</strong>. The model estimates one coefficient summarizing that effect across Years 5-7. The time-constant treated_ever variable would be absorbed by district effects. Use treated, which switches on at adoption.</p>
 <h2 id="estimate-an-event-study">6. Estimate an Event Study</h2>
-<p>Following the slides:</p>
+<p>We use the same equation as the slides</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><mo>+</mo><munder><mo>∑</mo><mrow><mi>k</mi><mo>≠</mo><mi>−</mi><mn>1</mn></mrow></munder><msub><mi>β</mi><mi>k</mi></msub><mspace width="0.167em"></mspace><mn mathvariant="bold">𝟏</mn><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mo>−</mo><mi>g</mi><mo>=</mo><mi>k</mi><mo stretchy="false" form="postfix">}</mo><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
 Y_{it}=\alpha_i+\lambda_t+
 \sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g=k\}+u_{it}
 </annotation></semantics></math></div>
-<p>Here <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo>=</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">g=5</annotation></semantics></math> and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>=</mo><mi>t</mi><mo>−</mo><mi>g</mi></mrow><annotation encoding="application/x-tex">k=t-g</annotation></semantics></math>. The slides use shorthand: the event-time indicators apply to treated districts, not the never-treated comparison group. Our code makes this restriction explicit.</p>
+<p>Treatment begins in Year 5, so <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo>=</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">g=5</annotation></semantics></math> and event time is the study year minus 5, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>=</mo><mi>t</mi><mo>−</mo><mi>g</mi></mrow><annotation encoding="application/x-tex">k=t-g</annotation></semantics></math>. The model compares treated and never-treated districts in each year, using Year 4 as the reference year.</p>
 <table>
 <thead>
 <tr>
@@ -236,15 +236,16 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 #&gt; RMSE: 0.395566     Adj. R2: 0.814379
 #&gt;                  Within R2: 0.020456</code></pre>
-<p><strong>mutate() is from dplyr.</strong> This relative-year index is defined for every observation; the existing event_time is missing for never-treated districts. <strong>i() from fixest</strong> interacts relative-year indicators with treated_ever; <strong>ref = -1</strong> omits Year 4.</p>
-<p>Each <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mi>k</mi></msub><annotation encoding="application/x-tex">\beta_k</annotation></semantics></math> measures how the treated-control gap differs from its Year 4 value. Pre-treatment coefficients are diagnostics, not proof of parallel trends. Under parallel trends and no anticipation, post-treatment coefficients estimate effects relative to Year 4. Their true values are all <strong>0.20 SD</strong> here. Do not carry this common-adoption model mechanically into staggered adoption.</p>
+<p><strong>mutate() is from dplyr.</strong> This relative-year index is defined for every observation. The existing event_time is missing for never-treated districts. <code>i(relative_year, treated_ever, ref = -1)</code> from <strong>fixest</strong> creates a separate comparison for each year. Multiplying the year indicators by <code>treated_ever</code> distinguishes treated districts from never-treated districts. Setting <code>ref = -1</code> makes the year before treatment the reference period.</p>
+<p>Each <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mi>k</mi></msub><annotation encoding="application/x-tex">\beta_k</annotation></semantics></math> measures how the treated-control gap differs from its Year 4 value. Pre-treatment coefficients are diagnostics, not proof of parallel trends. Under parallel trends and no anticipation, post-treatment coefficients estimate effects relative to Year 4. We added an effect of <strong>0.20 SD in each of Years 5-7</strong>. The three post-treatment coefficients estimate those effects separately.</p>
+<p>This example has one treatment start year. In the staggered example, districts begin treatment in different years, so we next estimate effects separately for each adoption cohort and study year.</p>
 <h2 id="move-to-staggered-adoption">7. Move to Staggered Adoption</h2>
-<p>Effects now depend on cohort and year:</p>
+<p>Effects now depend on cohort and year</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ATT</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi mathvariant="double-struck">𝔼</mi><mo stretchy="false" form="prefix">[</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo><mo>∣</mo><mi>i</mi><mo>∈</mo><msub><mi>G</mi><mi>g</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>t</mi><mo>≥</mo><mi>g</mi></mrow><annotation encoding="application/x-tex">
 \operatorname{ATT}(g,t)=\mathbb{E}[Y_{it}(g)-Y_{it}(0)\mid i\in G_g],
 \qquad t\geq g
 </annotation></semantics></math></div>
-<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>G</mi><mi>g</mi></msub><annotation encoding="application/x-tex">G_g</annotation></semantics></math> is the cohort first treated in <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>; <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_{it}(g)</annotation></semantics></math> is the potential outcome when treatment starts in <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>; <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_{it}(0)</annotation></semantics></math> is the outcome without treatment.</p>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>G</mi><mi>g</mi></msub><annotation encoding="application/x-tex">G_g</annotation></semantics></math> is the cohort first treated in <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_{it}(g)</annotation></semantics></math> is the potential outcome when treatment starts in <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_{it}(0)</annotation></semantics></math> is the outcome without treatment.</p>
 <table>
 <thead>
 <tr>
@@ -283,7 +284,7 @@ Y_{it}=\alpha_i+\lambda_t+
 </table>
 <p>These schedules are known effects added to the simulated untreated outcomes. A single TWFE coefficient can mix never-treated, not-yet-treated, and already-treated comparisons. Already-treated controls can be problematic when effects change over time.</p>
 <h2 id="estimate-cohort-time-treatment-effects">8. Estimate Cohort-Time Treatment Effects</h2>
-<p>Use <strong>att_gt() from did</strong>, implementing <a href="https://doi.org/10.1016/j.jeconom.2020.12.001">Callaway and Sant’Anna (2021)</a>. With never-treated controls:</p>
+<p>Use <strong>att_gt() from did</strong>, implementing <a href="https://doi.org/10.1016/j.jeconom.2020.12.001">Callaway and Sant’Anna (2021)</a>. We compare each cohort with never-treated districts</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>g</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mi>g</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}(g,t)
 =(\overline Y_{g,t}-\overline Y_{g,g-1})
@@ -358,7 +359,7 @@ Y_{it}=\alpha_i+\lambda_t+
 </tr>
 <tr>
 <td>gname</td>
-<td>First treatment year; 0 for never treated, not the binary treatment indicator</td>
+<td>First treatment year with 0 for never treated, not the binary treatment indicator</td>
 </tr>
 <tr>
 <td>xformla = ~ 1</td>
@@ -385,16 +386,16 @@ Y_{it}=\alpha_i+\lambda_t+
 <p>See the <a href="https://bcallaway11.github.io/did/reference/att_gt.html">att_gt() documentation</a>.</p>
 <h2 id="read-the-estimates-and-uncertainty">9. Read the Estimates and Uncertainty</h2>
 <p><strong>Group</strong> identifies adoption cohort and <strong>Time</strong> identifies outcome year. Group 5 and Time 7 identify ATT(5,7), whose true value is <strong>0.30 SD</strong>. Pre-treatment comparisons are diagnostics, not effects of an already-active treatment.</p>
-<p><strong>bstrap = TRUE</strong> uses a multiplier bootstrap; <strong>biters = 1000</strong> selects 1,000 iterations. <strong>clustervars = “district_id”</strong> allows within-district dependence over time. <strong>set.seed()</strong> makes the bootstrap reproducible in the same computing setup.</p>
+<p><strong>bstrap = TRUE</strong> uses a multiplier bootstrap. <strong>biters = 1000</strong> selects 1,000 iterations. <strong>clustervars = “district_id”</strong> allows within-district dependence over time. <strong>set.seed()</strong> makes the bootstrap reproducible in the same computing setup.</p>
 <p><strong>cband = TRUE</strong> requests simultaneous confidence bands across cohort-time estimates, rather than separate pointwise intervals. See the <a href="https://bcallaway11.github.io/did/reference/att_gt.html">did inference options</a>.</p>
 <h2 id="aggregate-the-cohort-time-effects">10. Aggregate the Cohort-Time Effects</h2>
-<p>Following the slides, the <strong>Simple ATT</strong> is:</p>
+<p>Following the slides, we calculate the <strong>Simple ATT</strong></p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>=</mo><munder><mo>∑</mo><mi>g</mi></munder><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mi>g</mi></mrow><mi>T</mi></munderover><msub><mi>w</mi><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>w</mi><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>=</mo><mfrac><msub><mi>N</mi><mi>g</mi></msub><mrow><munder><mo>∑</mo><mi>h</mi></munder><msub><mi>N</mi><mi>h</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>T</mi><mo>−</mo><mi>h</mi><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></mfrac></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{simple}}
 =\sum_g\sum_{t=g}^{T}w_{g,t}\widehat{\operatorname{ATT}}(g,t),
 \qquad w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 </annotation></semantics></math></div>
-<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> is cohort size and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">T=7</annotation></semantics></math> is the final year. This formula applies to our balanced panel without sampling weights. The treated cohorts have equal size, so each of the five cells receives weight 1/5. The true summary is:</p>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> is cohort size and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">T=7</annotation></semantics></math> is the final year. This formula applies to our balanced panel without sampling weights. The treated cohorts have equal size, so each of the five cells receives weight 1/5. The true summary is</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mrow><mi mathvariant="normal">ATT</mi><mo>&#8289;</mo></mrow><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>=</mo><mfrac><mrow><mn>0.10</mn><mo>+</mo><mn>0.20</mn><mo>+</mo><mn>0.30</mn><mo>+</mo><mn>0.15</mn><mo>+</mo><mn>0.25</mn></mrow><mn>5</mn></mfrac><mo>=</mo><mn>0.20</mn></mrow><annotation encoding="application/x-tex">
 \operatorname{ATT}_{\mathrm{simple}}
 =\frac{0.10+0.20+0.30+0.15+0.25}{5}=0.20
@@ -417,9 +418,9 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt;
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
-<p><strong>aggte() from did</strong> takes the fitted model_csa object, not the original dataset. <strong>type = “simple”</strong> selects the aggregation rule. The early cohort contributes three post-treatment years and the late cohort two, giving total weights 3/5 and 2/5. Never-treated districts supply the comparison, but receive no treatment-effect weight. Do not average the five standard errors; the package accounts for joint uncertainty. See the <a href="https://bcallaway11.github.io/did/reference/aggte.html">aggte() documentation</a>.</p>
+<p><strong>aggte() from did</strong> takes the fitted model_csa object, not the original dataset. <strong>type = “simple”</strong> selects the aggregation rule. The early cohort contributes three post-treatment years and the late cohort two, giving total weights 3/5 and 2/5. Never-treated districts supply the comparison, but receive no treatment-effect weight. Do not average the five standard errors. The package accounts for joint uncertainty. See the <a href="https://bcallaway11.github.io/did/reference/aggte.html">aggte() documentation</a>.</p>
 <h2 id="questions-and-discussion">Questions and Discussion</h2>
-<p><strong>1:30-2:00 PM:</strong> Which units receive treatment? Which supply an untreated comparison? Which effect summary answers your question? What makes parallel trends plausible?</p>
+<p><strong>1:30-2:00 PM</strong> Which units receive treatment? Which supply an untreated comparison? Which effect summary answers your question? What makes parallel trends plausible?</p>
 <p>ETWFE remains a lecture-only extension in this lab. See <a href="resources.html">Resources</a> for further reading.</p>
 <details>
 <summary>
