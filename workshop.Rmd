@@ -2,459 +2,333 @@
 title: "Hands-on R Lab"
 ---
 
-```{r render-settings, include=FALSE, purl=FALSE}
-knitr::opts_chunk$set(message=FALSE, warning=FALSE, fig.width=8, fig.height=4.5,
-                     dpi=150, fig.path="assets/figures/lab-", dev="png", comment="#>")
+```{r settings, include=FALSE, purl=FALSE}
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, comment="#>")
+data_dir <- if (dir.exists("assets/data")) "assets/data" else "."
+knitr::opts_knit$set(root.dir=normalizePath(data_dir))
 ```
 
-## Hands-on R Lab {#lab}
+# Hands-on R Lab
 
 **October 22, 2026 | 1:00-1:30 PM Eastern**
 
-This guided lab applies traditional and staggered DID methods to two simulated
-district-year datasets. We begin with a common treatment start, then examine
-districts adopting a gifted education program in different years. These are
-synthetic teaching examples, not the data or results of an actual gifted education study.
+What is the effect of district adoption of a gifted education program on district-level achievement?
+These are simulated teaching examples, not estimates from the actual gifted education study.
 
-[Download the complete R script](code/workshop_lab.R) ·
-[Download the R Markdown](workshop.Rmd) · [Data and codebook](data.html)
+[Download the R script](code/workshop_lab.R) · [Download the R Markdown](workshop.Rmd) · [Data and codebook](data.html)
 
-The walkthrough connects each model's equation to its R function, arguments,
-and interpretation. Figures provide context; their plotting code is available
-in the complete downloadable script rather than in the main walkthrough.
+**Dataset transition:** The Texas revision described below is planned. Current downloads still contain
+160 districts over seven years. Results below use those current files, not the planned 832-district data.
 
-Allow 5 minutes for setup and data, 10 minutes for traditional DID, and 15 minutes
-for staggered DID and aggregation. The last two sections are optional follow-up.
+## 1. Set Up R
 
-## Before You Begin {#setup}
+For help installing R and RStudio, see [Posit's setup page](https://posit.co/download/rstudio-desktop/).
+R performs calculations; RStudio provides an interface for code and results.
 
-Install R and RStudio before the session. Run the installation code once, then
-load the packages each time you start a new R session. No prior DID programming
-experience is required. An internet connection is needed for package installation
-and for downloading the datasets; downloaded files can be used offline.
+| Package | Purpose |
+|---|---|
+| readr | Import CSVs with read_csv(). |
+| dplyr | Select observations, create variables, and summarize data. |
+| fixest | Estimate regressions and fixed-effects models with feols(). |
+| did | Estimate and aggregate cohort-time treatment effects. |
 
-<details><summary>Install packages (run once before the lab)</summary>
+**fixest is the package; feols() is its linear-regression function.**
+See the [function documentation](https://lrberge.github.io/fixest/reference/feols.html).
 
-```{r install-packages, eval=FALSE, purl=FALSE}
-install.packages(c("dplyr", "readr", "ggplot2", "fixest", "did", "etwfe", "knitr"))
+```{r install, eval=FALSE}
+# Install once.
+install.packages(c("readr", "dplyr", "fixest", "did"))
 ```
-
-</details>
 
 ```{r packages}
-library(dplyr)
+# Load for each session.
 library(readr)
-library(ggplot2)
+library(dplyr)
 library(fixest)
 library(did)
-library(etwfe)
-library(knitr)
-set.seed(20261014)
 ```
 
-## 1. Meet the Data {#data}
+## 2. Load the Data
 
-Each row represents one district in one study year. Both panels contain **160
-districts observed for seven years (1,120 rows)**, with no adjustment covariates.
-Treatment stays on after adoption. Years 1-4 precede the earliest adoption.
+Our simulation study examines statistical power and estimator performance using **27 state panels
+calibrated to Stanford Education Data Archive (SEDA) district achievement data**. Pure-data and
+empirical-data simulations assess how sample size, outcome variability, serial correlation,
+and treatment design affect our ability to detect effects.
 
-The code first looks for local files, then uses the workshop downloads. To work
-offline, place the CSV files in your working folder or its `data` subfolder.
+The planned lab adapts the pure-data approach using **Texas's parameters: 832 simulated districts
+over seven years**, without adjustment covariates. These are generated outcomes, not actual
+Texas district records. The simulation manuscript is a working draft; a public link is not yet included.
+
+Place the downloaded CSV files in your R project folder:
 
 ```{r import}
-read_workshop_data <- function(filename) {
-  candidates <- c(file.path("assets/data", filename), file.path("data", filename), filename)
-  local <- candidates[file.exists(candidates)]
-  source <- if (length(local)) local[1] else paste0(
-    "https://katjanestrickland.github.io/did-eprc-workshop/assets/data/", filename)
-  read_csv(source, show_col_types = FALSE)
-}
-simple <- read_workshop_data("simple_did_district.csv")
-staggered <- read_workshop_data("staggered_did_district.csv")
-kable(head(simple), digits = 2)
+simple <- read_csv("simple_did_district.csv")
+staggered <- read_csv("staggered_did_district.csv")
 ```
 
-`treatment_start_year = 0` identifies never-treated districts. `treated` becomes
-1 in the district's adoption year. `event_time` is years since adoption and is
-missing for never-treated districts.
+**read_csv() comes from readr.** Each row is one district in one year.
+We use outcome_raw, measured in illustrative score points.
+It equals 50 + 10 times outcome_std; a 0.20-SD effect equals 2 score points.
 
-Both outcome columns describe **the same continuous outcome**:
-`outcome_raw = 50 + 10 * outcome_std`. We use raw score points for all models and
-graphs here. One reference SD equals 10 raw points. The scale is synthetic and
-unbounded, not a real test score or a 0-100 scale. Standardization uses the pooled
-untreated Years 1-4 reference distribution, not each cohort or year separately.
+## 3. Check Treatment Timing
 
-```{r descriptives, echo=FALSE}
-design <- bind_rows(
-  mutate(simple, simulation = "1: Common start"),
-  mutate(staggered, simulation = "2: Staggered start")
-) |>
-  group_by(simulation, treatment_start_year) |>
-  summarise(districts = n_distinct(district_id), rows = n(),
-            mean_score = mean(outcome_raw), sd_score = sd(outcome_raw), .groups = "drop")
-kable(design, digits = 2)
-stopifnot(nrow(simple) == 1120, nrow(staggered) == 1120,
-          all(table(simple$district_id) == 7), all(table(staggered$district_id) == 7))
-# Require the corrected two-cohort dataset, not the earlier three-cohort release.
-adoption_counts <- table(staggered$treatment_start_year[staggered$year == 1])
-stopifnot(identical(names(adoption_counts), c("0", "5", "6")),
-          all(as.integer(adoption_counts) == c(80, 40, 40)))
+Use **dplyr** to count districts by first treatment year:
+
+```{r counts}
+simple %>%
+  distinct(district_id, treatment_start_year) %>%
+  count(treatment_start_year, name = "districts")
+staggered %>%
+  distinct(district_id, treatment_start_year) %>%
+  count(treatment_start_year, name = "districts")
 ```
 
-## 2. Traditional DID {#traditional}
+**distinct()** keeps one record per district and adoption year; **count()** counts districts in
+each group. Read **%>%** as "then." Zero codes never treated; treatment stays on after adoption.
 
-In Simulation 1, **80 districts adopt in Year 5** and **80 remain untreated**.
-The research question is: Do districts improve after adopting a gifted education
-program, compared with the change in districts that remain untreated?
+The planned Texas traditional panel will have 416 adopting and 416 never-treated districts.
+The staggered panel will have 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.
 
-The figure shows observed group means. Parallel trends concerns how the groups
-would change **without treatment**; similar observed pre-trends alone do not prove it.
+## 4. Estimate the Classic Two-by-Two DID
 
-```{r simple-trends, echo=FALSE}
-simple_means <- simple |>
-  mutate(group = ifelse(treated_ever == 1, "Adopts in Year 5", "Never treated")) |>
-  group_by(group, year) |>
-  summarise(mean_score = mean(outcome_raw), .groups = "drop")
-ggplot(simple_means, aes(year, mean_score, color = group)) +
-  geom_vline(xintercept = 4.5, linetype = 2, color = "grey55") +
-  geom_line(linewidth = 0.9) + geom_point(size = 2) +
-  scale_x_continuous(breaks = 1:7) +
-  scale_color_manual(values = c("#2454a6", "#117c78")) +
-  labs(x = "Study year", y = "Mean achievement (raw score points)", color = NULL) +
-  theme_minimal(base_size = 13) + theme(legend.position = "bottom")
-```
-
-## 3. Estimate TWFE {#twfe}
-
-### From the equation to the function
+Use Year 4, immediately before adoption, and Year 5, the first treated year.
+Following the slides:
 
 $$
-Y_{it} = \alpha_i + \lambda_t + \beta D_{it} + \varepsilon_{it}
+\widehat{\operatorname{ATT}}_{2\times2}
+=(\overline Y_{G,\mathrm{post}}-\overline Y_{G,\mathrm{pre}})
+-(\overline Y_{C,\mathrm{post}}-\overline Y_{C,\mathrm{pre}})
 $$
 
-| Symbol | Meaning in our example |
-|---|---|
-| $Y_{it}$ | District $i$'s outcome in year $t$, in raw score points. |
-| $\alpha_i$ | District fixed effects: stable differences across districts. |
-| $\lambda_t$ | Year fixed effects: changes common to all districts in a year. |
-| $D_{it}$ | 1 once district $i$ adopts the program, 0 otherwise. |
-| $\beta$ | The treatment-effect coefficient. |
-| $\varepsilon_{it}$ | Remaining district-year variation not explained by the model. |
+$G$ is the treated group, $C$ the control group, and $\overline Y$ a group mean.
+Under parallel trends and no anticipation, the control change supplies the untreated change
+for the treated group. Estimate the contrast using the slides' TWFE equation:
 
-`feols()` is the fixed-effects ordinary least squares function in the **fixest**
-package. Its first argument is a formula: the outcome goes left of `~`, explanatory
-variables go right of `~`, and fixed effects go after `|`.
+$$
+Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
+$$
+
+```{r two-period}
+two_period <- simple %>%
+  filter(year %in% c(4, 5))
+model_2x2 <- feols(
+  outcome_raw ~ treated | district_id + year,
+  data = two_period,
+  vcov = ~ district_id
+)
+summary(model_2x2)
+```
+
+**filter() comes from dplyr; feols() comes from fixest.**
+
+| Equation | R variable | Meaning |
+|---|---|---|
+| $Y_{it}$ | outcome_raw | District achievement outcome |
+| $D_{it}$ | treated | 1 when treatment is active; otherwise 0 |
+| $\alpha_i$ | district_id | Identifies districts for district fixed effects |
+| $\lambda_t$ | year | Identifies years for year fixed effects |
+| $\beta$ | Coefficient on treated | Estimated DID effect |
+| $u_{it}$ | No input variable | Regression error |
+
+Variables after the vertical bar specify fixed effects, not ordinary numeric predictors.
+**data** selects the dataset; **vcov = ~ district_id** requests district-clustered standard errors.
+The coefficient on treated equals the two-by-two contrast.
+The true simulated effect is **2 points**, not necessarily the estimated value.
+
+## 5. Estimate TWFE Using All Seven Years
+
+The equation stays the same:
+
+$$
+Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
+$$
 
 ```{r twfe}
-twfe <- feols(
+model_twfe <- feols(
   outcome_raw ~ treated | district_id + year,
   data = simple,
   vcov = ~ district_id
 )
+summary(model_twfe)
 ```
 
-| R component | Connection to the model |
-|---|---|
-| `outcome_raw` | The dependent variable $Y_{it}$. |
-| `treated` | The district-year indicator $D_{it}$; its coefficient estimates $\beta$. |
-| `district_id + year` after `\|` | District effects $\alpha_i$ and year effects $\lambda_t$. |
-| `data = simple` | The data frame containing these variables. |
-| `vcov = ~ district_id` | District-clustered standard errors, allowing errors to be correlated within districts across years. |
-| `twfe <-` | Stores the fitted model for summaries and further calculations. |
+Only **data = simple** changes: we now use all seven years.
+District effects account for persistent differences; year effects account for common shocks.
+In this balanced common-adoption design, the coefficient equals the treated group's average
+pre-to-post change minus the control group's average change.
+The true effect is **2 points in each post-treatment year**.
+The time-constant treated_ever variable would be absorbed by district effects;
+use treated, which switches on at adoption.
 
-**`treated` is not the same as `treated_ever`.** For an adopting district,
-`treated` switches from 0 to 1 in Year 5. `treated_ever` is 1 in every year and
-would be absorbed by district fixed effects. Clustering changes the estimated
-uncertainty, not the treatment coefficient.
+## 6. Estimate an Event Study
 
-### Read the results
-
-```{r twfe-summary}
-summary(twfe)
-```
-
-`summary()` displays the fitted model. Focus on the `treated` row: **Estimate**
-is the estimated effect, **Std. Error** measures its sampling uncertainty, and
-the t statistic and p value test a zero coefficient. The table below also shows
-a 95% confidence interval, obtained with `confint()`.
-
-```{r twfe-table, echo=FALSE}
-twfe_ci <- confint(twfe, "treated")
-twfe_table <- data.frame(
-  estimate = coef(twfe)["treated"], std_error = se(twfe)["treated"],
-  lower_95 = twfe_ci[1, 1], upper_95 = twfe_ci[1, 2])
-kable(twfe_table, digits = 3, row.names = FALSE)
-```
-
-The estimated effect is **`r round(coef(twfe)["treated"], 2)` raw score points**,
-or **`r round(coef(twfe)["treated"] / 10, 3)` reference SDs**.
-These are simulated results, not evidence about the effectiveness of gifted education.
-Under parallel trends, no anticipation, and the other DID assumptions, the
-coefficient estimates the average effect over the post-treatment years in this
-constant-effect example. A confidence interval describes uncertainty in the
-estimate, not the range of effects across individual districts.
-
-With this balanced, common-start panel, TWFE equals the difference between group
-changes averaged over all pre- and all post-treatment years:
+Following the slides:
 
 $$
-\widehat\beta =
-(\overline Y_{T,\mathrm{post}}-\overline Y_{T,\mathrm{pre}})
--(\overline Y_{C,\mathrm{post}}-\overline Y_{C,\mathrm{pre}})
+Y_{it}=\alpha_i+\lambda_t+
+\sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g=k\}+u_{it}
 $$
 
-Here $T$ denotes adopting districts and $C$ never-treated districts. Pre-treatment
-means average Years 1-4; post-treatment means average Years 5-7.
+Here $g=5$ and $k=t-g$. The slides use shorthand: the event-time indicators apply to
+treated districts, not the never-treated comparison group. Our code makes this restriction explicit.
 
-<details><summary>Optional: verify the before-after contrast in R</summary>
+| Study year | Event time | Interpretation |
+|---|---|---|
+| 1, 2, 3 | -4, -3, -2 | Pre-treatment comparisons |
+| 4 | -1 | Reference period |
+| 5, 6, 7 | 0, 1, 2 | First, second, third treated year |
 
-```{r manual-did}
-changes <- simple |>
-  group_by(treated_ever) |>
-  summarise(change = mean(outcome_raw[year >= 5]) - mean(outcome_raw[year < 5]))
-manual_did <- changes$change[changes$treated_ever == 1] - changes$change[changes$treated_ever == 0]
-stopifnot(abs(manual_did - coef(twfe)["treated"]) < 1e-8)
-manual_did
+```{r event-study}
+simple <- simple %>%
+  mutate(relative_year = year - 5)
+model_event <- feols(
+  outcome_raw ~ i(relative_year, treated_ever, ref = -1) |
+    district_id + year,
+  data = simple,
+  vcov = ~ district_id
+)
+summary(model_event)
 ```
 
-</details>
+**mutate() is from dplyr.** This relative-year index is defined for every observation;
+the existing event_time is missing for never-treated districts.
+**i() from fixest** interacts relative-year indicators with treated_ever;
+**ref = -1** omits Year 4.
 
-## 4. Staggered DID {#staggered}
+Each $\beta_k$ measures how the treated-control gap differs from its Year 4 value.
+Pre-treatment coefficients are diagnostics, not proof of parallel trends.
+Under parallel trends and no anticipation, post-treatment coefficients estimate effects relative
+to Year 4. Their true values are all **2 points** here.
+Do not carry this common-adoption model mechanically into staggered adoption.
 
-Simulation 2 has **40 districts adopting in Year 5, 40 adopting in Year 6, and
-80 never-treated districts**. All 160 districts are observed over seven years;
-Year 7 is a follow-up year, not a new adoption cohort. Effects vary across cohorts
-and with time since adoption. The Year 5 cohort contributes three post-treatment
-years and the Year 6 cohort contributes two. A single TWFE coefficient can mix comparisons with
-already-treated groups when effects vary.
+## 7. Move to Staggered Adoption
 
-```{r timing, echo=FALSE}
-timing <- staggered |>
-  distinct(cohort, treatment_start_year, year, treated)
-ggplot(timing, aes(year, reorder(cohort, -treatment_start_year), fill = factor(treated))) +
-  geom_tile(color = "white", width = 0.94, height = 0.75) +
-  scale_x_continuous(breaks = 1:7, position = "top") +
-  scale_fill_manual(values = c("#e1e7eb", "#2454a6"), labels = c("Untreated", "Treated")) +
-  labs(x = "Study year", y = NULL, fill = NULL) +
-  theme_minimal(base_size = 13) +
-  theme(panel.grid = element_blank(), legend.position = "bottom")
-```
-
-```{r staggered-trends, echo=FALSE}
-staggered_means <- staggered |>
-  group_by(cohort, year) |>
-  summarise(mean_score = mean(outcome_raw), .groups = "drop")
-ggplot(staggered_means, aes(year, mean_score, color = cohort)) +
-  geom_line(linewidth = 0.9) + geom_point(size = 2) +
-  scale_x_continuous(breaks = 1:7) +
-  scale_color_manual(values = c("#5b6773", "#2454a6", "#117c78", "#b3435d")) +
-  labs(x = "Study year", y = "Mean achievement (raw score points)", color = NULL) +
-  theme_minimal(base_size = 13) + theme(legend.position = "bottom")
-```
-
-## 5. Estimate Cohort-Period Effects {#csa}
-
-Callaway and Sant'Anna estimate an ATT for each cohort and post-treatment period.
-The estimand is:
+Effects now depend on cohort and year:
 
 $$
-ATT(g,t) = E[Y_{it}(1)-Y_{it}(0) \mid G_i=g], \qquad t\geq g
+\operatorname{ATT}(g,t)=\mathbb{E}[Y_{it}(g)-Y_{it}(0)\mid i\in G_g],
+\qquad t\geq g
 $$
 
-$G_i$ is district $i$'s first treatment year; $g$ identifies a cohort and $t$ a
-calendar year. $Y_{it}(1)$ is the outcome under that cohort's treatment history,
-and $Y_{it}(0)$ is the outcome without treatment. For example, **ATT(5,6)** is
-the average effect in Year 6 for districts first treated in Year 5.
+$G_g$ is the cohort first treated in $g$; $Y_{it}(g)$ is the potential outcome when
+treatment starts in $g$; $Y_{it}(0)$ is the outcome without treatment.
 
-`att_gt()` in the **did** package estimates these group-time effects, rather
-than imposing a single treatment coefficient across all cohorts and years.
-Here we use **never-treated districts** as controls. `xformla = ~1` means no
-adjustment covariates. The baseline for a post-treatment effect is the year just
-before that cohort adopts. For example, ATT(5,7) compares the Year 4-to-7 change
-in the Year 5 cohort with that change in the never-treated group.
+| Cohort $g$ | Year $t$ | True effect (points) |
+|---|---|---|
+| 5 | 5 | 1.00 |
+| 5 | 6 | 2.00 |
+| 5 | 7 | 3.00 |
+| 6 | 6 | 1.50 |
+| 6 | 7 | 2.50 |
+
+These schedules apply to both the current and planned data.
+A single TWFE coefficient can mix never-treated, not-yet-treated, and already-treated comparisons.
+Already-treated controls can be problematic when effects change over time.
+
+## 8. Estimate Cohort-Time Treatment Effects
+
+Use **att_gt() from did**, implementing
+[Callaway and Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001).
+With never-treated controls:
+
+$$
+\widehat{\operatorname{ATT}}(g,t)
+=(\overline Y_{g,t}-\overline Y_{g,g-1})
+-(\overline Y_{C,t}-\overline Y_{C,g-1})
+$$
+
+ATT(6,7) compares the Year 6 cohort's change from Year 5 to Year 7
+with the control group's change over those same years.
 
 ```{r csa}
 set.seed(20261014)
-cs <- att_gt(
+model_csa <- att_gt(
   yname = "outcome_raw",
   tname = "year",
   idname = "district_id",
   gname = "treatment_start_year",
   xformla = ~ 1,
-  data = as.data.frame(staggered),
+  data = staggered,
   panel = TRUE,
   control_group = "nevertreated",
   base_period = "universal",
   anticipation = 0,
-  est_method = "reg",
   bstrap = TRUE,
-  biters = 999,
+  biters = 1000,
   clustervars = "district_id",
   cband = TRUE
 )
+summary(model_csa)
 ```
 
-| Argument | What we are telling the function |
+| Argument | Meaning |
 |---|---|
-| `yname`, `tname`, `idname` | The column names for outcome $Y_{it}$, calendar year $t$, and district $i$. |
-| `gname` | The column recording $G_i$, first treatment year; 0 codes never-treated districts. This is not the binary `treated` variable. |
-| `xformla = ~ 1` | No adjustment covariates. |
-| `data`, `panel = TRUE` | Use the staggered dataset as a panel following the same districts over time. |
-| `control_group = "nevertreated"` | Compare adopting cohorts with districts that never adopt. |
-| `base_period = "universal"`, `anticipation = 0` | Use the last pre-adoption year as the reference and assume no effects before adoption. |
-| `est_method = "reg"` | Select the outcome-regression estimation method; no covariates are included here. |
-| `bstrap = TRUE`, `biters = 999` | Use 999 multiplier-bootstrap iterations for inference. |
-| `clustervars = "district_id"` | Cluster inference at the district level. |
-| `cband = TRUE` | Request simultaneous confidence bands across the group-time estimates. |
+| yname, tname, idname | Outcome, study-year, and district-ID columns |
+| gname | First treatment year; 0 for never treated, not the binary treatment indicator |
+| xformla = ~ 1 | No adjustment covariates |
+| panel = TRUE | Follow the same districts over time |
+| control_group = "nevertreated" | Use never-treated controls |
+| base_period = "universal" | Reference each cohort's last untreated year |
+| anticipation = 0 | No effects before adoption |
 
-### Read the cohort-by-year effects
+See the [att_gt() documentation](https://bcallaway11.github.io/did/reference/att_gt.html).
 
-```{r csa-summary}
-summary(cs)
-```
+## 9. Read the Estimates and Uncertainty
 
-The summary includes pre-treatment comparisons as well as post-treatment effects.
-The following table selects just the five post-treatment cells, where $t\geq g$.
-Read each row as an effect for **one cohort in one year**, in raw outcome points.
+**Group** identifies adoption cohort and **Time** identifies outcome year.
+Group 5 and Time 7 identify ATT(5,7), whose true value is **3 points**.
+Pre-treatment comparisons are diagnostics, not effects of an already-active treatment.
 
-```{r csa-table, echo=FALSE}
-cells <- tibble(cohort = cs$group, year = cs$t, ATT = cs$att, SE = cs$se) |>
-  filter(year >= cohort)
-kable(cells, digits = 3)
-```
+**bstrap = TRUE** uses a multiplier bootstrap; **biters = 1000** selects 1,000 iterations.
+**clustervars = "district_id"** allows within-district dependence over time.
+**set.seed()** makes the bootstrap reproducible in the same computing setup.
 
-The table shows post-treatment effects and bootstrap standard errors. The
-multiplier bootstrap clusters at district level. `cband = TRUE` requests
-simultaneous confidence bands in the package summary; individual estimate
-intervals and simultaneous bands answer different uncertainty questions.
+**cband = TRUE** requests simultaneous confidence bands across cohort-time estimates,
+rather than separate pointwise intervals. See the
+[did inference options](https://bcallaway11.github.io/did/reference/att_gt.html).
 
-## 6. Compute the Simple ATT {#aggregation}
+## 10. Aggregate the Cohort-Time Effects
 
-`att_gt()` estimates separate cohort-by-year effects. `aggte()` combines them
-into a summary effect. With `type = "simple"`, the calculation is:
+Following the slides, the **Simple ATT** is:
 
 $$
-\widehat{ATT}_{\mathrm{simple}} =
-\sum_{(g,t)\in\mathcal P} w_{gt}\widehat{ATT}(g,t),
-\qquad
-w_{gt}=\frac{N_g}{\sum_{(h,s)\in\mathcal P}N_h}
+\widehat{\operatorname{ATT}}_{\mathrm{simple}}
+=\sum_g\sum_{t=g}^{T}w_{g,t}\widehat{\operatorname{ATT}}(g,t),
+\qquad w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 $$
 
-$\mathcal P$ is the set of observed post-treatment cohort-year cells and $N_g$
-is the number of districts in cohort $g$. Each weight multiplies its cell's
-estimated effect; adding those contributions gives the summary estimate.
+$N_g$ is cohort size and $T=7$ is the final year.
+This formula applies to our balanced panel without sampling weights.
+The treated cohorts have equal size, so each of the five cells receives weight 1/5.
+The true summary is:
 
-The Simple ATT averages the cohort-period effects with cohort-size weights.
-There are five observed post-treatment cells. Both treated cohorts contain 40
-districts, so each cell receives weight 1/5. Cohort 5 contributes 3/5 of the total
-weight and cohort 6 contributes 2/5. This is not an equal-weight average of the
-two cohort averages. The 80 never-treated districts supply the comparison group;
-they do not receive treatment-effect weights in this aggregation.
+$$
+\operatorname{ATT}_{\mathrm{simple}}
+=\frac{1.00+2.00+3.00+1.50+2.50}{5}=2.00
+$$
 
 ```{r aggregation}
-simple_att <- aggte(cs, type = "simple")
-summary(simple_att)
+overall_csa <- aggte(model_csa, type = "simple")
+summary(overall_csa)
 ```
 
-The first argument, `cs`, is the fitted object returned by `att_gt()`, not the
-original data frame. `type = "simple"` chooses the aggregation rule.
-`summary(simple_att)` reports the overall ATT, its standard error, and confidence
-interval. The weights and contributions below show exactly what is being averaged.
+**aggte() from did** takes the fitted model_csa object, not the original dataset.
+**type = "simple"** selects the aggregation rule.
+The early cohort contributes three post-treatment years and the late cohort two,
+giving total weights 3/5 and 2/5. Never-treated districts supply the comparison,
+but receive no treatment-effect weight. Do not average the five standard errors;
+the package accounts for joint uncertainty.
+See the [aggte() documentation](https://bcallaway11.github.io/did/reference/aggte.html).
 
-```{r aggregation-table, echo=FALSE}
-cohort_sizes <- staggered |>
-  distinct(district_id, treatment_start_year) |>
-  count(treatment_start_year, name = "districts")
-weighted_cells <- cells |>
-  left_join(cohort_sizes, by = c("cohort" = "treatment_start_year")) |>
-  mutate(weight = districts / sum(districts), contribution = weight * ATT)
-kable(select(weighted_cells, cohort, year, districts, ATT, weight, contribution), digits = 3)
-manual_simple_att <- sum(weighted_cells$contribution)
-stopifnot(abs(manual_simple_att - simple_att$overall.att) < 1e-8)
-stopifnot(nrow(weighted_cells) == 5,
-          all(abs(weighted_cells$weight - 1/5) < 1e-12))
-```
+## Questions and Discussion
 
-The Simple ATT is **`r round(simple_att$overall.att, 2)` raw score points**.
-The calculation uses unrounded values. The package computes uncertainty using
-the joint estimation structure; do not average the five standard errors.
+**1:30-2:00 PM:** Which units receive treatment? Which supply an untreated comparison?
+Which effect summary answers your question? What makes parallel trends plausible?
 
-<details><summary>Optional: verify the five DID contrasts directly in R</summary>
-
-```{r manual-cells}
-manual_cell <- function(g, t) {
-  treated_change <- with(staggered, mean(outcome_raw[treatment_start_year == g & year == t]) -
-                          mean(outcome_raw[treatment_start_year == g & year == g-1]))
-  control_change <- with(staggered, mean(outcome_raw[treatment_start_year == 0 & year == t]) -
-                          mean(outcome_raw[treatment_start_year == 0 & year == g-1]))
-  treated_change - control_change
-}
-manual_effects <- mapply(manual_cell, cells$cohort, cells$year)
-stopifnot(max(abs(manual_effects - cells$ATT)) < 1e-8)
-```
-
-</details>
-
-## 7. Extended TWFE (Optional) {#etwfe}
-
-Extended TWFE allows cohort and time interactions rather than imposing one
-constant treatment coefficient. Use the same never-treated comparison group and
-raw outcome. `emfx(type = "simple")` summarizes post-treatment effects across
-treated observations. In this balanced panel, those observations give the same
-1/5 weights to the five cells. Estimates can still differ because the estimation
-methods use time periods differently; matching the estimand does not guarantee
-identical finite-sample results.
-
-```{r etwfe}
-extended <- etwfe(outcome_raw ~ 0, tvar = year, gvar = treatment_start_year,
-                  data = staggered, cgroup = "never", gref = 0,
-                  vcov = ~district_id)
-extended_att <- emfx(extended, type = "simple")
-kable(as.data.frame(extended_att)[, c("estimate", "std.error", "conf.low", "conf.high")], digits = 3)
-```
-
-This optional model uses district-clustered covariance estimates and delta-method
-uncertainty, rather than the CSA multiplier bootstrap.
-
-## 8. Event Study (Optional) {#event-study}
-
-For Simulation 1, estimate separate coefficients relative to Year 4, the final
-pre-treatment year. Never-treated districts provide the comparison. Years 5, 6,
-and 7 correspond to event times 0, 1, and 2. Pre-treatment estimates are diagnostics,
-not proof of parallel trends. This common-start specification should not be
-carried over mechanically to staggered adoption.
-
-```{r event-study}
-event_model <- feols(outcome_raw ~ i(year, treated_ever, ref = 4) | district_id + year,
-                     data = simple, vcov = ~district_id)
-```
-
-`i(year, treated_ever, ref = 4)` creates year-specific interactions with the
-ever-treated indicator, omitting Year 4 as the reference. Each coefficient is
-the treated-versus-comparison change relative to Year 4. The fixed effects and
-clustering arguments have the same roles as in the earlier TWFE model.
-
-```{r event-study-plot, echo=FALSE}
-iplot(event_model, xlab = "Study year (Year 4 reference)",
-      ylab = "Effect relative to Year 4 (raw points)",
-      main = "Simulation 1: common-start event study")
-```
-
-The plot shows pointwise 95% confidence intervals. Multiple pre-period tests
-require care; failure to reject a pre-trend is not evidence that the identifying
-assumptions hold.
-
-## Questions & Discussion {#discussion}
-
-**1:30-2:00 PM:** Which units receive treatment in your application? Which units
-could supply an untreated comparison? Which treatment-effect summary answers your
-research question? What would make parallel trends plausible?
-
-Methods: [Callaway and Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001),
-[Wooldridge (2025)](https://doi.org/10.1007/s00181-025-02807-z).
+ETWFE remains a lecture-only extension in this lab.
 See [Resources](resources.html) for further reading.
 
-<details><summary>R session and package versions used for these results</summary>
+<details><summary>R session and package versions</summary>
 
 ```{r session}
 sessionInfo()
