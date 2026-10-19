@@ -20,6 +20,23 @@ staggered %>%
   count(treatment_start_year, name = "districts")
 
 
+## ----treatment-indicators-----------------------------------------------------
+simple <- simple %>%
+  mutate(
+    treated_ever = as.integer(treatment_start_year > 0),
+    treated = as.integer(
+      treatment_start_year > 0 & year >= treatment_start_year
+    )
+  )
+staggered <- staggered %>%
+  mutate(
+    treated_ever = as.integer(treatment_start_year > 0),
+    treated = as.integer(
+      treatment_start_year > 0 & year >= treatment_start_year
+    )
+  )
+
+
 ## ----two-period---------------------------------------------------------------
 two_period <- simple %>%
   filter(year %in% c(4, 5))
@@ -71,6 +88,16 @@ model_csa <- att_gt(
   cband = TRUE
 )
 summary(model_csa)
+
+
+## ----group-aggregation--------------------------------------------------------
+group_att <- aggte(model_csa, type = "group")
+summary(group_att)
+
+
+## ----calendar-aggregation-----------------------------------------------------
+calendar_att <- aggte(model_csa, type = "calendar")
+summary(calendar_att)
 
 
 ## ----aggregation--------------------------------------------------------------

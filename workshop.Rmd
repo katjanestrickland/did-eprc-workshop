@@ -28,7 +28,7 @@ R performs calculations. RStudio provides an interface for code and results.
 | readr | Import CSVs with read_csv(). |
 | dplyr | Select observations, create variables, and summarize data. |
 | fixest | Estimate regressions and fixed-effects models with feols(). |
-| did | Estimate and aggregate cohort-time treatment effects. |
+| did | Estimate and aggregate group-by-time treatment effects. |
 
 **fixest is the package and feols() is its linear-regression function.**
 See the [function documentation](https://lrberge.github.io/fixest/reference/feols.html).
@@ -48,14 +48,10 @@ library(did)
 
 ## 2. Load the Data
 
-Our simulation study examines statistical power and estimator performance using **27 state panels
-calibrated to Stanford Education Data Archive (SEDA) district achievement data**. Pure-data and
-empirical-data simulations assess how sample size, outcome variability, serial correlation,
-and treatment design affect our ability to detect effects.
-
-This lab adapts the pure-data approach using **Texas's parameters for 832 simulated districts
-over seven years**, without adjustment covariates. These are generated outcomes, not actual
-Texas district records.
+Both datasets contain **832 simulated districts representing Texas**, each observed over seven years.
+Each row represents one district in one year. Both panels are balanced and treatment is assigned
+at the district level. The downloaded files contain only district_id, year, treatment_start_year,
+and outcome_std.
 
 Place the downloaded CSV files in your R project folder
 
@@ -66,9 +62,9 @@ staggered <- read_csv("staggered_did_district.csv")
 
 **read_csv() comes from readr.** Each row is one district in one year.
 We use outcome_std, measured in standard-deviation (SD) units.
-The full untreated Texas panel defines the reference mean and SD before treatment effects are added.
+The outcome is standardized before treatment effects are added.
 
-## 3. Check Treatment Timing
+## 3. Check Treatment Timing and Create Indicators
 
 Use **dplyr** to count districts by first treatment year
 
@@ -86,6 +82,34 @@ each group. Read **%>%** as "then." Zero codes never treated. Treatment stays on
 
 The Texas traditional panel has 416 adopting and 416 never-treated districts.
 The staggered panel has 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.
+
+
+### Create the Treatment Indicators
+
+In applied DID work, adoption dates often need to be converted into indicators for analysis.
+We create these indicators ourselves using **mutate() from dplyr**.
+
+```{r treatment-indicators}
+simple <- simple %>%
+  mutate(
+    treated_ever = as.integer(treatment_start_year > 0),
+    treated = as.integer(
+      treatment_start_year > 0 & year >= treatment_start_year
+    )
+  )
+staggered <- staggered %>%
+  mutate(
+    treated_ever = as.integer(treatment_start_year > 0),
+    treated = as.integer(
+      treatment_start_year > 0 & year >= treatment_start_year
+    )
+  )
+```
+
+**treated_ever** is 1 in every year for a district that eventually adopts and 0 for a
+never-treated district. **treated** is 1 only from adoption onward.
+The test that treatment_start_year is greater than 0 keeps never-treated districts untreated.
+**as.integer()** converts TRUE and FALSE into 1 and 0.
 
 ## 4. Estimate the Classic Two-by-Two DID
 
@@ -190,7 +214,8 @@ summary(model_event)
 ```
 
 **mutate() is from dplyr.** This relative-year index is defined for every observation.
-The existing event_time is missing for never-treated districts.
+Never-treated districts have no adoption year of their own, so we use the common
+Year 5 reference for this index and distinguish the treated group with treated_ever.
 `i(relative_year, treated_ever, ref = -1)` from **fixest** creates a separate comparison
 for each year. Multiplying the year indicators by `treated_ever` distinguishes treated
 districts from never-treated districts. Setting `ref = -1` makes the year before
@@ -230,7 +255,7 @@ These schedules are known effects added to the simulated untreated outcomes.
 A single TWFE coefficient can mix never-treated, not-yet-treated, and already-treated comparisons.
 Already-treated controls can be problematic when effects change over time.
 
-## 8. Estimate Cohort-Time Treatment Effects
+## 8. Estimate Group-by-Time ATTs
 
 Use **att_gt() from did**, implementing
 [Callaway and Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001).
@@ -288,11 +313,64 @@ Pre-treatment comparisons are diagnostics, not effects of an already-active trea
 **clustervars = "district_id"** allows within-district dependence over time.
 **set.seed()** makes the bootstrap reproducible in the same computing setup.
 
-**cband = TRUE** requests simultaneous confidence bands across cohort-time estimates,
+**cband = TRUE** requests simultaneous confidence bands across group-by-time estimates,
 rather than separate pointwise intervals. See the
 [did inference options](https://bcallaway11.github.io/did/reference/att_gt.html).
 
-## 10. Aggregate the Cohort-Time Effects
+## 10. Estimate Group Averages
+
+A **group average** summarizes a group's effects across its post-treatment years.
+
+$
+\widehat{\operatorname{ATT}}_{\mathrm{group}}(g)
+=\frac{1}{T-g+1}\sum_{t=g}^{T}\widehat{\operatorname{ATT}}(g,t)
+$
+
+Here $T=7$. The early group contributes Years 5-7 and the late group Years 6-7.
+Their known averages are $(0.10+0.20+0.30)/3=0.20$ SD and
+$(0.15+0.25)/2=0.20$ SD.
+
+```{r group-aggregation}
+group_att <- aggte(model_csa, type = "group")
+summary(group_att)
+```
+
+**aggte() from did** takes the model returned by att_gt().
+**type = "group"** averages within each adoption group.
+Read the group-specific rows for each group's average.
+The overall summary additionally averages the group averages using group-size weights.
+It is not the same weighting rule as Simple ATT, even though their true values coincide here.
+
+## 11. Estimate Calendar Summaries
+
+A **calendar summary** averages effects across groups already treated in the same study year.
+
+$
+\widehat{\operatorname{ATT}}_{\mathrm{calendar}}(t)
+=\sum_{g\leq t}\frac{N_g}{\sum_{h\leq t}N_h}
+\widehat{\operatorname{ATT}}(g,t)
+$
+
+$N_g$ is the number of districts in group $g$.
+Only early adopters contribute in Year 5. Both groups contribute in Years 6 and 7.
+
+| Study year | True calendar summary in SD units |
+|---|---|
+| 5 | 0.10 |
+| 6 | (0.20 + 0.15) / 2 = 0.175 |
+| 7 | (0.30 + 0.25) / 2 = 0.275 |
+
+```{r calendar-aggregation}
+calendar_att <- aggte(model_csa, type = "calendar")
+summary(calendar_att)
+```
+
+**type = "calendar"** requests the study-year summaries.
+The overall result averages these calendar summaries across the included post-treatment years.
+Its true value is approximately 0.1833 SD, which differs from the true Simple ATT of 0.20 SD.
+The averaging rules answer different questions.
+
+## 12. Estimate Simple ATT
 
 Following the slides, we calculate the **Simple ATT**
 

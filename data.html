@@ -13,7 +13,13 @@
 <a href="resources.html">Resources</a></div></nav></header>
 <main id="main" class="document ">
 <article><h1 id="data">Data</h1>
-<p>These datasets contain <strong>832 simulated districts representing Texas</strong>, each observed over seven years. The simulation uses parameters estimated from Texas achievement data. For details, see <strong>[simulation paper link forthcoming]</strong>.</p>
+<p>These datasets contain <strong>832 simulated districts representing Texas</strong>, each observed over seven years</p>
+<ul>
+<li>Each row represents one district in one year</li>
+<li>Both datasets are balanced, with no missing district-year observations</li>
+<li>Treatment is assigned at the district level and continues after adoption</li>
+<li>Outcomes are measured in standard-deviation units</li>
+</ul>
 <h2 id="download-the-data">Download the Data</h2>
 <table>
 <thead>
@@ -25,7 +31,7 @@ Dataset
 Description
 </th>
 <th>
-Download
+Downloads
 </th>
 </tr>
 </thead>
@@ -43,7 +49,7 @@ Download
 <span class="cohort-label never">Never treated</span> 416 districts
 </li>
 <li>
-Constant treatment effect after adoption
+Constant effect after adoption
 </li>
 </ul>
 </td>
@@ -67,7 +73,7 @@ Constant treatment effect after adoption
 <span class="cohort-label never">Never treated</span> 416 districts
 </li>
 <li>
-Effects differ by cohort and increase over time
+Effects differ by group and increase over time
 </li>
 </ul>
 </td>
@@ -75,21 +81,55 @@ Effects differ by cohort and increase over time
 <a href="assets/data/staggered_did_district.csv">CSV</a> · <a href="assets/data/staggered_did_district.dta">Stata</a>
 </td>
 </tr>
+</tbody>
+</table>
+<h2 id="treatment-effects">Treatment Effects</h2>
+<p>These are the <strong>known effects added in the simulation</strong>, measured in SD units, rather than estimated results</p>
+<p><strong>Years 5 and 6 are adoption years</strong></p>
+<p>Treatment remains active afterward, so effects continue into Year 7</p>
+<table>
+<thead>
 <tr>
-<td>
-<strong>Data dictionary</strong>
-</td>
-<td>
-Variable definitions for both datasets
-</td>
-<td>
-<a href="assets/data/data_dictionary.csv">CSV</a>
-</td>
+<th>Dataset and group</th>
+<th style="text-align: right;">Years 1-4</th>
+<th style="text-align: right;">Year 5</th>
+<th style="text-align: right;">Year 6</th>
+<th style="text-align: right;">Year 7</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Traditional DID treated group</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.20</td>
+<td style="text-align: right;">0.20</td>
+<td style="text-align: right;">0.20</td>
+</tr>
+<tr>
+<td>Staggered DID early adopters</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.10</td>
+<td style="text-align: right;">0.20</td>
+<td style="text-align: right;">0.30</td>
+</tr>
+<tr>
+<td>Staggered DID late adopters</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.15</td>
+<td style="text-align: right;">0.25</td>
+</tr>
+<tr>
+<td>Never-treated groups in both datasets</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
 </tr>
 </tbody>
 </table>
 <h2 id="codebook">Codebook</h2>
-<p><strong>Each row represents one district in one year</strong></p>
+<p>Both downloaded datasets contain only these four variables</p>
 <table>
 <thead>
 <tr>
@@ -104,24 +144,12 @@ Definition
 <tbody>
 <tr>
 <td>
-<code>state</code>
-</td>
-<td>
-<ul>
-<li>
-TX identifies the state represented by the simulation
-</li>
-</ul>
-</td>
-</tr>
-<tr>
-<td>
 <code>district_id</code>
 </td>
 <td>
 <ul>
 <li>
-Synthetic district identifier from 1 to 832
+District identifier from 1 to 832
 </li>
 <li>
 The same identifier follows a district across all seven years
@@ -146,21 +174,6 @@ Not a calendar year
 </tr>
 <tr>
 <td>
-<code>cohort</code>
-</td>
-<td>
-<ul>
-<li>
-treated_year5, treated_year6, or never
-</li>
-<li>
-The traditional DID dataset has no Year 6 cohort
-</li>
-</ul>
-</td>
-</tr>
-<tr>
-<td>
 <code>treatment_start_year</code>
 </td>
 <td>
@@ -169,55 +182,10 @@ The traditional DID dataset has no Year 6 cohort
 First treated year is 5 or 6
 </li>
 <li>
+The traditional DID dataset has only Year 5 adopters
+</li>
+<li>
 0 means never treated
-</li>
-</ul>
-</td>
-</tr>
-<tr>
-<td>
-<code>treated_ever</code>
-</td>
-<td>
-<ul>
-<li>
-1 for a district that receives treatment during the study
-</li>
-<li>
-0 for a never-treated district
-</li>
-</ul>
-</td>
-</tr>
-<tr>
-<td>
-<code>treated</code>
-</td>
-<td>
-<ul>
-<li>
-1 from the adoption year onward
-</li>
-<li>
-0 before adoption and for never-treated districts
-</li>
-</ul>
-</td>
-</tr>
-<tr>
-<td>
-<code>event_time</code>
-</td>
-<td>
-<ul>
-<li>
-Study year minus adoption year
-</li>
-<li>
--1 is the year before adoption and 0 is the first treated year
-</li>
-<li>
-Missing for never-treated districts
 </li>
 </ul>
 </td>
@@ -232,19 +200,17 @@ Missing for never-treated districts
 Simulated achievement measured in SD units
 </li>
 <li>
-The full untreated Texas panel defines the reference mean and SD
+Untreated outcomes are standardized across all districts and years before effects are added
 </li>
 <li>
-Treatment effects are added after standardization
-</li>
-<li>
-The observed outcome is not standardized again after treatment
+The final observed outcome is not standardized again
 </li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p>An effect of <strong>0.20 SD</strong> means an increase equal to one fifth of the reference standard deviation</p>
+<p>An effect of <strong>0.20 SD</strong> represents an increase equal to one fifth of the untreated outcome’s standard deviation</p>
+<p>In the lab, we create the treatment indicators from treatment_start_year and year</p>
 <p><a href="workshop.html">Continue to the Hands-on R Lab</a></p>
 </article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

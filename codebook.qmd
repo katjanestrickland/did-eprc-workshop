@@ -4,40 +4,22 @@ title: "Data Codebook"
 
 # Data Codebook
 
-832 simulated districts representing Texas, observed over seven years
-
-The codebook is also on the [Data page](data.html#codebook)
+The codebook is available directly on the [Data page](data.html#codebook)
 
 ## Codebook
 
-**Each row represents one district in one year**
+Both downloaded datasets contain only these four variables
 
 <table>
 <thead><tr><th>Variable</th><th>Definition</th></tr></thead>
 <tbody>
-<tr><td><code>state</code></td><td><ul><li>TX identifies the state represented by the simulation</li></ul></td></tr>
-<tr><td><code>district_id</code></td><td><ul><li>Synthetic district identifier from 1 to 832</li><li>The same identifier follows a district across all seven years</li></ul></td></tr>
+<tr><td><code>district_id</code></td><td><ul><li>District identifier from 1 to 832</li><li>The same identifier follows a district across all seven years</li></ul></td></tr>
 <tr><td><code>year</code></td><td><ul><li>Study year from 1 to 7</li><li>Not a calendar year</li></ul></td></tr>
-<tr><td><code>cohort</code></td><td><ul><li>treated_year5, treated_year6, or never</li><li>The traditional DID dataset has no Year 6 cohort</li></ul></td></tr>
-<tr><td><code>treatment_start_year</code></td><td><ul><li>First treated year is 5 or 6</li><li>0 means never treated</li></ul></td></tr>
-<tr><td><code>treated_ever</code></td><td><ul><li>1 for a district that receives treatment during the study</li><li>0 for a never-treated district</li></ul></td></tr>
-<tr><td><code>treated</code></td><td><ul><li>1 from the adoption year onward</li><li>0 before adoption and for never-treated districts</li></ul></td></tr>
-<tr><td><code>event_time</code></td><td><ul><li>Study year minus adoption year</li><li>-1 is the year before adoption and 0 is the first treated year</li><li>Missing for never-treated districts</li></ul></td></tr>
-<tr><td><code>outcome_std</code></td><td><ul><li>Simulated achievement measured in SD units</li><li>The full untreated Texas panel defines the reference mean and SD</li><li>Treatment effects are added after standardization</li><li>The observed outcome is not standardized again after treatment</li></ul></td></tr>
+<tr><td><code>treatment_start_year</code></td><td><ul><li>First treated year is 5 or 6</li><li>The traditional DID dataset has only Year 5 adopters</li><li>0 means never treated</li></ul></td></tr>
+<tr><td><code>outcome_std</code></td><td><ul><li>Simulated achievement measured in SD units</li><li>Untreated outcomes are standardized across all districts and years before effects are added</li><li>The final observed outcome is not standardized again</li></ul></td></tr>
 </tbody>
 </table>
 
-An effect of **0.20 SD** means an increase equal to one fifth of the reference standard deviation
+An effect of **0.20 SD** represents an increase equal to one fifth of the untreated outcome's standard deviation
 
-## Generation
-
-The generator follows the pure-data mechanism from our simulation paper using Texas's
-SEDA-derived variance components and serial correlation. It adds a district baseline,
-a shared year shock, and correlated district-year errors, standardizes the full untreated
-panel, then assigns cohorts and adds effects. The seed is 20261014.
-
-The traditional effect is 0.20 SD in every treated period. Early staggered adopters receive
-0.10, 0.20, and 0.30 SD in Years 5-7. Late adopters receive 0.15 and 0.25 SD in Years 6-7.
-The true Simple ATT is 0.20 SD in both datasets. Observed estimates will differ.
-
-[Download the data](data.html) · [Follow the lab](workshop.html)
+In the lab, we create the treatment indicators from treatment_start_year and year
