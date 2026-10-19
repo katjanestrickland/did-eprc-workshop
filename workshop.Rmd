@@ -86,8 +86,34 @@ The staggered panel has 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-
 
 ### Create the Treatment Indicators
 
-In applied DID work, adoption dates often need to be converted into indicators for analysis.
-We create these indicators ourselves using **mutate() from dplyr**.
+Our dataset records each district's first treatment year in `treatment_start_year`.
+A value of 5 or 6 tells us when the district adopts the policy, while 0 means it
+never adopts. Panel data often provide adoption timing in this form, and we need
+to convert it into the indicators required for our models.
+
+We create two variables
+
+| Variable | Meaning | Used in this lab |
+|---|---|---|
+| `treated_ever` | 1 in every year for a district that eventually adopts, and 0 for a never-treated district | The traditional DID event study |
+| `treated` | 1 from the district's adoption year onward, and 0 otherwise | The two-by-two DID and TWFE regressions |
+
+For a district that adopts in Year 5
+
+| Year | `treatment_start_year` | `treated_ever` | `treated` |
+|---|---:|---:|---:|
+| 4 | 5 | 1 | 0 |
+| 5 | 5 | 1 | 1 |
+| 6 | 5 | 1 | 1 |
+
+The distinction is between **belonging to the treatment group** and **currently
+receiving treatment**. For never-treated districts, both indicators equal 0 in
+every year.
+
+The CSA function `att_gt()` uses `treatment_start_year` directly to identify
+adoption groups. It does not require either of these new indicators as an input.
+
+We use `mutate()` from **dplyr** to create the variables in both datasets
 
 ```{r treatment-indicators}
 simple <- simple %>%
@@ -106,10 +132,9 @@ staggered <- staggered %>%
   )
 ```
 
-**treated_ever** is 1 in every year for a district that eventually adopts and 0 for a
-never-treated district. **treated** is 1 only from adoption onward.
-The test that treatment_start_year is greater than 0 keeps never-treated districts untreated.
-**as.integer()** converts TRUE and FALSE into 1 and 0.
+The first condition identifies districts that eventually adopt. The second
+checks that the district adopts **and** that the observation is in its adoption
+year or later. `as.integer()` converts these conditions into 1s and 0s.
 
 ## 4. Estimate the Classic Two-by-Two DID
 

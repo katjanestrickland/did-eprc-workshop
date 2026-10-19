@@ -80,7 +80,68 @@
 <p><strong>distinct()</strong> keeps one record per district and adoption year. <strong>count()</strong> counts districts in each group. Read <strong>%&gt;%</strong> as “then.” Zero codes never treated. Treatment stays on after adoption.</p>
 <p>The Texas traditional panel has 416 adopting and 416 never-treated districts. The staggered panel has 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.</p>
 <h3 id="create-the-treatment-indicators">Create the Treatment Indicators</h3>
-<p>In applied DID work, adoption dates often need to be converted into indicators for analysis. We create these indicators ourselves using <strong>mutate() from dplyr</strong>.</p>
+<p>Our dataset records each district’s first treatment year in <code>treatment_start_year</code>. A value of 5 or 6 tells us when the district adopts the policy, while 0 means it never adopts. Panel data often provide adoption timing in this form, and we need to convert it into the indicators required for our models.</p>
+<p>We create two variables</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Meaning</th>
+<th>Used in this lab</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>treated_ever</code></td>
+<td>1 in every year for a district that eventually adopts, and 0 for a never-treated district</td>
+<td>The traditional DID event study</td>
+</tr>
+<tr>
+<td><code>treated</code></td>
+<td>1 from the district’s adoption year onward, and 0 otherwise</td>
+<td>The two-by-two DID and TWFE regressions</td>
+</tr>
+</tbody>
+</table>
+<p>For a district that adopts in Year 5</p>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th style="text-align: right;"><code>treatment_start_year</code></th>
+<th style="text-align: right;"><code>treated_ever</code></th>
+<th style="text-align: right;"><code>treated</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td>6</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+<p>The distinction is between <strong>belonging to the treatment group</strong> and <strong>currently receiving treatment</strong>. For never-treated districts, both indicators equal 0 in every year.</p>
+<p>The CSA function <code>att_gt()</code> uses <code>treatment_start_year</code> directly to identify adoption groups. It does not require either of these new indicators as an input.</p>
+<p>We use <code>mutate()</code> from <strong>dplyr</strong> to create the variables in both datasets</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> simple <span class="sc">%&gt;%</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">treated_ever =</span> <span class="fu">as.integer</span>(treatment_start_year <span class="sc">&gt;</span> <span class="dv">0</span>),</span>
@@ -95,7 +156,7 @@
 <span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>      treatment_start_year <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> year <span class="sc">&gt;=</span> treatment_start_year</span>
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div>
-<p><strong>treated_ever</strong> is 1 in every year for a district that eventually adopts and 0 for a never-treated district. <strong>treated</strong> is 1 only from adoption onward. The test that treatment_start_year is greater than 0 keeps never-treated districts untreated. <strong>as.integer()</strong> converts TRUE and FALSE into 1 and 0.</p>
+<p>The first condition identifies districts that eventually adopt. The second checks that the district adopts <strong>and</strong> that the observation is in its adoption year or later. <code>as.integer()</code> converts these conditions into 1s and 0s.</p>
 <h2 id="estimate-the-classic-two-by-two-did">4. Estimate the Classic Two-by-Two DID</h2>
 <p>Use Year 4, immediately before adoption, and Year 5, the first treated year. We use the same equation as the slides</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mn>2</mn><mo>×</mo><mn>2</mn></mrow></msub><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>G</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>G</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
