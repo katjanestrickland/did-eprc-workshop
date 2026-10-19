@@ -51,8 +51,8 @@ library(did)
 
 Both datasets contain **832 simulated districts representing Texas**, each observed over seven years.
 Each row represents one district in one year. Both panels are balanced and treatment is assigned
-at the district level. The downloaded files contain only district_id, year, treatment_start_year,
-and outcome_std.
+at the district level. The six supplied variables are district_id, year, treatment_start_year,
+outcome_std, treated_ever, and treated. Data preparation is omitted so we can begin analysis directly.
 
 Place the downloaded CSV files in your R project folder
 
@@ -63,9 +63,8 @@ staggered <- read_csv("staggered_did_district.csv")
 
 **read_csv() comes from readr.** Each row is one district in one year.
 We use outcome_std, measured in standard-deviation (SD) units.
-The outcome is standardized before treatment effects are added.
 
-## 3. Check Treatment Timing and Create Indicators
+## 3. Understand the Treatment Variables
 
 Use **dplyr** to count districts by first treatment year
 
@@ -85,14 +84,11 @@ The Texas traditional panel has 416 adopting and 416 never-treated districts.
 The staggered panel has 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.
 
 
-### Create the Treatment Indicators
+### Treatment Group Membership and Active Treatment
 
 Our dataset records each district's first treatment year in `treatment_start_year`.
 A value of 5 or 6 tells us when the district adopts the policy, while 0 means it
-never adopts. Panel data often provide adoption timing in this form, and we need
-to convert it into the indicators required for our models.
-
-We create two variables
+never adopts. Both files already contain the following indicators
 
 | Variable | Meaning | Used in this lab |
 |---|---|---|
@@ -112,30 +108,11 @@ receiving treatment**. For never-treated districts, both indicators equal 0 in
 every year.
 
 The CSA function `att_gt()` uses `treatment_start_year` directly to identify
-adoption groups. It does not require either of these new indicators as an input.
+adoption groups. It does not require either of these indicators as an input.
 
-We use `mutate()` from **dplyr** to create the variables in both datasets
-
-```{r treatment-indicators}
-simple <- simple %>%
-  mutate(
-    treated_ever = as.integer(treatment_start_year > 0),
-    treated = as.integer(
-      treatment_start_year > 0 & year >= treatment_start_year
-    )
-  )
-staggered <- staggered %>%
-  mutate(
-    treated_ever = as.integer(treatment_start_year > 0),
-    treated = as.integer(
-      treatment_start_year > 0 & year >= treatment_start_year
-    )
-  )
-```
-
-The first condition identifies districts that eventually adopt. The second
-checks that the district adopts **and** that the observation is in its adoption
-year or later. `as.integer()` converts these conditions into 1s and 0s.
+The coding rule for `treated_ever` is whether the start year is greater than 0.
+For `treated`, that condition must hold and the observation year must be at least
+the start year. Never-treated districts remain 0 even though their start-year code is 0.
 
 ## 4. Estimate the Classic Two-by-Two DID
 
@@ -181,7 +158,8 @@ summary(model_2x2)
 Variables after the vertical bar specify fixed effects, not ordinary numeric predictors.
 **data** selects the dataset. **vcov = ~ district_id** requests district-clustered standard errors.
 The coefficient on treated equals the two-by-two contrast.
-The true simulated effect is **0.20 SD**, not necessarily the estimated value.
+Clustering allows outcomes from the same district to be related across years.
+The estimated coefficient is measured in SD units.
 
 ## 5. Estimate TWFE Using All Seven Years
 
@@ -204,8 +182,7 @@ Only **data = simple** changes. We now use all seven years.
 District effects account for persistent differences. Year effects account for common shocks.
 In this balanced common-adoption design, the coefficient equals the treated group's average
 pre-to-post change minus the control group's average change.
-We added a treatment effect of **0.20 SD in each post-treatment year**.
-The model estimates one coefficient summarizing that effect across Years 5-7.
+The model estimates one coefficient summarizing the effect across Years 5-7.
 The time-constant treated_ever variable would be absorbed by district effects.
 Use treated, which switches on at adoption.
 
@@ -215,7 +192,7 @@ We use the same equation as the slides
 
 $$
 Y_{it}=\alpha_i+\lambda_t+
-\sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g=k\}+u_{it}
+\sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g=k\}\,\mathrm{TreatedEver}_i+u_{it}
 $$
 
 Treatment begins in Year 5, so $g=5$ and event time is the study year minus 5, $k=t-g$.
@@ -250,7 +227,7 @@ treatment the reference period.
 Each $\beta_k$ measures how the treated-control gap differs from its Year 4 value.
 Pre-treatment coefficients are diagnostics, not proof of parallel trends.
 Under parallel trends and no anticipation, post-treatment coefficients estimate effects relative
-to Year 4. We added an effect of **0.20 SD in each of Years 5-7**.
+to Year 4.
 The three post-treatment coefficients estimate those effects separately.
 
 This example has one treatment start year. In the staggered example, districts begin
@@ -269,15 +246,8 @@ $$
 $G_g$ is the cohort first treated in $g$. $Y_{it}(g)$ is the potential outcome when
 treatment starts in $g$. $Y_{it}(0)$ is the outcome without treatment.
 
-| Cohort $g$ | Year $t$ | True effect (SD) |
-|---|---|---|
-| 5 | 5 | 0.10 |
-| 5 | 6 | 0.20 |
-| 5 | 7 | 0.30 |
-| 6 | 6 | 0.15 |
-| 6 | 7 | 0.25 |
-
-These schedules are known effects added to the simulated untreated outcomes.
+There are 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.
+The early group has three post-treatment years and the late group has two.
 A single TWFE coefficient can mix never-treated, not-yet-treated, and already-treated comparisons.
 Already-treated controls can be problematic when effects change over time.
 
@@ -317,59 +287,190 @@ model_csa <- att_gt(
 summary(model_csa)
 ```
 
-| Argument | Meaning |
+| Argument | Meaning and reason for our choice |
 |---|---|
-| yname, tname, idname | Outcome, study-year, and district-ID columns |
-| gname | First treatment year with 0 for never treated, not the binary treatment indicator |
-| xformla = ~ 1 | No adjustment covariates |
-| panel = TRUE | Follow the same districts over time |
-| control_group = "nevertreated" | Use never-treated controls |
-| base_period = "universal" | Reference each cohort's last untreated year |
-| anticipation = 0 | No effects before adoption |
+| yname = "outcome_std" | Outcome $Y_{it}$ in SD units |
+| tname = "year" | Study year $t$, not time since adoption |
+| idname = "district_id" | Follows district $i$ across years |
+| gname = "treatment_start_year" | Cohort $g$, with 0 for never treated, not a binary indicator |
+| xformla = ~ 1 | Intercept-only covariate formula, meaning no adjustment covariates |
+| data = staggered | Selects the staggered-adoption dataset |
+| panel = TRUE | Follows the same districts over time. FALSE is for repeated cross sections |
+| control_group = "nevertreated" | Uses never-treated districts as comparison group $C$ |
+| base_period = "universal" | Fixed reference year within each cohort |
+| anticipation = 0 | No treatment effects before adoption |
+| bstrap = TRUE | Multiplier bootstrap inference |
+| biters = 1000 | 1,000 bootstrap iterations |
+| clustervars = "district_id" | Allows dependence within districts over time |
+| cband = TRUE | Simultaneous confidence bands across group-time estimates |
+
+In `xformla = ~ 1`, the 1 represents an intercept, not one covariate.
+With covariates, a formula could be `~ poverty_rate + enrollment`, provided those
+columns existed. Our example has no covariates.
+
+The alternative `control_group = "notyettreated"` includes never-treated districts
+and eligible districts that have not yet adopted. With no anticipation, Year 6
+adopters can contribute as controls in Year 5, but not once treated in Year 6.
+
+### What Does the Base Period Mean?
+
+With `base_period = "universal"` and no anticipation, each cohort uses $g-1$.
+Universal does not mean that every cohort uses the same calendar year.
+
+| Cohort | Reference year | Example |
+|---|---|---|
+| Year 5 adopters | Year 4 | ATT(5,7) compares changes from Year 4 to Year 7 |
+| Year 6 adopters | Year 5 | ATT(6,7) compares changes from Year 5 to Year 7 |
+
+Subtract the control group's change over those same years in each case.
+Before treatment, the universal setting also compares each year with the cohort's
+fixed reference year, normalizing that reference to zero.
+
+The alternative `base_period = "varying"` uses consecutive-year changes before
+treatment, such as Year 2 to Year 3. Both settings produce the same post-treatment
+ATTs, but different pre-treatment comparisons. This lab retains the universal setting.
+With `anticipation = 1`, effects may begin one year before adoption and the clean
+reference period moves back to $g-2$.
 
 See the [att_gt() documentation](https://bcallaway11.github.io/did/reference/att_gt.html).
 
 ## 9. Read the Estimates and Uncertainty
 
 **Group** identifies adoption cohort and **Time** identifies outcome year.
-Group 5 and Time 7 identify ATT(5,7), whose true value is **0.30 SD**.
+Group 5 and Time 7 identify the effect in Year 7 for Year 5 adopters.
 Pre-treatment comparisons are diagnostics, not effects of an already-active treatment.
 
-**bstrap = TRUE** uses a multiplier bootstrap. **biters = 1000** selects 1,000 iterations.
-**clustervars = "district_id"** allows within-district dependence over time.
-**set.seed()** makes the bootstrap reproducible in the same computing setup.
+### Bootstrap, Seed, and Clustering
 
-**cband = TRUE** requests simultaneous confidence bands across group-by-time estimates,
-rather than separate pointwise intervals. See the
-[did inference options](https://bcallaway11.github.io/did/reference/att_gt.html).
+We use the multiplier bootstrap to approximate sampling uncertainty.
+It randomly reweights district-level influence contributions across iterations,
+rather than generating a new outcome dataset. We cluster by district because
+treatment is assigned to districts and their repeated observations may be dependent.
+
+`set.seed(20261014)` fixes the random-number sequence, making the bootstrap reproducible
+with the same data, code, package versions, and computing setup. A different seed can
+change bootstrap standard errors and confidence bands slightly, but not the group-time
+point estimates for the same data and model settings.
+
+`biters = 1000` requests 1,000 iterations. `cband = TRUE` requests simultaneous
+confidence bands that target coverage of the group-time effects together at the default
+95% level, rather than separate 95% pointwise intervals. `cband = FALSE` requests
+pointwise intervals. Simultaneous bands require `bstrap = TRUE`.
+
+### Pre-Trends Assessment
+
+`summary(model_csa)` includes a p-value for a joint Wald pre-test of whether the
+non-normalized pre-treatment comparisons are jointly zero. For our universal-base
+specification, comparisons are relative to each cohort's fixed pre-treatment reference.
+
+```{r pretest}
+model_csa$Wpval
+```
+
+The pre-test p-value is **`r format.pval(model_csa$Wpval, digits=3, eps=0.001)`**.
+A small p-value provides evidence against the pre-treatment restrictions.
+A large p-value means we did not detect a violation, not that parallel trends is proven.
+Pre-treatment evidence cannot establish the unobserved post-treatment counterfactual.
+Interpret the test alongside the design, estimates, and their uncertainty.
+
+See the [pre-testing guide](https://bcallaway11.github.io/did/articles/pre-testing.html).
 
 ## 10. Estimate Group Averages
 
-A **group average** summarizes a group's effects across its post-treatment years.
+A group average summarizes one adoption group's effects across its post-treatment years.
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(g)
 =\frac{1}{T-g+1}\sum_{t=g}^{T}\widehat{\operatorname{ATT}}(g,t)
 $$
 
-Here $T=7$. The early group contributes Years 5-7 and the late group Years 6-7.
-Their known averages are $(0.10+0.20+0.30)/3=0.20$ SD and
-$(0.15+0.25)/2=0.20$ SD.
+Here $g$ is the first treatment year, $t$ is the outcome year, and $T=7$ is the last year.
+$T-g+1$ counts the group's post-treatment years. Hats indicate estimates, not known effects.
+Each year within a group receives equal weight in this balanced panel.
+
+### Calculate the Within-Group Weights
+
+The Year 5 group contributes $7-5+1=3$ years, each weighted $1/3$.
+The Year 6 group contributes $7-6+1=2$ years, each weighted $1/2$.
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{group}}(5)
+=\frac{\widehat{\operatorname{ATT}}(5,5)+
+\widehat{\operatorname{ATT}}(5,6)+\widehat{\operatorname{ATT}}(5,7)}{3}
+$$
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{group}}(6)
+=\frac{\widehat{\operatorname{ATT}}(6,6)+\widehat{\operatorname{ATT}}(6,7)}{2}
+$$
 
 ```{r group-aggregation}
 group_att <- aggte(model_csa, type = "group")
 summary(group_att)
 ```
 
-**aggte() from did** takes the model returned by att_gt().
-**type = "group"** averages within each adoption group.
-Read the group-specific rows for each group's average.
-The overall summary additionally averages the group averages using group-size weights.
-It is not the same weighting rule as Simple ATT, even though their true values coincide here.
+`aggte()` takes the fitted `model_csa` object. `type = "group"` requests the group averages.
+We extract the five estimated post-treatment effects to show the arithmetic.
+
+```{r extract-effects}
+post_att <- data.frame(
+  group = model_csa$group,
+  year = model_csa$t,
+  estimate = model_csa$att
+) %>%
+  filter(year >= group) %>%
+  arrange(group, year)
+post_att
+```
+
+```{r arithmetic-helpers, include=FALSE, purl=FALSE}
+cell <- function(g,t) post_att$estimate[post_att$group == g & post_att$year == t]
+fmt <- function(x) sprintf("%.4f", x)
+a55 <- cell(5,5)
+a56 <- cell(5,6)
+a57 <- cell(5,7)
+a66 <- cell(6,6)
+a67 <- cell(6,7)
+g5 <- mean(c(a55,a56,a57))
+g6 <- mean(c(a66,a67))
+c5 <- a55
+c6 <- mean(c(a56,a66))
+c7 <- mean(c(a57,a67))
+```
+
+### Substitute the Estimated Effects
+
+All results below are in SD units. Displayed numbers are rounded to four decimals.
+Calculations use full precision.
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{group}}(5)
+=\frac{(`r fmt(a55)`)+(`r fmt(a56)`)+(`r fmt(a57)`)}{3}
+=`r fmt(g5)`
+$$
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{group}}(6)
+=\frac{(`r fmt(a66)`)+(`r fmt(a67)`)}{2}
+=`r fmt(g6)`
+$$
+
+### Overall Group Average
+
+$N_g$ counts districts in adoption group $g$, not rows. We have $N_5=N_6=208$.
+Each group receives weight $208/(208+208)=1/2$.
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{group,overall}}
+=\frac12(`r fmt(g5)`)+\frac12(`r fmt(g6)`)
+=`r fmt(group_att$overall.att)`
+$$
+
+This overall result averages the group averages, rather than weighting all five cells equally.
 
 ## 11. Estimate Calendar Summaries
 
-A **calendar summary** averages effects across groups already treated in the same study year.
+A calendar summary combines effects across groups already treated in the same study year.
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(t)
@@ -377,43 +478,125 @@ $$
 \widehat{\operatorname{ATT}}(g,t)
 $$
 
-$N_g$ is the number of districts in treated cohort $g$. The sums are over treated cohorts.
-Only early adopters contribute in Year 5. Both groups contribute in Years 6 and 7.
+$N_g$ is the number of districts in group $g$. The index $h$ runs over adoption groups
+already treated by year $t$. The denominator counts their districts.
+Never-treated and not-yet-treated districts are excluded from these aggregation weights,
+although never-treated districts supply the comparison used to estimate each ATT.
 
-| Study year | True calendar summary in SD units |
-|---|---|
-| 5 | 0.10 |
-| 6 | (0.20 + 0.15) / 2 = 0.175 |
-| 7 | (0.30 + 0.25) / 2 = 0.275 |
+### Calculate the Weights
+
+| Year $t$ | Treated groups | Denominator | Weight per included group |
+|---|---|---|---|
+| 5 | Group 5 | $208$ | $208/208=1$ |
+| 6 | Groups 5 and 6 | $208+208=416$ | $208/416=1/2$ |
+| 7 | Groups 5 and 6 | $208+208=416$ | $208/416=1/2$ |
+
+Only the early group contributes in Year 5. Both groups contribute in Years 6 and 7.
+Calendar time means the same observation year, not the same time since adoption.
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{calendar}}(5)
+=\widehat{\operatorname{ATT}}(5,5)
+$$
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{calendar}}(6)
+=\frac12\widehat{\operatorname{ATT}}(5,6)+\frac12\widehat{\operatorname{ATT}}(6,6)
+$$
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
+=\frac12\widehat{\operatorname{ATT}}(5,7)+\frac12\widehat{\operatorname{ATT}}(6,7)
+$$
 
 ```{r calendar-aggregation}
 calendar_att <- aggte(model_csa, type = "calendar")
 summary(calendar_att)
 ```
 
-**type = "calendar"** requests the study-year summaries.
-The overall result averages these calendar summaries across the included post-treatment years.
-Its true value is approximately 0.1833 SD, which differs from the true Simple ATT of 0.20 SD.
-The averaging rules answer different questions.
+`type = "calendar"` requests a separate summary for each post-treatment calendar year.
+
+### Substitute the Estimated Effects
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{calendar}}(5)
+=1(`r fmt(a55)`)=`r fmt(c5)`
+$$
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{calendar}}(6)
+=\frac12(`r fmt(a56)`)+\frac12(`r fmt(a66)`)=`r fmt(c6)`
+$$
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
+=\frac12(`r fmt(a57)`)+\frac12(`r fmt(a67)`)=`r fmt(c7)`
+$$
+
+### Overall Calendar Average
+
+The overall result gives equal weight to each included post-treatment calendar year.
+There are three such years, so each year receives weight $1/3$.
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{calendar,overall}}
+=\frac{(`r fmt(c5)`)+(`r fmt(c6)`)+(`r fmt(c7)`)}{3}
+=`r fmt(calendar_att$overall.att)`
+$$
 
 ## 12. Estimate Simple ATT
 
-Following the slides, we calculate the **Simple ATT**
+Simple ATT combines all post-treatment group-time effects with cell weights proportional to cohort size.
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{simple}}
-=\sum_g\sum_{t=g}^{T}w_{g,t}\widehat{\operatorname{ATT}}(g,t),
-\qquad w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
+=\sum_g\sum_{t=g}^{T}w_{g,t}\widehat{\operatorname{ATT}}(g,t)
 $$
 
-$N_g$ is cohort size and $T=7$ is the final year.
+$$
+w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
+$$
+
+$N_g$ counts districts in adoption group $g$, and $T-h+1$ counts group $h$'s
+post-treatment years. The sums include treated cohorts only.
 This formula applies to our balanced panel without sampling weights.
-The treated cohorts have equal size, so each of the five cells receives weight 1/5.
-The true summary is
+
+### Calculate the Denominator and Weights
+
+The Year 5 group contributes $208\times3=624$ treated district-year observations.
+The Year 6 group contributes $208\times2=416$.
 
 $$
-\operatorname{ATT}_{\mathrm{simple}}
-=\frac{0.10+0.20+0.30+0.15+0.25}{5}=0.20
+\begin{aligned}
+\sum_h N_h(T-h+1)&=208(3)+208(2)\\
+&=624+416\\
+&=1040
+\end{aligned}
+$$
+
+Each of our five cells has the same cohort size, so each receives weight
+
+$$
+w_{g,t}=\frac{208}{1040}=0.20
+$$
+
+| Group | Year | Cell weight |
+|---|---|---|
+| 5 | 5 | $208/1040=0.20$ |
+| 5 | 6 | $208/1040=0.20$ |
+| 5 | 7 | $208/1040=0.20$ |
+| 6 | 6 | $208/1040=0.20$ |
+| 6 | 7 | $208/1040=0.20$ |
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{simple}}
+={}&0.20\widehat{\operatorname{ATT}}(5,5)
++0.20\widehat{\operatorname{ATT}}(5,6)\\
+&+0.20\widehat{\operatorname{ATT}}(5,7)
++0.20\widehat{\operatorname{ATT}}(6,6)\\
+&+0.20\widehat{\operatorname{ATT}}(6,7)
+\end{aligned}
 $$
 
 ```{r aggregation}
@@ -421,12 +604,27 @@ overall_csa <- aggte(model_csa, type = "simple")
 summary(overall_csa)
 ```
 
-**aggte() from did** takes the fitted model_csa object, not the original dataset.
-**type = "simple"** selects the aggregation rule.
-The early cohort contributes three post-treatment years and the late cohort two,
-giving total weights 3/5 and 2/5. Never-treated districts supply the comparison,
-but receive no treatment-effect weight. Do not average the five standard errors.
-The package accounts for joint uncertainty.
+`type = "simple"` selects the cell-weighted overall average.
+
+### Substitute the Estimated Effects
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{simple}}
+={}&0.20(`r fmt(a55)`)+0.20(`r fmt(a56)`)\\
+&+0.20(`r fmt(a57)`)+0.20(`r fmt(a66)`)\\
+&+0.20(`r fmt(a67)`)\\
+={}&`r fmt(overall_csa$overall.att)`
+\end{aligned}
+$$
+
+The early group receives total weight $3(0.20)=0.60$ and the late group receives
+$2(0.20)=0.40$. This differs from the overall group average, which gives each group
+weight $0.50$. The calendar overall average instead gives each calendar year equal weight.
+These summaries can differ because they answer different questions.
+
+Never-treated districts supply the comparison but receive no treatment-effect weight.
+Do not average the standard errors. The package accounts for joint uncertainty.
 See the [aggte() documentation](https://bcallaway11.github.io/did/reference/aggte.html).
 
 ## Questions and Discussion

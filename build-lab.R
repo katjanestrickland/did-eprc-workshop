@@ -21,8 +21,15 @@ stopifnot(max(abs(manual - post$ATT)) < 1e-8)
 cat("Texas sample sizes and manual DID contrasts verified.\n")
 for (name in c("simple_did_district", "staggered_did_district")) {
   input <- readr::read_csv(paste0("assets/data/", name, ".csv"), show_col_types=FALSE)
-  stopifnot(identical(names(input), c("district_id", "year", "treatment_start_year", "outcome_std")),
-            !anyNA(input))
+  stopifnot(identical(names(input), c("district_id", "year", "treatment_start_year", "outcome_std", "treated_ever", "treated")),
+            !anyNA(input), nrow(input) == 5824,
+            !anyDuplicated(input[c("district_id", "year")]),
+            all(table(input$district_id) == 7),
+            all(input$treated_ever == as.integer(input$treatment_start_year > 0)),
+            all(input$treated == as.integer(input$treatment_start_year > 0 & input$year >= input$treatment_start_year)))
+  expected <- if (name == "simple_did_district") c(`0`=416, `5`=416) else c(`0`=416, `5`=208, `6`=208)
+  counts <- table(input$treatment_start_year[input$year == 1])
+  stopifnot(identical(names(counts), names(expected)), all(as.numeric(counts) == expected))
 }
 group_manual <- tapply(post$ATT, post$cohort, mean)
 calendar_manual <- tapply(post$ATT, post$year, mean)
@@ -30,4 +37,7 @@ stopifnot(max(abs(group_manual[as.character(lab$group_att$egt)] - lab$group_att$
           max(abs(calendar_manual[as.character(lab$calendar_att$egt)] - lab$calendar_att$att.egt)) < 1e-8,
           abs(mean(group_manual) - lab$group_att$overall.att) < 1e-8,
           abs(mean(calendar_manual) - lab$calendar_att$overall.att) < 1e-8)
-cat("Four-column inputs, group averages, and calendar summaries verified.\n")
+stopifnot(abs(lab$g5 - lab$group_att$att.egt[lab$group_att$egt == 5]) < 1e-8,
+          abs(lab$g6 - lab$group_att$att.egt[lab$group_att$egt == 6]) < 1e-8,
+          abs(mean(c(lab$c5,lab$c6,lab$c7)) - lab$calendar_att$overall.att) < 1e-8)
+cat("Six-column inputs and all worked aggregation calculations verified.\n")

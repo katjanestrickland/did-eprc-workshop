@@ -20,23 +20,6 @@ staggered %>%
   count(treatment_start_year, name = "districts")
 
 
-## ----treatment-indicators-----------------------------------------------------
-simple <- simple %>%
-  mutate(
-    treated_ever = as.integer(treatment_start_year > 0),
-    treated = as.integer(
-      treatment_start_year > 0 & year >= treatment_start_year
-    )
-  )
-staggered <- staggered %>%
-  mutate(
-    treated_ever = as.integer(treatment_start_year > 0),
-    treated = as.integer(
-      treatment_start_year > 0 & year >= treatment_start_year
-    )
-  )
-
-
 ## ----two-period---------------------------------------------------------------
 two_period <- simple %>%
   filter(year %in% c(4, 5))
@@ -90,9 +73,26 @@ model_csa <- att_gt(
 summary(model_csa)
 
 
+## ----pretest------------------------------------------------------------------
+model_csa$Wpval
+
+
 ## ----group-aggregation--------------------------------------------------------
 group_att <- aggte(model_csa, type = "group")
 summary(group_att)
+
+
+## ----extract-effects----------------------------------------------------------
+post_att <- data.frame(
+  group = model_csa$group,
+  year = model_csa$t,
+  estimate = model_csa$att
+) %>%
+  filter(year >= group) %>%
+  arrange(group, year)
+post_att
+
+
 
 
 ## ----calendar-aggregation-----------------------------------------------------

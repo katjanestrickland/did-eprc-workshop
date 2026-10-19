@@ -4,18 +4,7 @@ title: "Data"
 
 # Data
 
-These datasets illustrate a district-level intervention in Texas using 832 simulated districts followed over 7 years. Every district is observed each year, so the panels are balanced. Each row represents one district in one year. Once a district starts treatment, it stays treated for the remaining years. For more details on the data-generation process, see our staggered DID simulation paper [link forthcoming].
-
-## Treatment Effects
-
-The treatment effects are shown below in standard-deviation (SD) units
-
-| Dataset and group | Years 1-4 | Year 5 | Year 6 | Year 7 |
-|---|---:|---:|---:|---:|
-| Traditional DID treated group | 0 | 0.20 | 0.20 | 0.20 |
-| Staggered DID early adopters | 0 | 0.10 | 0.20 | 0.30 |
-| Staggered DID late adopters | 0 | 0 | 0.15 | 0.25 |
-| Never-treated groups | 0 | 0 | 0 | 0 |
+These datasets illustrate a district-level intervention in Texas using 832 simulated districts followed over 7 years. Every district is observed each year, so the panels are balanced. Each row represents one district in one year. Once a district starts treatment, it stays treated for the remaining years. Both datasets are ready for analysis and include the treatment indicators used in the lab.
 
 ## Download the Data
 
@@ -34,8 +23,10 @@ The treatment effects are shown below in standard-deviation (SD) units
 | `district_id` | District identifier from 1 to 832 |
 | `year` | Study year from 1 to 7 |
 | `treatment_start_year` | First treated year, with 0 for never treated |
-| `outcome_std` | Achievement in SD units, standardized across districts and years before treatment effects are added |
+| `outcome_std` | Achievement measured in standard-deviation (SD) units |
+| `treated_ever` | 1 in every year for a district that eventually adopts, otherwise 0 |
+| `treated` | 1 in the adoption year and all later years, otherwise 0 |
 
-We create the treatment indicators during the lab using `treatment_start_year` and `year`.
+Both treatment indicators are supplied in the downloads.
 
 [Continue to the Hands-on R Lab](workshop.html)

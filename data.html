@@ -13,50 +13,7 @@
 <a href="resources.html">Resources</a></div></nav></header>
 <main id="main" class="document ">
 <article><h1 id="data">Data</h1>
-<p>These datasets illustrate a district-level intervention in Texas using 832 simulated districts followed over 7 years. Every district is observed each year, so the panels are balanced. Each row represents one district in one year. Once a district starts treatment, it stays treated for the remaining years. For more details on the data-generation process, see our staggered DID simulation paper [link forthcoming].</p>
-<h2 id="treatment-effects">Treatment Effects</h2>
-<p>The treatment effects are shown below in standard-deviation (SD) units</p>
-<table>
-<thead>
-<tr>
-<th>Dataset and group</th>
-<th style="text-align: right;">Years 1-4</th>
-<th style="text-align: right;">Year 5</th>
-<th style="text-align: right;">Year 6</th>
-<th style="text-align: right;">Year 7</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Traditional DID treated group</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.20</td>
-<td style="text-align: right;">0.20</td>
-<td style="text-align: right;">0.20</td>
-</tr>
-<tr>
-<td>Staggered DID early adopters</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.10</td>
-<td style="text-align: right;">0.20</td>
-<td style="text-align: right;">0.30</td>
-</tr>
-<tr>
-<td>Staggered DID late adopters</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0.15</td>
-<td style="text-align: right;">0.25</td>
-</tr>
-<tr>
-<td>Never-treated groups</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-</tr>
-</tbody>
-</table>
+<p>These datasets illustrate a district-level intervention in Texas using 832 simulated districts followed over 7 years. Every district is observed each year, so the panels are balanced. Each row represents one district in one year. Once a district starts treatment, it stays treated for the remaining years. Both datasets are ready for analysis and include the treatment indicators used in the lab.</p>
 <h2 id="download-the-data">Download the Data</h2>
 <table>
 <thead>
@@ -141,10 +98,18 @@ Staggered DID
 </tr>
 <tr>
 <td><code>outcome_std</code></td>
-<td>Achievement in SD units, standardized across districts and years before treatment effects are added</td>
+<td>Achievement measured in standard-deviation (SD) units</td>
+</tr>
+<tr>
+<td><code>treated_ever</code></td>
+<td>1 in every year for a district that eventually adopts, otherwise 0</td>
+</tr>
+<tr>
+<td><code>treated</code></td>
+<td>1 in the adoption year and all later years, otherwise 0</td>
 </tr>
 </tbody>
 </table>
-<p>We create the treatment indicators during the lab using <code>treatment_start_year</code> and <code>year</code>.</p>
+<p>Both treatment indicators are supplied in the downloads.</p>
 <p><a href="workshop.html">Continue to the Hands-on R Lab</a></p>
 </article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

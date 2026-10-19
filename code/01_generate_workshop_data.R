@@ -57,10 +57,10 @@ for (name in names(panels)) {
   stopifnot(max(abs(p$true_effect_std - expected_effect)) < 1e-12,
             abs(mean(p$true_effect_std[p$treated == 1]) - 0.20) < 1e-12,
             all(p$state == "TX"))
-  teaching <- select(p, district_id, year, treatment_start_year, outcome_std)
+  teaching <- select(p, district_id, year, treatment_start_year, outcome_std, treated_ever, treated)
   stopifnot(nrow(teaching) == 5824, !anyDuplicated(teaching[c("district_id", "year")]),
             all(table(teaching$district_id) == 7), !anyNA(teaching$outcome_std),
-            identical(names(teaching), c("district_id", "year", "treatment_start_year", "outcome_std")))
+            identical(names(teaching), c("district_id", "year", "treatment_start_year", "outcome_std", "treated_ever", "treated")))
   expected <- if (name == "simple_did_district") c(`0`=416L, `5`=416L) else c(`0`=416L, `5`=208L, `6`=208L)
   counts <- table(teaching$treatment_start_year[teaching$year == 1])
   stopifnot(identical(names(counts), names(expected)), all(as.integer(counts) == expected),

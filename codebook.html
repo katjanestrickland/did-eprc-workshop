@@ -15,7 +15,7 @@
 <article><h1 id="data-codebook">Data Codebook</h1>
 <p>The codebook is available directly on the <a href="data.html#codebook">Data page</a></p>
 <h2 id="codebook">Codebook</h2>
-<p>Both downloaded datasets contain only these four variables</p>
+<p>Both downloaded datasets contain these six variables</p>
 <table>
 <thead>
 <tr>
@@ -81,21 +81,26 @@ The traditional DID dataset has only Year 5 adopters
 <code>outcome_std</code>
 </td>
 <td>
-<ul>
-<li>
 Simulated achievement measured in SD units
-</li>
-<li>
-Untreated outcomes are standardized across all districts and years before effects are added
-</li>
-<li>
-The final observed outcome is not standardized again
-</li>
-</ul>
+</td>
+</tr>
+<tr>
+<td>
+<code>treated_ever</code>
+</td>
+<td>
+1 if treatment_start_year is greater than 0, otherwise 0. Constant within each district
+</td>
+</tr>
+<tr>
+<td>
+<code>treated</code>
+</td>
+<td>
+1 if treatment_start_year is greater than 0 and year is at least treatment_start_year, otherwise 0
 </td>
 </tr>
 </tbody>
 </table>
-<p>An effect of <strong>0.20 SD</strong> represents an increase equal to one fifth of the untreated outcome’s standard deviation</p>
-<p>In the lab, we create the treatment indicators from treatment_start_year and year</p>
+<p>Both treatment indicators are included in the downloads so participants can begin the analysis directly</p>
 </article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

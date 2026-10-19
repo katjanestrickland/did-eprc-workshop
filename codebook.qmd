@@ -8,7 +8,7 @@ The codebook is available directly on the [Data page](data.html#codebook)
 
 ## Codebook
 
-Both downloaded datasets contain only these four variables
+Both downloaded datasets contain these six variables
 
 <table>
 <thead><tr><th>Variable</th><th>Definition</th></tr></thead>
@@ -16,10 +16,10 @@ Both downloaded datasets contain only these four variables
 <tr><td><code>district_id</code></td><td><ul><li>District identifier from 1 to 832</li><li>The same identifier follows a district across all seven years</li></ul></td></tr>
 <tr><td><code>year</code></td><td><ul><li>Study year from 1 to 7</li><li>Not a calendar year</li></ul></td></tr>
 <tr><td><code>treatment_start_year</code></td><td><ul><li>First treated year is 5 or 6</li><li>The traditional DID dataset has only Year 5 adopters</li><li>0 means never treated</li></ul></td></tr>
-<tr><td><code>outcome_std</code></td><td><ul><li>Simulated achievement measured in SD units</li><li>Untreated outcomes are standardized across all districts and years before effects are added</li><li>The final observed outcome is not standardized again</li></ul></td></tr>
+<tr><td><code>outcome_std</code></td><td>Simulated achievement measured in SD units</td></tr>
+<tr><td><code>treated_ever</code></td><td>1 if treatment_start_year is greater than 0, otherwise 0. Constant within each district</td></tr>
+<tr><td><code>treated</code></td><td>1 if treatment_start_year is greater than 0 and year is at least treatment_start_year, otherwise 0</td></tr>
 </tbody>
 </table>
 
-An effect of **0.20 SD** represents an increase equal to one fifth of the untreated outcome's standard deviation
-
-In the lab, we create the treatment indicators from treatment_start_year and year
+Both treatment indicators are included in the downloads so participants can begin the analysis directly
