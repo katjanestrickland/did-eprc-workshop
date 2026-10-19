@@ -467,7 +467,10 @@ Y_{it}=\alpha_i+\lambda_t+
 <p><strong>cband = TRUE</strong> requests simultaneous confidence bands across group-by-time estimates, rather than separate pointwise intervals. See the <a href="https://bcallaway11.github.io/did/reference/att_gt.html">did inference options</a>.</p>
 <h2 id="estimate-group-averages">10. Estimate Group Averages</h2>
 <p>A <strong>group average</strong> summarizes a group’s effects across its post-treatment years.</p>
-<p>$ <em>{}(g) =</em>{t=g}^{T}(g,t) $</p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">g</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mn>1</mn><mrow><mi>T</mi><mo>−</mo><mi>g</mi><mo>+</mo><mn>1</mn></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mi>g</mi></mrow><mi>T</mi></munderover><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
+\widehat{\operatorname{ATT}}_{\mathrm{group}}(g)
+=\frac{1}{T-g+1}\sum_{t=g}^{T}\widehat{\operatorname{ATT}}(g,t)
+</annotation></semantics></math></div>
 <p>Here <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">T=7</annotation></semantics></math>. The early group contributes Years 5-7 and the late group Years 6-7. Their known averages are <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.10</mn><mo>+</mo><mn>0.20</mn><mo>+</mo><mn>0.30</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>3</mn><mo>=</mo><mn>0.20</mn></mrow><annotation encoding="application/x-tex">(0.10+0.20+0.30)/3=0.20</annotation></semantics></math> SD and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.15</mn><mo>+</mo><mn>0.25</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn><mo>=</mo><mn>0.20</mn></mrow><annotation encoding="application/x-tex">(0.15+0.25)/2=0.20</annotation></semantics></math> SD.</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>group_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;group&quot;</span>)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(group_att)</span></code></pre></div>
@@ -495,8 +498,12 @@ Y_{it}=\alpha_i+\lambda_t+
 <p><strong>aggte() from did</strong> takes the model returned by att_gt(). <strong>type = “group”</strong> averages within each adoption group. Read the group-specific rows for each group’s average. The overall summary additionally averages the group averages using group-size weights. It is not the same weighting rule as Simple ATT, even though their true values coincide here.</p>
 <h2 id="estimate-calendar-summaries">11. Estimate Calendar Summaries</h2>
 <p>A <strong>calendar summary</strong> averages effects across groups already treated in the same study year.</p>
-<p>$ <em>{}(t) =</em>{gt} (g,t) $</p>
-<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> is the number of districts in group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>. Only early adopters contribute in Year 5. Both groups contribute in Years 6 and 7.</p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><munder><mo>∑</mo><mrow><mi>g</mi><mo>≤</mo><mi>t</mi></mrow></munder><mfrac><msub><mi>N</mi><mi>g</mi></msub><mrow><munder><mo>∑</mo><mrow><mi>h</mi><mo>≤</mo><mi>t</mi></mrow></munder><msub><mi>N</mi><mi>h</mi></msub></mrow></mfrac><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
+\widehat{\operatorname{ATT}}_{\mathrm{calendar}}(t)
+=\sum_{g\le t}\frac{N_g}{\sum_{h\le t}N_h}
+\widehat{\operatorname{ATT}}(g,t)
+</annotation></semantics></math></div>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> is the number of districts in treated cohort <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>. The sums are over treated cohorts. Only early adopters contribute in Year 5. Both groups contribute in Years 6 and 7.</p>
 <table>
 <thead>
 <tr>
@@ -578,10 +585,7 @@ Y_{it}=\alpha_i+\lambda_t+
 <h2 id="questions-and-discussion">Questions and Discussion</h2>
 <p><strong>1:30-2:00 PM</strong> Which units receive treatment? Which supply an untreated comparison? Which effect summary answers your question? What makes parallel trends plausible?</p>
 <p>ETWFE remains a lecture-only extension in this lab. See <a href="resources.html">Resources</a> for further reading.</p>
-<details>
-<summary>
-R session and package versions
-</summary>
+<h3 id="r-session-and-package-versions">R Session and Package Versions</h3>
 <div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
 <pre><code>#&gt; R version 4.4.2 (2024-10-31)
 #&gt; Platform: aarch64-apple-darwin20
@@ -638,5 +642,4 @@ R session and package versions
 #&gt;  [94] caret_7.0-1          TH.data_1.1-2        farver_2.1.2
 #&gt;  [97] lifecycle_1.0.4      hardhat_1.4.0        bit64_4.6.0-1
 #&gt; [100] MASS_7.3-61</code></pre>
-</details>
 </article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

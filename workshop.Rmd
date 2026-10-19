@@ -1,5 +1,6 @@
 ---
 title: "Hands-on R Lab"
+output: pdf_document
 ---
 
 ```{r settings, include=FALSE, purl=FALSE}
@@ -346,10 +347,10 @@ rather than separate pointwise intervals. See the
 
 A **group average** summarizes a group's effects across its post-treatment years.
 
-$
+$$
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(g)
 =\frac{1}{T-g+1}\sum_{t=g}^{T}\widehat{\operatorname{ATT}}(g,t)
-$
+$$
 
 Here $T=7$. The early group contributes Years 5-7 and the late group Years 6-7.
 Their known averages are $(0.10+0.20+0.30)/3=0.20$ SD and
@@ -370,13 +371,13 @@ It is not the same weighting rule as Simple ATT, even though their true values c
 
 A **calendar summary** averages effects across groups already treated in the same study year.
 
-$
+$$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(t)
-=\sum_{g\leq t}\frac{N_g}{\sum_{h\leq t}N_h}
+=\sum_{g\le t}\frac{N_g}{\sum_{h\le t}N_h}
 \widehat{\operatorname{ATT}}(g,t)
-$
+$$
 
-$N_g$ is the number of districts in group $g$.
+$N_g$ is the number of districts in treated cohort $g$. The sums are over treated cohorts.
 Only early adopters contribute in Year 5. Both groups contribute in Years 6 and 7.
 
 | Study year | True calendar summary in SD units |
@@ -436,10 +437,8 @@ Which effect summary answers your question? What makes parallel trends plausible
 ETWFE remains a lecture-only extension in this lab.
 See [Resources](resources.html) for further reading.
 
-<details><summary>R session and package versions</summary>
+### R Session and Package Versions
 
 ```{r session}
 sessionInfo()
 ```
-
-</details>
