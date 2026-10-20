@@ -28,7 +28,9 @@ for (const [slug, name] of pages) {
     if (index !== numbers.length) throw new Error('An equation did not render');
   }
   if (!/<h1\b/.test(body) && slug !== 'workshop') body = `<h1>${name}</h1>\n` + body;
-  const headings = [...body.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/g)];
+  const headings = [...body.matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<\/h\1>/g)]
+    .filter(h => h[1] === '2' || /^(8\.\d|Inference|Assess Parallel Trends)/.test(h[3]))
+    .map(h => [h[0], h[2], h[3]]);
   const toc = slug === 'workshop' ? `<aside class="lab-toc" aria-label="On this page"><strong>In this lab</strong><nav>${headings.map(h => `<a href="#${escape(h[1])}">${h[2]}</a>`).join('')}</nav></aside>` : '';
   const nav = pages.slice(0,6).map(([p,n]) => `<a href="${p}.html"${p === slug ? ' aria-current="page"' : ''}>${n}</a>`).join('\n');
   const html = `<!doctype html>

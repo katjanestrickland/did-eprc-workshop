@@ -12,7 +12,7 @@
 <a href="data.html">Data</a>
 <a href="resources.html">Resources</a></div></nav></header>
 <main id="main" class="document lab-layout">
-<aside class="lab-toc" aria-label="On this page"><strong>In this lab</strong><nav><a href="#set-up-r">1. Set Up R</a><a href="#load-the-data">2. Load the Data</a><a href="#understand-the-treatment-variables">3. Understand the Treatment Variables</a><a href="#estimate-the-classic-two-by-two-did">4. Estimate the Classic Two-by-Two DID</a><a href="#estimate-twfe-using-all-seven-years">5. Estimate TWFE Using All Seven Years</a><a href="#estimate-an-event-study">6. Estimate an Event Study</a><a href="#move-to-staggered-adoption">7. Move to Staggered Adoption</a><a href="#estimate-group-by-time-atts">8. Estimate Group-by-Time ATTs</a><a href="#read-the-estimates-and-uncertainty">9. Read the Estimates and Uncertainty</a><a href="#estimate-group-averages">10. Estimate Group Averages</a><a href="#estimate-calendar-summaries">11. Estimate Calendar Summaries</a><a href="#estimate-simple-att">12. Estimate Simple ATT</a><a href="#questions-and-discussion">Questions and Discussion</a></nav></aside><article><h1 id="hands-on-r-lab">Hands-on R Lab</h1>
+<aside class="lab-toc" aria-label="On this page"><strong>In this lab</strong><nav><a href="#set-up-r">1. Set Up R</a><a href="#load-the-data">2. Load the Data</a><a href="#understand-the-treatment-variables">3. Understand the Treatment Variables</a><a href="#estimate-the-classic-two-by-two-did">4. Estimate the Classic Two-by-Two DID</a><a href="#estimate-twfe-using-all-seven-years">5. Estimate TWFE Using All Seven Years</a><a href="#estimate-an-event-study">6. Estimate an Event Study</a><a href="#move-to-staggered-adoption">7. Move to Staggered Adoption</a><a href="#estimate-and-summarize-treatment-effects">8. Estimate and Summarize Treatment Effects</a><a href="#group-by-time-atts">8.1 Group-by-Time ATTs</a><a href="#inference">Inference</a><a href="#assess-parallel-trends">Assess Parallel Trends</a><a href="#group-averages">8.2 Group Averages</a><a href="#calendar-summaries">8.3 Calendar Summaries</a><a href="#simple-att">8.4 Simple ATT</a><a href="#dynamic-effects">8.5 Dynamic Effects</a><a href="#questions-and-discussion">Questions and Discussion</a></nav></aside><article><h1 id="hands-on-r-lab">Hands-on R Lab</h1>
 <p><strong>October 22, 2026 | 1:00-1:30 PM Eastern</strong></p>
 <p>What is the effect of district adoption of a gifted education program on district-level achievement? These are simulated teaching examples, not estimates from the actual gifted education study.</p>
 <p><a href="code/workshop_lab.R">Download the R script</a> · <a href="workshop.Rmd">Download the R Markdown</a> · <a href="data.html">Data and codebook</a></p>
@@ -387,7 +387,43 @@ Y_{it}=\alpha_i+\lambda_t+
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 5">(5)</span></div>
 <p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>G</mi><mi>g</mi></msub><annotation encoding="application/x-tex">G_g</annotation></semantics></math> is the cohort first treated in <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_{it}(g)</annotation></semantics></math> is the potential outcome when treatment starts in <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_{it}(0)</annotation></semantics></math> is the outcome without treatment.</p>
 <p>There are 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts. The early group has three post-treatment years and the late group has two. A single TWFE coefficient can mix never-treated, not-yet-treated, and already-treated comparisons. Already-treated controls can be problematic when effects change over time.</p>
-<h2 id="estimate-group-by-time-atts">8. Estimate Group-by-Time ATTs</h2>
+<h2 id="estimate-and-summarize-treatment-effects">8. Estimate and Summarize Treatment Effects</h2>
+<p>First, we estimate group-by-time ATTs. We then summarize those estimates in four ways, each answering a different question. These are not five separate models.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Output</th>
+<th>Question</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Group-by-time ATT</td>
+<td>What is the effect for one adoption group in one year?</td>
+</tr>
+<tr>
+<td>2. Group average</td>
+<td>What is the average effect for each group across its post-treatment years?</td>
+</tr>
+<tr>
+<td>3. Calendar summary</td>
+<td>What is the average effect across groups already treated in the same year?</td>
+</tr>
+<tr>
+<td>4. Simple ATT</td>
+<td>What is the overall weighted average across post-treatment group-time effects?</td>
+</tr>
+<tr>
+<td>5. Dynamic effect</td>
+<td>How does the effect vary with time since treatment began?</td>
+</tr>
+</tbody>
+</table>
+<h3 id="group-by-time-atts">8.1 Group-by-Time ATTs</h3>
 <p>Use <strong>att_gt() from did</strong>, implementing <a href="https://doi.org/10.1016/j.jeconom.2020.12.001">Callaway and Sant’Anna (2021)</a>. We compare each cohort with never-treated districts</p>
 <div class="numbered-equation" id="equation-6"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>g</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">¯</mo></mover><mrow><mi>C</mi><mo>,</mo><mi>g</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}(g,t)
@@ -517,58 +553,82 @@ Y_{it}=\alpha_i+\lambda_t+
 </table>
 <p>In <code>xformla = ~ 1</code>, the 1 represents an intercept, not one covariate. With covariates, a formula could be <code>~ poverty_rate + enrollment</code>, provided those columns existed. Our example has no covariates.</p>
 <p>The alternative <code>control_group = "notyettreated"</code> includes never-treated districts and eligible districts that have not yet adopted. With no anticipation, Year 6 adopters can contribute as controls in Year 5, but not once treated in Year 6.</p>
-<h3 id="what-does-the-base-period-mean">What Does the Base Period Mean?</h3>
-<p>With <code>base_period = "universal"</code> and no anticipation, each group uses its last year before treatment as the reference. Year 5 adopters use Year 4, and Year 6 adopters use Year 5.</p>
-<table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
-<thead>
-<tr>
-<th>Cohort</th>
-<th>Reference year</th>
-<th>Example</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Year 5 adopters</td>
-<td>Year 4</td>
-<td>ATT(5,7) compares changes from Year 4 to Year 7</td>
-</tr>
-<tr>
-<td>Year 6 adopters</td>
-<td>Year 5</td>
-<td>ATT(6,7) compares changes from Year 5 to Year 7</td>
-</tr>
-</tbody>
-</table>
-<p>Subtract the control group’s change over those same years in each case. Before treatment, the universal setting also compares each year with the cohort’s fixed reference year, normalizing that reference to zero.</p>
-<p>The alternative <code>base_period = "varying"</code> uses consecutive-year changes before treatment, such as Year 2 to Year 3. Both settings produce the same post-treatment ATTs, but different pre-treatment comparisons. This lab retains the universal setting. With <code>anticipation = 1</code>, effects may begin one year before adoption and the clean reference period moves back to <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo>−</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">g-2</annotation></semantics></math>.</p>
-<p>See the <a href="https://bcallaway11.github.io/did/reference/att_gt.html">att_gt() documentation</a>.</p>
-<h2 id="read-the-estimates-and-uncertainty">9. Read the Estimates and Uncertainty</h2>
+<h3 id="inference">Inference</h3>
 <p><strong>Group</strong> identifies adoption cohort and <strong>Time</strong> identifies outcome year. Group 5 and Time 7 identify the effect in Year 7 for Year 5 adopters. Pre-treatment comparisons are diagnostics, not effects of an already-active treatment.</p>
-<h3 id="bootstrap-seed-and-clustering">Bootstrap, Seed, and Clustering</h3>
+<h4 id="bootstrap-seed-and-clustering">Bootstrap, Seed, and Clustering</h4>
 <p>We use the multiplier bootstrap to approximate sampling uncertainty. It randomly reweights district-level influence contributions across iterations, rather than generating a new outcome dataset. We cluster by district because treatment is assigned to districts and their repeated observations may be dependent.</p>
 <p><code>set.seed(20261014)</code> fixes the random-number sequence, making the bootstrap reproducible with the same data, code, package versions, and computing setup. A different seed can change bootstrap standard errors and confidence bands slightly, but not the group-time point estimates for the same data and model settings.</p>
 <p><code>biters = 1000</code> requests 1,000 iterations. <code>cband = TRUE</code> requests simultaneous confidence bands that target coverage of the group-time effects together at the default 95% level, rather than separate 95% pointwise intervals. <code>cband = FALSE</code> requests pointwise intervals. Simultaneous bands require <code>bstrap = TRUE</code>.</p>
-<h3 id="pre-trends-assessment">Pre-Trends Assessment</h3>
-<p><code>summary(model_csa)</code> includes a p-value for a joint Wald pre-test of whether the non-normalized pre-treatment comparisons are jointly zero. For our universal-base specification, comparisons are relative to each cohort’s fixed pre-treatment reference.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>model_csa<span class="sc">$</span>Wpval</span></code></pre></div>
+<h3 id="assess-parallel-trends">Assess Parallel Trends</h3>
+<p>Parallel trends means that, without treatment, treated and comparison districts would have experienced the same average change in outcomes. Their outcome levels do not need to be equal.</p>
+<p>We cannot directly test what would have happened after treatment. We can, however, examine whether the groups changed similarly before treatment.</p>
+<h4 id="examine-the-pre-treatment-estimates">Examine the Pre-Treatment Estimates</h4>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggdid</span>(model_csa)</span></code></pre></div>
+<div class="figure">
+<img src="assets/figures/lab-pretrends-plot-1.png" alt="Group-time estimates for Year 5 and Year 6 adopters, with pre-treatment comparisons and simultaneous confidence bands" width="100%" />
+<p class="caption">
+plot of chunk pretrends-plot
+</p>
+</div>
+<p>The plot shows estimates for each adoption group over time. Before treatment, estimates near zero indicate that the treated-control gap was similar to its value in the reference year. Consider both the estimates and their confidence bands. The reference-period value is fixed at zero, not evidence that trends were parallel.</p>
+<p>Our model uses <code>base_period = "universal"</code> with no anticipation.</p>
+<ul>
+<li>Year 5 adopters use Year 4 as the reference</li>
+<li>Year 6 adopters use Year 5 as the reference</li>
+</ul>
+<p>The alternative, <code>"varying"</code>, compares consecutive pre-treatment years. Both settings produce the same post-treatment ATT estimates. A complete set of short- and long-difference restrictions expresses the same joint null hypothesis, although individual estimates and their significance can differ.</p>
+<h4 id="read-the-pre-test">Read the Pre-Test</h4>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_csa)</span></code></pre></div>
+<pre><code>#&gt;
+#&gt; Call:
+#&gt; att_gt(yname = &quot;outcome_std&quot;, tname = &quot;year&quot;, idname = &quot;district_id&quot;,
+#&gt;     gname = &quot;treatment_start_year&quot;, xformla = ~1, data = staggered,
+#&gt;     panel = TRUE, control_group = &quot;nevertreated&quot;, anticipation = 0,
+#&gt;     bstrap = TRUE, cband = TRUE, biters = 1000, clustervars = &quot;district_id&quot;,
+#&gt;     base_period = &quot;universal&quot;)
+#&gt;
+#&gt; Reference: Callaway, Brantly and Pedro H.C. Sant&#39;Anna.  &quot;Difference-in-Differences with Multiple Time Periods.&quot; Journal of Econometrics, Vol. 225, No. 2, pp. 200-230, 2021. &lt;https://doi.org/10.1016/j.jeconom.2020.12.001&gt;, &lt;https://arxiv.org/abs/1803.09015&gt;
+#&gt;
+#&gt; Group-Time Average Treatment Effects:
+#&gt;  Group Time ATT(g,t) Std. Error [95% Simult.  Conf. Band]
+#&gt;      5    1   0.0872     0.0557       -0.0694      0.2437
+#&gt;      5    2   0.0040     0.0491       -0.1340      0.1420
+#&gt;      5    3  -0.0138     0.0400       -0.1264      0.0988
+#&gt;      5    4   0.0000         NA            NA          NA
+#&gt;      5    5   0.1501     0.0375        0.0447      0.2554 *
+#&gt;      5    6   0.2082     0.0495        0.0691      0.3474 *
+#&gt;      5    7   0.3932     0.0596        0.2258      0.5607 *
+#&gt;      6    1   0.0040     0.0581       -0.1595      0.1675
+#&gt;      6    2  -0.0265     0.0562       -0.1845      0.1314
+#&gt;      6    3  -0.0741     0.0523       -0.2213      0.0730
+#&gt;      6    4  -0.0717     0.0397       -0.1835      0.0400
+#&gt;      6    5   0.0000         NA            NA          NA
+#&gt;      6    6   0.1926     0.0416        0.0757      0.3095 *
+#&gt;      6    7   0.2903     0.0491        0.1522      0.4283 *
+#&gt; ---
+#&gt; Signif. codes: `*&#39; confidence band does not cover 0
+#&gt;
+#&gt; P-value for pre-test of parallel trends assumption:  0.23306
+#&gt; Control Group:  Never Treated,  Anticipation Periods:  0
+#&gt; Estimation Method:  Doubly Robust</code></pre>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>model_csa<span class="sc">$</span>Wpval</span></code></pre></div>
 <pre><code>#&gt;         [,1]
 #&gt; [1,] 0.23306</code></pre>
-<p>The pre-test p-value is <strong>0.233</strong>. A small p-value provides evidence against the pre-treatment restrictions. A large p-value means we did not detect a violation, not that parallel trends is proven. Pre-treatment evidence cannot establish the unobserved post-treatment counterfactual. Interpret the test alongside the design, estimates, and their uncertainty.</p>
-<p>See the <a href="https://bcallaway11.github.io/did/articles/pre-testing.html">pre-testing guide</a>.</p>
-<h2 id="estimate-group-averages">10. Estimate Group Averages</h2>
+<p>Look for <strong>P-value for pre-test of parallel trends assumption</strong> in the summary. The joint Wald test checks whether the non-normalized pre-treatment comparisons are jointly zero.</p>
+<ul>
+<li>A small p-value suggests differences in pre-treatment trends</li>
+<li>A large p-value means we did not detect such differences, not that parallel trends is proven</li>
+</ul>
+<p>In this example, the p-value is <strong>0.233</strong>. At the 5% level, we do not reject the joint pre-treatment restrictions.</p>
+<p>Consider the plot, uncertainty, and study design together, not the p-value alone. See the <a href="https://bcallaway11.github.io/did/articles/pre-testing.html">pre-testing guide</a>.</p>
+<h3 id="group-averages">8.2 Group Averages</h3>
 <p>A group average summarizes one adoption group’s effects across its post-treatment years.</p>
 <div class="numbered-equation" id="equation-7"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">g</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mn>1</mn><mrow><mi>T</mi><mo>−</mo><mi>g</mi><mo>+</mo><mn>1</mn></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mi>g</mi></mrow><mi>T</mi></munderover><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(g)
 =\frac{1}{T-g+1}\sum_{t=g}^{T}\widehat{\operatorname{ATT}}(g,t)
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 7">(7)</span></div>
 <p>Here <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math> is the first treatment year, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math> is the outcome year, and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">T=7</annotation></semantics></math> is the last year. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>−</mo><mi>g</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">T-g+1</annotation></semantics></math> counts the group’s post-treatment years. Hats indicate estimates, not known effects. Each year within a group receives equal weight in this balanced panel.</p>
-<h3 id="average-across-each-groups-post-treatment-years">Average Across Each Group’s Post-Treatment Years</h3>
+<h4 id="average-across-each-groups-post-treatment-years">Average Across Each Group’s Post-Treatment Years</h4>
 <p>The Year 5 group contributes <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>7</mn><mo>−</mo><mn>5</mn><mo>+</mo><mn>1</mn><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">7-5+1=3</annotation></semantics></math> post-treatment years, Years 5, 6, and 7, so each year receives weight <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mn>3</mn></mrow><annotation encoding="application/x-tex">1/3</annotation></semantics></math>. The Year 6 group contributes <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>7</mn><mo>−</mo><mn>6</mn><mo>+</mo><mn>1</mn><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">7-6+1=2</annotation></semantics></math> post-treatment years, Years 6 and 7, so each year receives weight <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">1/2</annotation></semantics></math>.</p>
 <p>For Group 5, the included years are <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>=</mo><mn>5</mn><mo>,</mo><mn>6</mn><mo>,</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">t=5,6,7</annotation></semantics></math>.</p>
 <div class="numbered-equation" id="equation-8"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mi>w</mi><mrow><mn>5</mn><mo>∣</mo><mn>5</mn></mrow></msub><mo>=</mo><msub><mi>w</mi><mrow><mn>6</mn><mo>∣</mo><mn>5</mn></mrow></msub><mo>=</mo><msub><mi>w</mi><mrow><mn>7</mn><mo>∣</mo><mn>5</mn></mrow></msub></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>1</mn><mrow><mi>T</mi><mo>−</mo><mi>g</mi><mo>+</mo><mn>1</mn></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>1</mn><mrow><mn>7</mn><mo>−</mo><mn>5</mn><mo>+</mo><mn>1</mn></mrow></mfrac><mo>=</mo><mfrac><mn>1</mn><mn>3</mn></mfrac></mtd></mtr></mtable><annotation encoding="application/x-tex">
@@ -601,8 +661,8 @@ w_{6\mid6}=w_{7\mid6}
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(6)
 =\frac{\widehat{\operatorname{ATT}}(6,6)+\widehat{\operatorname{ATT}}(6,7)}{2}
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 12">(12)</span></div>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>group_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;group&quot;</span>)</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(group_att)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>group_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;group&quot;</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(group_att)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; aggte(MP = model_csa, type = &quot;group&quot;)
@@ -625,23 +685,23 @@ w_{6\mid6}=w_{7\mid6}
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
 <p><code>aggte()</code> takes the fitted <code>model_csa</code> object. <code>type = "group"</code> requests the group averages. We extract the five estimated post-treatment effects to show the arithmetic.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>post_att <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> model_csa<span class="sc">$</span>group,</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> model_csa<span class="sc">$</span>t,</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate =</span> model_csa<span class="sc">$</span>att</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> group) <span class="sc">%&gt;%</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(group, year)</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>post_att</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>post_att <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> model_csa<span class="sc">$</span>group,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> model_csa<span class="sc">$</span>t,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate =</span> model_csa<span class="sc">$</span>att</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> group) <span class="sc">%&gt;%</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(group, year)</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>post_att</span></code></pre></div>
 <pre><code>#&gt;   group year  estimate
 #&gt; 1     5    5 0.1500799
 #&gt; 2     5    6 0.2082406
 #&gt; 3     5    7 0.3932432
 #&gt; 4     6    6 0.1925952
 #&gt; 5     6    7 0.2902764</code></pre>
-<h3 id="substitute-the-estimated-effects">Substitute the Estimated Effects</h3>
+<h4 id="substitute-the-estimated-effects">Substitute the Estimated Effects</h4>
 <p><strong>Group-time ATT values</strong></p>
-<p>Using the estimates from Section 8, let <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math> denote the never-treated districts and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">\bar Y_{g,t}</annotation></semantics></math> the mean outcome for group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math> in year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>. Group 5 uses Year 4 as its reference. Group 6 uses Year 5. The following comparisons display four decimals and use unrounded estimates for aggregation.</p>
+<p>Using the estimates from Section 8.1, let <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math> denote the never-treated districts and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">\bar Y_{g,t}</annotation></semantics></math> the mean outcome for group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math> in year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>. Group 5 uses Year 4 as its reference. Group 6 uses Year 5. The following comparisons display four decimals and use unrounded estimates for aggregation.</p>
 <div class="numbered-equation" id="equation-13"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>5</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>5</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.1501</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
 \begin{aligned}
 \widehat{\operatorname{ATT}}(5,5)
@@ -703,7 +763,7 @@ w_{6\mid6}=w_{7\mid6}
 &amp;\approx\boxed{0.2414}
 \end{aligned}
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 19">(19)</span></div>
-<h3 id="overall-group-average">Overall Group Average</h3>
+<h4 id="overall-group-average">Overall Group Average</h4>
 <p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> counts districts in adoption group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>, not rows. We have <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mn>5</mn></msub><mo>=</mo><msub><mi>N</mi><mn>6</mn></msub><mo>=</mo><mn>208</mn></mrow><annotation encoding="application/x-tex">N_5=N_6=208</annotation></semantics></math>. Each group receives weight <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>208</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>208</mn><mo>+</mo><mn>208</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">208/(208+208)=1/2</annotation></semantics></math>.</p>
 <div class="numbered-equation" id="equation-20"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">g</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi><mo mathvariant="normal">,</mo><mi mathvariant="normal">o</mi><mi mathvariant="normal">v</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">l</mi></mrow></msub><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2505</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2414</mn><mo stretchy="false" form="postfix">)</mo><mo>≈</mo><mn>0.2460</mn></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{group,overall}}
@@ -711,15 +771,15 @@ w_{6\mid6}=w_{7\mid6}
 \approx0.2460
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 20">(20)</span></div>
 <p>This overall result averages the group averages, rather than weighting all five cells equally.</p>
-<h2 id="estimate-calendar-summaries">11. Estimate Calendar Summaries</h2>
+<h3 id="calendar-summaries">8.3 Calendar Summaries</h3>
 <p>A calendar summary combines effects across groups already treated in the same study year.</p>
 <div class="numbered-equation" id="equation-21"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><munder><mo>∑</mo><mrow><mi>g</mi><mo>≤</mo><mi>t</mi></mrow></munder><mfrac><msub><mi>N</mi><mi>g</mi></msub><mrow><munder><mo>∑</mo><mrow><mi>h</mi><mo>≤</mo><mi>t</mi></mrow></munder><msub><mi>N</mi><mi>h</mi></msub></mrow></mfrac><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(t)
 =\sum_{g\le t}\frac{N_g}{\sum_{h\le t}N_h}
 \widehat{\operatorname{ATT}}(g,t)
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 21">(21)</span></div>
-<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> is the number of districts in group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>. The index <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math> runs over adoption groups already treated by year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>. The denominator counts their districts. Never-treated and not-yet-treated districts are excluded from these aggregation weights, although never-treated districts supply the comparison used to estimate each ATT.</p>
-<h3 id="calculate-the-weights">Calculate the Weights</h3>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> is the number of districts in group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>. The index <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math> runs over adoption groups already treated by year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>. The denominator counts their districts. We average effects only for groups already treated in that year. Never-treated districts provide the comparison used to estimate those effects.</p>
+<h4 id="calculate-the-weights">Calculate the Weights</h4>
 <table>
 <thead>
 <tr>
@@ -816,8 +876,8 @@ w_{6\mid6}=w_{7\mid6}
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
 =\frac12\widehat{\operatorname{ATT}}(5,7)+\frac12\widehat{\operatorname{ATT}}(6,7)
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 30">(30)</span></div>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>calendar_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;calendar&quot;</span>)</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(calendar_att)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>calendar_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;calendar&quot;</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(calendar_att)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; aggte(MP = model_csa, type = &quot;calendar&quot;)
@@ -841,9 +901,9 @@ w_{6\mid6}=w_{7\mid6}
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
 <p><code>type = "calendar"</code> requests a separate summary for each post-treatment calendar year.</p>
-<h3 id="substitute-the-estimated-effects-1">Substitute the Estimated Effects</h3>
+<h4 id="substitute-the-estimated-effects-1">Substitute the Estimated Effects</h4>
 <p><strong>Group-time ATT values by calendar year</strong></p>
-<p>Use the same group-time estimates as in Section 10, arranged by outcome year. With <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math> denoting the never-treated districts, Group 5 uses Year 4 as its reference and Group 6 uses Year 5. Displayed estimates use four decimals and aggregation uses unrounded values.</p>
+<p>Use the same group-time estimates as in Section 8.2, arranged by outcome year. With <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math> denoting the never-treated districts, Group 5 uses Year 4 as its reference and Group 6 uses Year 5. Displayed estimates use four decimals and aggregation uses unrounded values.</p>
 <p><strong>Year 5</strong></p>
 <div class="numbered-equation" id="equation-31"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>5</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>5</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.1501</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
 \begin{aligned}
@@ -899,14 +959,14 @@ w_{6\mid6}=w_{7\mid6}
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
 \approx\frac12(0.3932)+\frac12(0.2903)\approx0.3418
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 38">(38)</span></div>
-<h3 id="overall-calendar-average">Overall Calendar Average</h3>
+<h4 id="overall-calendar-average">Overall Calendar Average</h4>
 <p>The overall result gives equal weight to each included post-treatment calendar year. There are three such years, so each year receives weight <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mn>3</mn></mrow><annotation encoding="application/x-tex">1/3</annotation></semantics></math>.</p>
 <div class="numbered-equation" id="equation-39"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi><mo mathvariant="normal">,</mo><mi mathvariant="normal">o</mi><mi mathvariant="normal">v</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">l</mi></mrow></msub><mo>≈</mo><mfrac><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.2004</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.3418</mn><mo stretchy="false" form="postfix">)</mo></mrow><mn>3</mn></mfrac><mo>≈</mo><mn>0.2308</mn></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{calendar,overall}}
 \approx\frac{(0.1501)+(0.2004)+(0.3418)}{3}
 \approx0.2308
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 39">(39)</span></div>
-<h2 id="estimate-simple-att">12. Estimate Simple ATT</h2>
+<h3 id="simple-att">8.4 Simple ATT</h3>
 <p>Simple ATT combines all post-treatment group-time effects with cell weights proportional to cohort size.</p>
 <div class="numbered-equation" id="equation-40"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>=</mo><munder><mo>∑</mo><mi>g</mi></munder><munderover><mo>∑</mo><mrow><mi>t</mi><mo>=</mo><mi>g</mi></mrow><mi>T</mi></munderover><msub><mi>w</mi><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{simple}}
@@ -916,7 +976,7 @@ w_{6\mid6}=w_{7\mid6}
 w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 41">(41)</span></div>
 <p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> counts districts in adoption group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>, and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>−</mo><mi>h</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">T-h+1</annotation></semantics></math> counts group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>’s post-treatment years. The sums include treated cohorts only. This formula applies to our balanced panel without sampling weights.</p>
-<h3 id="calculate-the-denominator-and-weights">Calculate the Denominator and Weights</h3>
+<h4 id="calculate-the-denominator-and-weights">Calculate the Denominator and Weights</h4>
 <p>The Year 5 group contributes <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>208</mn><mo>×</mo><mn>3</mn><mo>=</mo><mn>624</mn></mrow><annotation encoding="application/x-tex">208\times3=624</annotation></semantics></math> treated district-year observations. The Year 6 group contributes <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>208</mn><mo>×</mo><mn>2</mn><mo>=</mo><mn>416</mn></mrow><annotation encoding="application/x-tex">208\times2=416</annotation></semantics></math>.</p>
 <div class="numbered-equation" id="equation-42"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><munder><mo>∑</mo><mi>h</mi></munder><msub><mi>N</mi><mi>h</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>T</mi><mo>−</mo><mi>h</mi><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><msub><mi>N</mi><mn>5</mn></msub><mo stretchy="false" form="prefix">(</mo><mi>T</mi><mo>−</mo><mn>5</mn><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>N</mi><mn>6</mn></msub><mo stretchy="false" form="prefix">(</mo><mi>T</mi><mo>−</mo><mn>6</mn><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>208</mn><mo stretchy="false" form="prefix">(</mo><mn>7</mn><mo>−</mo><mn>5</mn><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>208</mn><mo stretchy="false" form="prefix">(</mo><mn>7</mn><mo>−</mo><mn>6</mn><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>208</mn><mo stretchy="false" form="prefix">(</mo><mn>3</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>208</mn><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>624</mn><mo>+</mo><mn>416</mn></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>1040</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
 \begin{aligned}
@@ -979,8 +1039,8 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 &amp;+0.20\widehat{\operatorname{ATT}}(6,7)
 \end{aligned}
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 44">(44)</span></div>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>overall_csa <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(overall_csa)</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>overall_csa <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(overall_csa)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; aggte(MP = model_csa, type = &quot;simple&quot;)
@@ -998,7 +1058,7 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
 <p><code>type = "simple"</code> selects the cell-weighted overall average.</p>
-<h3 id="substitute-the-estimated-effects-2">Substitute the Estimated Effects</h3>
+<h4 id="substitute-the-estimated-effects-2">Substitute the Estimated Effects</h4>
 <div class="numbered-equation" id="equation-45"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>≈</mo><mrow></mrow></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.2082</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.3932</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.1926</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.2903</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.2469</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
 \begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{simple}}
@@ -1010,11 +1070,129 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 45">(45)</span></div>
 <p>The early group receives total weight <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>3</mn><mo stretchy="false" form="prefix">(</mo><mn>0.20</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.60</mn></mrow><annotation encoding="application/x-tex">3(0.20)=0.60</annotation></semantics></math> and the late group receives <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2</mn><mo stretchy="false" form="prefix">(</mo><mn>0.20</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.40</mn></mrow><annotation encoding="application/x-tex">2(0.20)=0.40</annotation></semantics></math>. This differs from the overall group average, which gives each group weight <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.50</mn><annotation encoding="application/x-tex">0.50</annotation></semantics></math>. The calendar overall average instead gives each calendar year equal weight. These summaries can differ because they answer different questions.</p>
 <p>Never-treated districts supply the comparison but receive no treatment-effect weight. Do not average the standard errors. The package accounts for joint uncertainty. See the <a href="https://bcallaway11.github.io/did/reference/aggte.html">aggte() documentation</a>.</p>
+<h3 id="dynamic-effects">8.5 Dynamic Effects</h3>
+<p>Dynamic aggregation averages effects across groups at the same time since adoption, rather than the same calendar year. Let <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>e</mi><mo>=</mo><mi>t</mi><mo>−</mo><mi>g</mi></mrow><annotation encoding="application/x-tex">e=t-g</annotation></semantics></math> denote event time, the same concept as <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> in the earlier event-study example. Event time 0 is the first treated year.</p>
+<p>For a post-treatment event time <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>e</mi><annotation encoding="application/x-tex">e</annotation></semantics></math>, let <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi mathvariant="script">𝒢</mi><mi>e</mi></msub><annotation encoding="application/x-tex">\mathcal{G}_e</annotation></semantics></math> contain the adoption groups observed at that event time. The weights are proportional to their district counts.</p>
+<div class="numbered-equation" id="equation-46"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">c</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>e</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><munder><mo>∑</mo><mrow><mi>g</mi><mo>∈</mo><msub><mi mathvariant="script">𝒢</mi><mi>e</mi></msub></mrow></munder><mfrac><msub><mi>N</mi><mi>g</mi></msub><mrow><munder><mo>∑</mo><mrow><mi>h</mi><mo>∈</mo><msub><mi mathvariant="script">𝒢</mi><mi>e</mi></msub></mrow></munder><msub><mi>N</mi><mi>h</mi></msub></mrow></mfrac><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>g</mi><mo>+</mo><mi>e</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(e)
+=\sum_{g\in\mathcal{G}_e}
+\frac{N_g}{\sum_{h\in\mathcal{G}_e}N_h}
+\widehat{\operatorname{ATT}}(g,g+e)
+</annotation></semantics></math></div><span class="equation-number" aria-label="Equation 46">(46)</span></div>
+<h4 id="identify-the-comparisons-and-weights">Identify the Comparisons and Weights</h4>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Event time</th>
+<th>Meaning</th>
+<th>Group-time effects</th>
+<th>Weights</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>First treated year</td>
+<td>ATT(5,5) and ATT(6,6)</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>208</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>208</mn><mo>+</mo><mn>208</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">208/(208+208)=1/2</annotation></semantics></math> each</td>
+</tr>
+<tr>
+<td>1</td>
+<td>One year after adoption</td>
+<td>ATT(5,6) and ATT(6,7)</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>208</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>208</mn><mo>+</mo><mn>208</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">208/(208+208)=1/2</annotation></semantics></math> each</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Two years after adoption</td>
+<td>ATT(5,7) only</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>208</mn><mi>/</mi><mn>208</mn><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">208/208=1</annotation></semantics></math></td>
+</tr>
+</tbody>
+</table>
+<p>For example, the first-year average combines the early group’s effect in Year 5 with the late group’s effect in Year 6.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>dynamic_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;dynamic&quot;</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(dynamic_att)</span></code></pre></div>
+<pre><code>#&gt;
+#&gt; Call:
+#&gt; aggte(MP = model_csa, type = &quot;dynamic&quot;)
+#&gt;
+#&gt; Reference: Callaway, Brantly and Pedro H.C. Sant&#39;Anna.  &quot;Difference-in-Differences with Multiple Time Periods.&quot; Journal of Econometrics, Vol. 225, No. 2, pp. 200-230, 2021. &lt;https://doi.org/10.1016/j.jeconom.2020.12.001&gt;, &lt;https://arxiv.org/abs/1803.09015&gt;
+#&gt;
+#&gt;
+#&gt; Overall summary of ATT&#39;s based on event-study/dynamic aggregation:
+#&gt;     ATT    Std. Error     [ 95%  Conf. Int.]
+#&gt;  0.2713        0.0338      0.205      0.3376 *
+#&gt;
+#&gt;
+#&gt; Dynamic Effects:
+#&gt;  Event time Estimate Std. Error [95% Simult.  Conf. Band]
+#&gt;          -5   0.0040     0.0563       -0.1460      0.1541
+#&gt;          -4   0.0303     0.0416       -0.0806      0.1412
+#&gt;          -3  -0.0351     0.0360       -0.1309      0.0608
+#&gt;          -2  -0.0428     0.0276       -0.1162      0.0307
+#&gt;          -1   0.0000         NA            NA          NA
+#&gt;           0   0.1713     0.0272        0.0990      0.2437 *
+#&gt;           1   0.2493     0.0364        0.1523      0.3462 *
+#&gt;           2   0.3932     0.0593        0.2354      0.5511 *
+#&gt; ---
+#&gt; Signif. codes: `*&#39; confidence band does not cover 0
+#&gt;
+#&gt; Control Group:  Never Treated,  Anticipation Periods:  0
+#&gt; Estimation Method:  Doubly Robust</code></pre>
+<p><code>type = "dynamic"</code> requests estimates by event time. The default output also includes pre-treatment comparisons. We calculate the three post-treatment averages below.</p>
+<h4 id="substitute-the-estimated-effects-3">Substitute the Estimated Effects</h4>
+<div class="numbered-equation" id="equation-47"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">c</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo>,</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.1926</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.1713</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(0)
+&amp;=\frac12\widehat{\operatorname{ATT}}(5,5)
++\frac12\widehat{\operatorname{ATT}}(6,6)\\
+&amp;\approx\frac12(0.1501)+\frac12(0.1926)\\
+&amp;\approx 0.1713
+\end{aligned}
+</annotation></semantics></math></div><span class="equation-number" aria-label="Equation 47">(47)</span></div>
+<div class="numbered-equation" id="equation-48"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">c</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo>,</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2082</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2903</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.2493</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(1)
+&amp;=\frac12\widehat{\operatorname{ATT}}(5,6)
++\frac12\widehat{\operatorname{ATT}}(6,7)\\
+&amp;\approx\frac12(0.2082)+\frac12(0.2903)\\
+&amp;\approx 0.2493
+\end{aligned}
+</annotation></semantics></math></div><span class="equation-number" aria-label="Equation 48">(48)</span></div>
+<div class="numbered-equation" id="equation-49"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">c</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.3932</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(2)
+&amp;=\widehat{\operatorname{ATT}}(5,7)\\
+&amp;\approx 0.3932
+\end{aligned}
+</annotation></semantics></math></div><span class="equation-number" aria-label="Equation 49">(49)</span></div>
+<p>The estimate at event time 2 comes only from Group 5 because our data end in Year 7. Changes across event times can therefore reflect both time since adoption and which groups contribute. For a comparison with both groups at every event time, focus on 0 and 1. The <code>balance_e</code> option can restrict contributing cohorts when a balanced event-time composition is needed.</p>
+<h4 id="overall-dynamic-average">Overall Dynamic Average</h4>
+<p>The overall dynamic result averages the included post-treatment event-time effects, including event time 0. Here it gives equal weight to event times 0, 1, and 2.</p>
+<div class="numbered-equation" id="equation-50"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">c</mi><mo mathvariant="normal">,</mo><mi mathvariant="normal">o</mi><mi mathvariant="normal">v</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">l</mi></mrow></msub></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">c</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">c</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">c</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><mn>3</mn></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mfrac><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.1713</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.2493</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.3932</mn><mo stretchy="false" form="postfix">)</mo></mrow><mn>3</mn></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.2713</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic,overall}}
+&amp;=\frac{
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(0)+
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(1)+
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(2)}{3}\\
+&amp;\approx\frac{(0.1713)+(0.2493)+(0.3932)}{3}\\
+&amp;\approx 0.2713
+\end{aligned}
+</annotation></semantics></math></div><span class="equation-number" aria-label="Equation 50">(50)</span></div>
+<p>This is not Simple ATT. Averaging event-time summaries gives different total weights to the five group-time cells. See the <a href="https://bcallaway11.github.io/did/reference/aggte.html">aggregation documentation</a>.</p>
 <h2 id="questions-and-discussion">Questions and Discussion</h2>
 <p><strong>1:30-2:00 PM</strong> Which units receive treatment? Which supply an untreated comparison? Which effect summary answers your question? What makes parallel trends plausible?</p>
 <p>ETWFE remains a lecture-only extension in this lab. See <a href="resources.html">Resources</a> for further reading.</p>
-<h3 id="r-session-and-package-versions">R Session and Package Versions</h3>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
+<h4 id="r-session-and-package-versions">R Session and Package Versions</h4>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
 <pre><code>#&gt; R version 4.4.2 (2024-10-31)
 #&gt; Platform: aarch64-apple-darwin20
 #&gt; Running under: macOS Sequoia 15.5
@@ -1041,33 +1219,33 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 #&gt;   [7] dreamerr_1.4.0       otel_0.2.0           compiler_4.4.2
 #&gt;  [10] vctrs_0.6.5          reshape2_1.4.4       stringr_1.5.2
 #&gt;  [13] pkgconfig_2.0.3      crayon_1.5.3         backports_1.5.0
-#&gt;  [16] prodlim_2024.06.25   tzdb_0.5.0           purrr_1.1.0
-#&gt;  [19] bit_4.6.0            xfun_0.61            trust_0.1-8
-#&gt;  [22] recipes_1.1.0        stringmagic_1.1.2    fastglm_0.0.3
-#&gt;  [25] uuid_1.2-1           broom_1.0.10         parallel_4.4.2
-#&gt;  [28] R6_2.6.1             stringi_1.8.7        RColorBrewer_1.1-3
-#&gt;  [31] parallelly_1.45.1    car_3.1-3            rpart_4.1.24
-#&gt;  [34] lubridate_1.9.4      numDeriv_2016.8-1.1  estimability_1.5.1
-#&gt;  [37] Rcpp_1.1.2           iterators_1.0.14     BMisc_1.4.7
-#&gt;  [40] knitr_1.51           future.apply_1.11.3  zoo_1.8-14
-#&gt;  [43] Matrix_1.7-1         splines_4.4.2        nnet_7.3-19
-#&gt;  [46] timechange_0.3.0     tidyselect_1.2.1     abind_1.4-8
-#&gt;  [49] timeDate_4041.110    codetools_0.2-20     listenv_0.9.1
-#&gt;  [52] lattice_0.22-6       tibble_3.3.0         plyr_1.8.9
-#&gt;  [55] withr_3.0.2          S7_0.2.1-1           coda_0.19-4.1
-#&gt;  [58] evaluate_1.0.1       future_1.67.0        survival_3.7-0
-#&gt;  [61] pillar_1.11.1        ggpubr_0.6.1         carData_3.0-5
-#&gt;  [64] foreach_1.5.2        stats4_4.4.2         generics_0.1.4
-#&gt;  [67] vroom_1.6.6          hms_1.1.3            ggplot2_4.0.1
-#&gt;  [70] scales_1.4.0         globals_0.18.0       xtable_1.8-4
-#&gt;  [73] class_7.3-22         glue_1.8.0           emmeans_1.11.1
-#&gt;  [76] tools_4.4.2          data.table_1.16.4    ModelMetrics_1.2.2.2
-#&gt;  [79] gower_1.0.2          ggsignif_0.6.4       mvtnorm_1.3-3
-#&gt;  [82] grid_4.4.2           bigmemory_4.6.4      tidyr_1.3.1
-#&gt;  [85] ipred_0.9-15         nlme_3.1-166         Formula_1.2-5
-#&gt;  [88] cli_3.6.5            bigmemory.sri_0.1.8  lava_1.8.0
-#&gt;  [91] gtable_0.3.6         rstatix_0.7.2        digest_0.6.37
-#&gt;  [94] caret_7.0-1          TH.data_1.1-2        farver_2.1.2
-#&gt;  [97] lifecycle_1.0.4      hardhat_1.4.0        bit64_4.6.0-1
-#&gt; [100] MASS_7.3-61</code></pre>
+#&gt;  [16] labeling_0.4.3       prodlim_2024.06.25   tzdb_0.5.0
+#&gt;  [19] purrr_1.1.0          bit_4.6.0            xfun_0.61
+#&gt;  [22] trust_0.1-8          recipes_1.1.0        stringmagic_1.1.2
+#&gt;  [25] fastglm_0.0.3        uuid_1.2-1           broom_1.0.10
+#&gt;  [28] parallel_4.4.2       R6_2.6.1             stringi_1.8.7
+#&gt;  [31] RColorBrewer_1.1-3   parallelly_1.45.1    car_3.1-3
+#&gt;  [34] rpart_4.1.24         lubridate_1.9.4      numDeriv_2016.8-1.1
+#&gt;  [37] estimability_1.5.1   Rcpp_1.1.2           iterators_1.0.14
+#&gt;  [40] BMisc_1.4.7          knitr_1.51           future.apply_1.11.3
+#&gt;  [43] zoo_1.8-14           Matrix_1.7-1         splines_4.4.2
+#&gt;  [46] nnet_7.3-19          timechange_0.3.0     tidyselect_1.2.1
+#&gt;  [49] abind_1.4-8          timeDate_4041.110    codetools_0.2-20
+#&gt;  [52] listenv_0.9.1        lattice_0.22-6       tibble_3.3.0
+#&gt;  [55] plyr_1.8.9           withr_3.0.2          S7_0.2.1-1
+#&gt;  [58] coda_0.19-4.1        evaluate_1.0.1       future_1.67.0
+#&gt;  [61] survival_3.7-0       pillar_1.11.1        ggpubr_0.6.1
+#&gt;  [64] carData_3.0-5        foreach_1.5.2        stats4_4.4.2
+#&gt;  [67] generics_0.1.4       vroom_1.6.6          hms_1.1.3
+#&gt;  [70] ggplot2_4.0.1        scales_1.4.0         globals_0.18.0
+#&gt;  [73] xtable_1.8-4         class_7.3-22         glue_1.8.0
+#&gt;  [76] emmeans_1.11.1       tools_4.4.2          data.table_1.16.4
+#&gt;  [79] ModelMetrics_1.2.2.2 gower_1.0.2          ggsignif_0.6.4
+#&gt;  [82] mvtnorm_1.3-3        grid_4.4.2           bigmemory_4.6.4
+#&gt;  [85] tidyr_1.3.1          ipred_0.9-15         nlme_3.1-166
+#&gt;  [88] Formula_1.2-5        cli_3.6.5            bigmemory.sri_0.1.8
+#&gt;  [91] lava_1.8.0           gtable_0.3.6         rstatix_0.7.2
+#&gt;  [94] digest_0.6.37        caret_7.0-1          TH.data_1.1-2
+#&gt;  [97] farver_2.1.2         lifecycle_1.0.4      hardhat_1.4.0
+#&gt; [100] bit64_4.6.0-1        MASS_7.3-61</code></pre>
 </article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

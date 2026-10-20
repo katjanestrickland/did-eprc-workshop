@@ -76,7 +76,12 @@ model_csa <- att_gt(
 summary(model_csa)
 
 
+## ----pretrends-plot, fig.path="assets/figures/lab-", fig.width=8, fig.height=5.5, dpi=160, out.width="100%", fig.alt="Group-time estimates for Year 5 and Year 6 adopters, with pre-treatment comparisons and simultaneous confidence bands"----
+ggdid(model_csa)
+
+
 ## ----pretest------------------------------------------------------------------
+summary(model_csa)
 model_csa$Wpval
 
 
@@ -106,6 +111,13 @@ summary(calendar_att)
 ## ----aggregation--------------------------------------------------------------
 overall_csa <- aggte(model_csa, type = "simple")
 summary(overall_csa)
+
+
+## ----dynamic-aggregation------------------------------------------------------
+dynamic_att <- aggte(model_csa, type = "dynamic")
+summary(dynamic_att)
+
+
 
 
 ## ----session------------------------------------------------------------------

@@ -299,7 +299,20 @@ The early group has three post-treatment years and the late group has two.
 A single TWFE coefficient can mix never-treated, not-yet-treated, and already-treated comparisons.
 Already-treated controls can be problematic when effects change over time.
 
-## 8. Estimate Group-by-Time ATTs
+## 8. Estimate and Summarize Treatment Effects
+
+First, we estimate group-by-time ATTs. We then summarize those estimates in four
+ways, each answering a different question. These are not five separate models.
+
+| Output | Question |
+|---|---|
+| 1. Group-by-time ATT | What is the effect for one adoption group in one year? |
+| 2. Group average | What is the average effect for each group across its post-treatment years? |
+| 3. Calendar summary | What is the average effect across groups already treated in the same year? |
+| 4. Simple ATT | What is the overall weighted average across post-treatment group-time effects? |
+| 5. Dynamic effect | How does the effect vary with time since treatment began? |
+
+### 8.1 Group-by-Time ATTs
 
 Use **att_gt() from did**, implementing
 [Callaway and Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001).
@@ -361,35 +374,13 @@ The alternative `control_group = "notyettreated"` includes never-treated distric
 and eligible districts that have not yet adopted. With no anticipation, Year 6
 adopters can contribute as controls in Year 5, but not once treated in Year 6.
 
-### What Does the Base Period Mean?
-
-With `base_period = "universal"` and no anticipation, each group uses its last year
-before treatment as the reference. Year 5 adopters use Year 4, and Year 6 adopters use Year 5.
-
-| Cohort | Reference year | Example |
-|---|---|---|
-| Year 5 adopters | Year 4 | ATT(5,7) compares changes from Year 4 to Year 7 |
-| Year 6 adopters | Year 5 | ATT(6,7) compares changes from Year 5 to Year 7 |
-
-Subtract the control group's change over those same years in each case.
-Before treatment, the universal setting also compares each year with the cohort's
-fixed reference year, normalizing that reference to zero.
-
-The alternative `base_period = "varying"` uses consecutive-year changes before
-treatment, such as Year 2 to Year 3. Both settings produce the same post-treatment
-ATTs, but different pre-treatment comparisons. This lab retains the universal setting.
-With `anticipation = 1`, effects may begin one year before adoption and the clean
-reference period moves back to $g-2$.
-
-See the [att_gt() documentation](https://bcallaway11.github.io/did/reference/att_gt.html).
-
-## 9. Read the Estimates and Uncertainty
+### Inference
 
 **Group** identifies adoption cohort and **Time** identifies outcome year.
 Group 5 and Time 7 identify the effect in Year 7 for Year 5 adopters.
 Pre-treatment comparisons are diagnostics, not effects of an already-active treatment.
 
-### Bootstrap, Seed, and Clustering
+#### Bootstrap, Seed, and Clustering
 
 We use the multiplier bootstrap to approximate sampling uncertainty.
 It randomly reweights district-level influence contributions across iterations,
@@ -406,25 +397,57 @@ confidence bands that target coverage of the group-time effects together at the 
 95% level, rather than separate 95% pointwise intervals. `cband = FALSE` requests
 pointwise intervals. Simultaneous bands require `bstrap = TRUE`.
 
-### Pre-Trends Assessment
+### Assess Parallel Trends
 
-`summary(model_csa)` includes a p-value for a joint Wald pre-test of whether the
-non-normalized pre-treatment comparisons are jointly zero. For our universal-base
-specification, comparisons are relative to each cohort's fixed pre-treatment reference.
+Parallel trends means that, without treatment, treated and comparison districts
+would have experienced the same average change in outcomes. Their outcome levels
+do not need to be equal.
+
+We cannot directly test what would have happened after treatment. We can, however,
+examine whether the groups changed similarly before treatment.
+
+#### Examine the Pre-Treatment Estimates
+
+```{r pretrends-plot, fig.path="assets/figures/lab-", fig.width=8, fig.height=5.5, dpi=160, out.width="100%", fig.alt="Group-time estimates for Year 5 and Year 6 adopters, with pre-treatment comparisons and simultaneous confidence bands"}
+ggdid(model_csa)
+```
+
+The plot shows estimates for each adoption group over time. Before treatment,
+estimates near zero indicate that the treated-control gap was similar to its
+value in the reference year. Consider both the estimates and their confidence bands.
+The reference-period value is fixed at zero, not evidence that trends were parallel.
+
+Our model uses `base_period = "universal"` with no anticipation.
+
+- Year 5 adopters use Year 4 as the reference
+- Year 6 adopters use Year 5 as the reference
+
+The alternative, `"varying"`, compares consecutive pre-treatment years.
+Both settings produce the same post-treatment ATT estimates.
+A complete set of short- and long-difference restrictions expresses the same
+joint null hypothesis, although individual estimates and their significance can differ.
+
+#### Read the Pre-Test
 
 ```{r pretest}
+summary(model_csa)
 model_csa$Wpval
 ```
 
-The pre-test p-value is **`r format.pval(model_csa$Wpval, digits=3, eps=0.001)`**.
-A small p-value provides evidence against the pre-treatment restrictions.
-A large p-value means we did not detect a violation, not that parallel trends is proven.
-Pre-treatment evidence cannot establish the unobserved post-treatment counterfactual.
-Interpret the test alongside the design, estimates, and their uncertainty.
+Look for **P-value for pre-test of parallel trends assumption** in the summary.
+The joint Wald test checks whether the non-normalized pre-treatment comparisons
+are jointly zero.
 
+- A small p-value suggests differences in pre-treatment trends
+- A large p-value means we did not detect such differences, not that parallel trends is proven
+
+In this example, the p-value is **`r format.pval(model_csa$Wpval, digits=3, eps=0.001)`**.
+`r if (model_csa$Wpval < 0.05) "At the 5% level, we reject the joint pre-treatment restrictions." else "At the 5% level, we do not reject the joint pre-treatment restrictions."`
+
+Consider the plot, uncertainty, and study design together, not the p-value alone.
 See the [pre-testing guide](https://bcallaway11.github.io/did/articles/pre-testing.html).
 
-## 10. Estimate Group Averages
+### 8.2 Group Averages
 
 A group average summarizes one adoption group's effects across its post-treatment years.
 
@@ -438,7 +461,7 @@ Here $g$ is the first treatment year, $t$ is the outcome year, and $T=7$ is the 
 $T-g+1$ counts the group's post-treatment years. Hats indicate estimates, not known effects.
 Each year within a group receives equal weight in this balanced panel.
 
-### Average Across Each Group's Post-Treatment Years
+#### Average Across Each Group's Post-Treatment Years
 
 The Year 5 group contributes $7-5+1=3$ post-treatment years, Years 5, 6, and 7,
 so each year receives weight $1/3$.
@@ -524,11 +547,11 @@ c6 <- mean(c(a56,a66))
 c7 <- mean(c(a57,a67))
 ```
 
-### Substitute the Estimated Effects
+#### Substitute the Estimated Effects
 
 **Group-time ATT values**
 
-Using the estimates from Section 8, let $C$ denote the never-treated districts
+Using the estimates from Section 8.1, let $C$ denote the never-treated districts
 and $\bar Y_{g,t}$ the mean outcome for group $g$ in year $t$.
 Group 5 uses Year 4 as its reference. Group 6 uses Year 5.
 The following comparisons display four decimals and use unrounded estimates for aggregation.
@@ -612,7 +635,7 @@ $$
 \tag{19}
 $$
 
-### Overall Group Average
+#### Overall Group Average
 
 $N_g$ counts districts in adoption group $g$, not rows. We have $N_5=N_6=208$.
 Each group receives weight $208/(208+208)=1/2$.
@@ -626,7 +649,7 @@ $$
 
 This overall result averages the group averages, rather than weighting all five cells equally.
 
-## 11. Estimate Calendar Summaries
+### 8.3 Calendar Summaries
 
 A calendar summary combines effects across groups already treated in the same study year.
 
@@ -639,10 +662,10 @@ $$
 
 $N_g$ is the number of districts in group $g$. The index $h$ runs over adoption groups
 already treated by year $t$. The denominator counts their districts.
-Never-treated and not-yet-treated districts are excluded from these aggregation weights,
-although never-treated districts supply the comparison used to estimate each ATT.
+We average effects only for groups already treated in that year.
+Never-treated districts provide the comparison used to estimate those effects.
 
-### Calculate the Weights
+#### Calculate the Weights
 
 | Year $t$ | Treated groups | Denominator | Weight per included group |
 |---|---|---|---|
@@ -754,11 +777,11 @@ summary(calendar_att)
 
 `type = "calendar"` requests a separate summary for each post-treatment calendar year.
 
-### Substitute the Estimated Effects
+#### Substitute the Estimated Effects
 
 **Group-time ATT values by calendar year**
 
-Use the same group-time estimates as in Section 10, arranged by outcome year.
+Use the same group-time estimates as in Section 8.2, arranged by outcome year.
 With $C$ denoting the never-treated districts, Group 5 uses Year 4 as its reference
 and Group 6 uses Year 5. Displayed estimates use four decimals and aggregation uses unrounded values.
 
@@ -836,7 +859,7 @@ $$
 \tag{38}
 $$
 
-### Overall Calendar Average
+#### Overall Calendar Average
 
 The overall result gives equal weight to each included post-treatment calendar year.
 There are three such years, so each year receives weight $1/3$.
@@ -848,7 +871,7 @@ $$
 \tag{39}
 $$
 
-## 12. Estimate Simple ATT
+### 8.4 Simple ATT
 
 Simple ATT combines all post-treatment group-time effects with cell weights proportional to cohort size.
 
@@ -867,7 +890,7 @@ $N_g$ counts districts in adoption group $g$, and $T-h+1$ counts group $h$'s
 post-treatment years. The sums include treated cohorts only.
 This formula applies to our balanced panel without sampling weights.
 
-### Calculate the Denominator and Weights
+#### Calculate the Denominator and Weights
 
 The Year 5 group contributes $208\times3=624$ treated district-year observations.
 The Year 6 group contributes $208\times2=416$.
@@ -919,7 +942,7 @@ summary(overall_csa)
 
 `type = "simple"` selects the cell-weighted overall average.
 
-### Substitute the Estimated Effects
+#### Substitute the Estimated Effects
 
 $$
 \begin{aligned}
@@ -941,6 +964,109 @@ Never-treated districts supply the comparison but receive no treatment-effect we
 Do not average the standard errors. The package accounts for joint uncertainty.
 See the [aggte() documentation](https://bcallaway11.github.io/did/reference/aggte.html).
 
+### 8.5 Dynamic Effects
+
+Dynamic aggregation averages effects across groups at the same time since adoption,
+rather than the same calendar year. Let $e=t-g$ denote event time, the same concept
+as $k$ in the earlier event-study example. Event time 0 is the first treated year.
+
+For a post-treatment event time $e$, let $\mathcal{G}_e$ contain the adoption groups
+observed at that event time. The weights are proportional to their district counts.
+
+$$
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(e)
+=\sum_{g\in\mathcal{G}_e}
+\frac{N_g}{\sum_{h\in\mathcal{G}_e}N_h}
+\widehat{\operatorname{ATT}}(g,g+e)
+\tag{46}
+$$
+
+#### Identify the Comparisons and Weights
+
+| Event time | Meaning | Group-time effects | Weights |
+|---|---|---|---|
+| 0 | First treated year | ATT(5,5) and ATT(6,6) | $208/(208+208)=1/2$ each |
+| 1 | One year after adoption | ATT(5,6) and ATT(6,7) | $208/(208+208)=1/2$ each |
+| 2 | Two years after adoption | ATT(5,7) only | $208/208=1$ |
+
+For example, the first-year average combines the early group's effect in Year 5
+with the late group's effect in Year 6.
+
+```{r dynamic-aggregation}
+dynamic_att <- aggte(model_csa, type = "dynamic")
+summary(dynamic_att)
+```
+
+`type = "dynamic"` requests estimates by event time. The default output also
+includes pre-treatment comparisons. We calculate the three post-treatment averages below.
+
+```{r dynamic-arithmetic, include=FALSE, purl=FALSE}
+d0 <- mean(c(a55,a66))
+d1 <- mean(c(a56,a67))
+d2 <- a57
+```
+
+#### Substitute the Estimated Effects
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(0)
+&=\frac12\widehat{\operatorname{ATT}}(5,5)
++\frac12\widehat{\operatorname{ATT}}(6,6)\\
+&\approx\frac12(`r fmt(a55)`)+\frac12(`r fmt(a66)`)\\
+&\approx `r fmt(d0)`
+\end{aligned}
+\tag{47}
+$$
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(1)
+&=\frac12\widehat{\operatorname{ATT}}(5,6)
++\frac12\widehat{\operatorname{ATT}}(6,7)\\
+&\approx\frac12(`r fmt(a56)`)+\frac12(`r fmt(a67)`)\\
+&\approx `r fmt(d1)`
+\end{aligned}
+\tag{48}
+$$
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(2)
+&=\widehat{\operatorname{ATT}}(5,7)\\
+&\approx `r fmt(d2)`
+\end{aligned}
+\tag{49}
+$$
+
+The estimate at event time 2 comes only from Group 5 because our data end in Year 7.
+Changes across event times can therefore reflect both time since adoption and which
+groups contribute. For a comparison with both groups at every event time, focus on 0 and 1.
+The `balance_e` option can restrict contributing cohorts when a balanced event-time
+composition is needed.
+
+#### Overall Dynamic Average
+
+The overall dynamic result averages the included post-treatment event-time effects,
+including event time 0. Here it gives equal weight to event times 0, 1, and 2.
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic,overall}}
+&=\frac{
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(0)+
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(1)+
+\widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(2)}{3}\\
+&\approx\frac{(`r fmt(d0)`)+(`r fmt(d1)`)+(`r fmt(d2)`)}{3}\\
+&\approx `r fmt(dynamic_att$overall.att)`
+\end{aligned}
+\tag{50}
+$$
+
+This is not Simple ATT. Averaging event-time summaries gives different total weights
+to the five group-time cells. See the
+[aggregation documentation](https://bcallaway11.github.io/did/reference/aggte.html).
+
 ## Questions and Discussion
 
 **1:30-2:00 PM** Which units receive treatment? Which supply an untreated comparison?
@@ -949,7 +1075,7 @@ Which effect summary answers your question? What makes parallel trends plausible
 ETWFE remains a lecture-only extension in this lab.
 See [Resources](resources.html) for further reading.
 
-### R Session and Package Versions
+#### R Session and Package Versions
 
 ```{r session}
 sessionInfo()

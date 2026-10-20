@@ -41,3 +41,11 @@ stopifnot(abs(lab$g5 - lab$group_att$att.egt[lab$group_att$egt == 5]) < 1e-8,
           abs(lab$g6 - lab$group_att$att.egt[lab$group_att$egt == 6]) < 1e-8,
           abs(mean(c(lab$c5,lab$c6,lab$c7)) - lab$calendar_att$overall.att) < 1e-8)
 cat("Six-column inputs and all worked aggregation calculations verified.\n")
+dynamic_manual <- tapply(post$ATT, post$year - post$cohort, mean)
+dynamic_post <- lab$dynamic_att$egt >= 0
+stopifnot(max(abs(dynamic_manual[as.character(lab$dynamic_att$egt[dynamic_post])] -
+                   lab$dynamic_att$att.egt[dynamic_post])) < 1e-8,
+          abs(mean(dynamic_manual) - lab$dynamic_att$overall.att) < 1e-8,
+          max(abs(unname(dynamic_manual) - c(lab$d0, lab$d1, lab$d2))) < 1e-8)
+cat("Dynamic estimates and overall dynamic average verified.\n")
+print(dynamic_manual)
