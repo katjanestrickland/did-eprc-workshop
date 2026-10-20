@@ -127,7 +127,8 @@ post_att <- data.frame(
   upper_95_sim = model_csa$att + model_csa$c * model_csa$se
 ) %>%
   filter(year >= group) %>%
-  arrange(group, year)
+  arrange(group, year) %>%
+  mutate(`ATT(g,t)` = paste0("ATT(", group, ",", year, ")"), .before = group)
 # Show post-treatment cells, rounding only the displayed table
 post_att %>%
   mutate(across(c(estimate, SE, lower_95_sim, upper_95_sim), ~ round(.x, 4)))
