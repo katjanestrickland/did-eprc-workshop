@@ -49,3 +49,15 @@ stopifnot(max(abs(dynamic_manual[as.character(lab$dynamic_att$egt[dynamic_post])
           max(abs(unname(dynamic_manual) - c(lab$d0, lab$d1, lab$d2))) < 1e-8)
 cat("Dynamic estimates and overall dynamic average verified.\n")
 print(dynamic_manual)
+post_index <- which(lab$model_csa$t >= lab$model_csa$group)
+post_index <- post_index[order(lab$model_csa$group[post_index], lab$model_csa$t[post_index])]
+stopifnot(
+  isTRUE(lab$model_csa$DIDparams$cband),
+  lab$model_csa$alp == 0.05,
+  max(abs(lab$post_att$SE - lab$model_csa$se[post_index])) < 1e-8,
+  max(abs(lab$post_att$lower_95_sim -
+            (lab$model_csa$att - lab$model_csa$c * lab$model_csa$se)[post_index])) < 1e-8,
+  max(abs(lab$post_att$upper_95_sim -
+            (lab$model_csa$att + lab$model_csa$c * lab$model_csa$se)[post_index])) < 1e-8
+)
+cat("Displayed standard errors and simultaneous bands match the model summary.\n")

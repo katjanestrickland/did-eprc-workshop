@@ -94,14 +94,17 @@
 </tbody>
 </table>
 <p>Place the downloaded CSV files in your R project folder</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;simple_did_district.csv&quot;</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>staggered <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;staggered_did_district.csv&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Import the common-adoption and staggered-adoption panels</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;simple_did_district.csv&quot;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>staggered <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;staggered_did_district.csv&quot;</span>)</span></code></pre></div>
 <p><strong>read_csv() comes from readr.</strong> We use <code>outcome_std</code>, measured in standard-deviation (SD) units, so estimated treatment effects are also expressed in SD units.</p>
 <h2 id="understand-the-treatment-variables">3. Understand the Treatment Variables</h2>
 <p>We use functions from <strong>dplyr</strong>, part of the tidyverse, to summarize the treatment groups. See the <a href="https://dplyr.tidyverse.org/articles/dplyr.html">introduction to dplyr</a> for more information.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>simple <span class="sc">%&gt;%</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(district_id, treatment_start_year) <span class="sc">%&gt;%</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(treatment_start_year, <span class="at">name =</span> <span class="st">&quot;districts&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count each district once, rather than counting its seven observations</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># A treatment start year of 0 identifies never-treated districts</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>simple <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(district_id, treatment_start_year) <span class="sc">%&gt;%</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(treatment_start_year, <span class="at">name =</span> <span class="st">&quot;districts&quot;</span>)</span></code></pre></div>
 <pre><code>#&gt; # A tibble: 2 × 2
 #&gt;   treatment_start_year districts
 #&gt;                  &lt;dbl&gt;     &lt;int&gt;
@@ -190,14 +193,17 @@
 <div class="numbered-equation" id="equation-2"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><mo>+</mo><mi>β</mi><msub><mi>D</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 2">(2)</span></div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>two_period <span class="ot">&lt;-</span> simple <span class="sc">%&gt;%</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">5</span>))</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>model_2x2 <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> treated <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> two_period,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_2x2)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep the year before adoption and the first treated year</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>two_period <span class="ot">&lt;-</span> simple <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">5</span>))</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimate DID with district and year fixed effects</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Cluster standard errors by district</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>model_2x2 <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> treated <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> two_period,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_2x2)</span></code></pre></div>
 <pre><code>#&gt; OLS estimation, Dep. Var.: outcome_std
 #&gt; Observations: 1,664
 #&gt; Fixed-effects: district_id: 832,  year: 2
@@ -208,6 +214,7 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 #&gt; RMSE: 0.223049     Adj. R2: 0.888779
 #&gt;                  Within R2: 0.053677</code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The treated coefficient is the two-by-two DID estimate, about 0.2125 SD</span></span></code></pre></div>
 <p><strong>filter() comes from dplyr and feols() comes from fixest.</strong></p>
 <table>
 <colgroup>
@@ -262,12 +269,13 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 <div class="numbered-equation" id="equation-3"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><mo>+</mo><mi>β</mi><msub><mi>D</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 3">(3)</span></div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>model_twfe <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> treated <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simple,</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_twfe)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Use all seven years with the same fixed effects and clustering</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>model_twfe <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> treated <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simple,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_twfe)</span></code></pre></div>
 <pre><code>#&gt; OLS estimation, Dep. Var.: outcome_std
 #&gt; Observations: 5,824
 #&gt; Fixed-effects: district_id: 832,  year: 7
@@ -278,6 +286,7 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 #&gt; RMSE: 0.395699     Adj. R2: 0.814441
 #&gt;                  Within R2: 0.0198</code></pre>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The treated coefficient summarizes the effect across Years 5-7</span></span></code></pre></div>
 <p>The time-constant treated_ever variable would be absorbed by district effects. Use treated, which switches on at adoption.</p>
 <h2 id="estimate-an-event-study">6. Estimate an Event Study</h2>
 <p>In an event study, we estimate a separate coefficient for each year relative to treatment, rather than one average post-treatment effect. This lets us examine differences in trends before treatment and how treatment effects evolve afterward.</p>
@@ -342,8 +351,9 @@ Y_{it}=\alpha_i+\lambda_t+
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> simple <span class="sc">%&gt;%</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">relative_year =</span> year <span class="sc">-</span> <span class="dv">5</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Event time 0 is Year 5, and event time -1 is Year 4</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> simple <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">relative_year =</span> year <span class="sc">-</span> <span class="dv">5</span>)</span></code></pre></div>
 <p>This adds <code>relative_year</code> without changing the existing variables. We use the same year index for both groups. Never-treated districts do not actually adopt in Year 5, but the shared index lets us compare both groups in the same years.</p>
 <h3 id="estimate-the-model">Estimate the Model</h3>
 <p>We still use <code>feols()</code> with district and year fixed effects. We replace the single <code>treated</code> indicator with <code>i(relative_year, treated_ever, ref = -1)</code>.</p>
@@ -353,13 +363,15 @@ Y_{it}=\alpha_i+\lambda_t+
 <li><code>ref = -1</code> sets Year 4 as the reference, so its coefficient is not estimated separately</li>
 </ul>
 <p>Together, these arguments allow a separate treated-group coefficient for each year other than the reference year.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>model_event <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> <span class="fu">i</span>(relative_year, treated_ever, <span class="at">ref =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">|</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    district_id <span class="sc">+</span> year,</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simple,</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_event)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimate separate year-specific effects relative to Year 4</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co"># treated_ever distinguishes adopters from never-treated districts</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>model_event <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> <span class="fu">i</span>(relative_year, treated_ever, <span class="at">ref =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">|</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    district_id <span class="sc">+</span> year,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simple,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_event)</span></code></pre></div>
 <pre><code>#&gt; OLS estimation, Dep. Var.: outcome_std
 #&gt; Observations: 5,824
 #&gt; Fixed-effects: district_id: 832,  year: 7
@@ -375,6 +387,7 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 #&gt; RMSE: 0.395566     Adj. R2: 0.814379
 #&gt;                  Within R2: 0.020456</code></pre>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># relative_year::1:treated_ever is the Year 6 effect, about 0.1690 SD</span></span></code></pre></div>
 <h3 id="interpret-the-coefficients">Interpret the Coefficients</h3>
 <p>The coefficient for <code>relative_year::1:treated_ever</code> is <strong>0.169 SD</strong>. Event time 1 corresponds to Year 6, one year after treatment began. Achievement increased by 0.169 standard deviations more in treated districts than in never-treated districts between Years 4 and 6. This is not the additional change from Year 5 to Year 6. Every coefficient is compared with Year 4.</p>
 <p>Pre-treatment coefficients describe changes in the treated-control gap before treatment. They help assess pre-trends but do not prove parallel trends. Under parallel trends and no anticipation, post-treatment coefficients estimate effects separately for Years 5, 6, and 7, rather than one average effect.</p>
@@ -431,24 +444,26 @@ Y_{it}=\alpha_i+\lambda_t+
 -(\overline Y_{C,t}-\overline Y_{C,g-1})
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 6">(6)</span></div>
 <p>ATT(6,7) compares the Year 6 cohort’s change from Year 5 to Year 7 with the control group’s change over those same years.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20261014</span>)</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>model_csa <span class="ot">&lt;-</span> <span class="fu">att_gt</span>(</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">yname =</span> <span class="st">&quot;outcome_std&quot;</span>,</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">tname =</span> <span class="st">&quot;year&quot;</span>,</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">idname =</span> <span class="st">&quot;district_id&quot;</span>,</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">gname =</span> <span class="st">&quot;treatment_start_year&quot;</span>,</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">xformla =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> staggered,</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">panel =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">control_group =</span> <span class="st">&quot;nevertreated&quot;</span>,</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">base_period =</span> <span class="st">&quot;universal&quot;</span>,</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">anticipation =</span> <span class="dv">0</span>,</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">bstrap =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">biters =</span> <span class="dv">1000</span>,</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">clustervars =</span> <span class="st">&quot;district_id&quot;</span>,</span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">cband =</span> <span class="cn">TRUE</span></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_csa)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Make the bootstrap reproducible</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20261014</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimate ATT(g,t) for each adoption group g and calendar year t</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>model_csa <span class="ot">&lt;-</span> <span class="fu">att_gt</span>(</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">yname =</span> <span class="st">&quot;outcome_std&quot;</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">tname =</span> <span class="st">&quot;year&quot;</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">idname =</span> <span class="st">&quot;district_id&quot;</span>,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">gname =</span> <span class="st">&quot;treatment_start_year&quot;</span>,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">xformla =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> staggered,</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">panel =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">control_group =</span> <span class="st">&quot;nevertreated&quot;</span>,</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">base_period =</span> <span class="st">&quot;universal&quot;</span>,</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">anticipation =</span> <span class="dv">0</span>,</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">bstrap =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">biters =</span> <span class="dv">1000</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">clustervars =</span> <span class="st">&quot;district_id&quot;</span>,</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">cband =</span> <span class="cn">TRUE</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_csa)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; att_gt(yname = &quot;outcome_std&quot;, tname = &quot;year&quot;, idname = &quot;district_id&quot;,
@@ -481,6 +496,8 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt; P-value for pre-test of parallel trends assumption:  0.23306
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Group 5, Time 5 is ATT(5,5), about 0.1501 SD</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># This is a group-by-time effect, not an average across post-treatment years</span></span></code></pre></div>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -563,7 +580,8 @@ Y_{it}=\alpha_i+\lambda_t+
 <p>Parallel trends means that, without treatment, treated and comparison districts would have experienced the same average change in outcomes. Their outcome levels do not need to be equal.</p>
 <p>We cannot directly test what would have happened after treatment. We can, however, examine whether the groups changed similarly before treatment.</p>
 <h4 id="examine-the-pre-treatment-estimates">Examine the Pre-Treatment Estimates</h4>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggdid</span>(model_csa)</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Examine pre-treatment comparisons and their simultaneous confidence bands</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggdid</span>(model_csa)</span></code></pre></div>
 <div class="figure">
 <img src="assets/figures/lab-pretrends-plot-1.png" alt="Group-time estimates for Year 5 and Year 6 adopters, with pre-treatment comparisons and simultaneous confidence bands" width="100%" />
 <p class="caption">
@@ -578,7 +596,8 @@ plot of chunk pretrends-plot
 </ul>
 <p>The alternative, <code>"varying"</code>, compares consecutive pre-treatment years. Both settings produce the same post-treatment ATT estimates. A complete set of short- and long-difference restrictions expresses the same joint null hypothesis, although individual estimates and their significance can differ.</p>
 <h4 id="read-the-pre-test">Read the Pre-Test</h4>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_csa)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show the model results, including the joint pre-trends test</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_csa)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; att_gt(yname = &quot;outcome_std&quot;, tname = &quot;year&quot;, idname = &quot;district_id&quot;,
@@ -611,7 +630,8 @@ plot of chunk pretrends-plot
 #&gt; P-value for pre-test of parallel trends assumption:  0.23306
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>model_csa<span class="sc">$</span>Wpval</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract its p-value; a large value does not prove parallel trends</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>model_csa<span class="sc">$</span>Wpval</span></code></pre></div>
 <pre><code>#&gt;         [,1]
 #&gt; [1,] 0.23306</code></pre>
 <p>Look for <strong>P-value for pre-test of parallel trends assumption</strong> in the summary. The joint Wald test checks whether the non-normalized pre-treatment comparisons are jointly zero.</p>
@@ -661,8 +681,9 @@ w_{6\mid6}=w_{7\mid6}
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(6)
 =\frac{\widehat{\operatorname{ATT}}(6,6)+\widehat{\operatorname{ATT}}(6,7)}{2}
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 12">(12)</span></div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>group_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;group&quot;</span>)</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(group_att)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Average post-treatment effects within each adoption group</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>group_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;group&quot;</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(group_att)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; aggte(MP = model_csa, type = &quot;group&quot;)
@@ -684,21 +705,34 @@ w_{6\mid6}=w_{7\mid6}
 #&gt;
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Group 5 averages ATT(5,5), ATT(5,6), and ATT(5,7), about 0.2505 SD</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Group 6 averages ATT(6,6) and ATT(6,7), about 0.2414 SD</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="co"># The overall group average weights these by cohort size, about 0.2460 SD</span></span></code></pre></div>
 <p><code>aggte()</code> takes the fitted <code>model_csa</code> object. <code>type = "group"</code> requests the group averages. We extract the five estimated post-treatment effects to show the arithmetic.</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>post_att <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> model_csa<span class="sc">$</span>group,</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> model_csa<span class="sc">$</span>t,</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate =</span> model_csa<span class="sc">$</span>att</span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> group) <span class="sc">%&gt;%</span></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(group, year)</span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>post_att</span></code></pre></div>
-<pre><code>#&gt;   group year  estimate
-#&gt; 1     5    5 0.1500799
-#&gt; 2     5    6 0.2082406
-#&gt; 3     5    7 0.3932432
-#&gt; 4     6    6 0.1925952
-#&gt; 5     6    7 0.2902764</code></pre>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Collect each group-by-time estimate and its bootstrap standard error</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the model&#39;s critical value for 95% simultaneous confidence bounds</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>post_att <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> model_csa<span class="sc">$</span>group,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> model_csa<span class="sc">$</span>t,</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate =</span> model_csa<span class="sc">$</span>att,</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">SE =</span> model_csa<span class="sc">$</span>se,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">lower_95_sim =</span> model_csa<span class="sc">$</span>att <span class="sc">-</span> model_csa<span class="sc">$</span>c <span class="sc">*</span> model_csa<span class="sc">$</span>se,</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">upper_95_sim =</span> model_csa<span class="sc">$</span>att <span class="sc">+</span> model_csa<span class="sc">$</span>c <span class="sc">*</span> model_csa<span class="sc">$</span>se</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> group) <span class="sc">%&gt;%</span></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(group, year)</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Show post-treatment cells, rounding only the displayed table</span></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>post_att <span class="sc">%&gt;%</span></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(estimate, SE, lower_95_sim, upper_95_sim), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">4</span>)))</span></code></pre></div>
+<pre><code>#&gt;   group year estimate     SE lower_95_sim upper_95_sim
+#&gt; 1     5    5   0.1501 0.0375       0.0447       0.2554
+#&gt; 2     5    6   0.2082 0.0495       0.0691       0.3474
+#&gt; 3     5    7   0.3932 0.0596       0.2258       0.5607
+#&gt; 4     6    6   0.1926 0.0416       0.0757       0.3095
+#&gt; 5     6    7   0.2903 0.0491       0.1522       0.4283</code></pre>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Group 5, Year 5 is ATT(5,5), about 0.1501 SD</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="co"># SE describes uncertainty, and the last two columns give the band bounds</span></span></code></pre></div>
+<p><code>lower_95_sim</code> and <code>upper_95_sim</code> are the 95% simultaneous confidence bounds reported by <code>summary(model_csa)</code>. They use the fitted model’s critical value, not 1.96. We retain the model’s simultaneous band when displaying only the post-treatment rows. Estimates, standard errors, and bounds are in SD units.</p>
 <h4 id="substitute-the-estimated-effects">Substitute the Estimated Effects</h4>
 <p><strong>Group-time ATT values</strong></p>
 <p>Using the estimates from Section 8.1, let <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math> denote the never-treated districts and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">\bar Y_{g,t}</annotation></semantics></math> the mean outcome for group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math> in year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>. Group 5 uses Year 4 as its reference. Group 6 uses Year 5. The following comparisons display four decimals and use unrounded estimates for aggregation.</p>
@@ -876,8 +910,9 @@ w_{6\mid6}=w_{7\mid6}
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
 =\frac12\widehat{\operatorname{ATT}}(5,7)+\frac12\widehat{\operatorname{ATT}}(6,7)
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 30">(30)</span></div>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>calendar_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;calendar&quot;</span>)</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(calendar_att)</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Average effects for groups already treated in the same calendar year</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>calendar_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;calendar&quot;</span>)</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(calendar_att)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; aggte(MP = model_csa, type = &quot;calendar&quot;)
@@ -900,6 +935,9 @@ w_{6\mid6}=w_{7\mid6}
 #&gt;
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Year 5 uses Group 5 only, about 0.1501 SD</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Years 6 and 7 combine both groups, about 0.2004 and 0.3418 SD</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="co"># The overall calendar average weights these three years equally</span></span></code></pre></div>
 <p><code>type = "calendar"</code> requests a separate summary for each post-treatment calendar year.</p>
 <h4 id="substitute-the-estimated-effects-1">Substitute the Estimated Effects</h4>
 <p><strong>Group-time ATT values by calendar year</strong></p>
@@ -1039,8 +1077,9 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 &amp;+0.20\widehat{\operatorname{ATT}}(6,7)
 \end{aligned}
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 44">(44)</span></div>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>overall_csa <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(overall_csa)</span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine all post-treatment group-time effects using cohort-size weights</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>overall_csa <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(overall_csa)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; aggte(MP = model_csa, type = &quot;simple&quot;)
@@ -1057,6 +1096,8 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 #&gt;
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Each of the five cells has weight 0.20 here</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple ATT is approximately 0.2469 SD</span></span></code></pre></div>
 <p><code>type = "simple"</code> selects the cell-weighted overall average.</p>
 <h4 id="substitute-the-estimated-effects-2">Substitute the Estimated Effects</h4>
 <div class="numbered-equation" id="equation-45"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>≈</mo><mrow></mrow></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.2082</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.3932</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.1926</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.2903</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.2469</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
@@ -1117,8 +1158,9 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 </tbody>
 </table>
 <p>For example, the first-year average combines the early group’s effect in Year 5 with the late group’s effect in Year 6.</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>dynamic_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;dynamic&quot;</span>)</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(dynamic_att)</span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Average across groups at the same time since treatment began</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>dynamic_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;dynamic&quot;</span>)</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(dynamic_att)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; aggte(MP = model_csa, type = &quot;dynamic&quot;)
@@ -1146,6 +1188,10 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 #&gt;
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Event time 0 combines ATT(5,5) and ATT(6,6), about 0.1713 SD</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Event time 1 combines ATT(5,6) and ATT(6,7), about 0.2493 SD</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Event time 2 uses ATT(5,7) only, about 0.3932 SD</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a><span class="co"># The overall dynamic average is about 0.2713 SD</span></span></code></pre></div>
 <p><code>type = "dynamic"</code> requests estimates by event time. The default output also includes pre-treatment comparisons. We calculate the three post-treatment averages below.</p>
 <h4 id="substitute-the-estimated-effects-3">Substitute the Estimated Effects</h4>
 <div class="numbered-equation" id="equation-47"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">y</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">c</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo>,</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.1926</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.1713</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
@@ -1192,7 +1238,8 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 <p><strong>1:30-2:00 PM</strong> Which units receive treatment? Which supply an untreated comparison? Which effect summary answers your question? What makes parallel trends plausible?</p>
 <p>ETWFE remains a lecture-only extension in this lab. See <a href="resources.html">Resources</a> for further reading.</p>
 <h4 id="r-session-and-package-versions">R Session and Package Versions</h4>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Record R and package versions to help reproduce these results</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
 <pre><code>#&gt; R version 4.4.2 (2024-10-31)
 #&gt; Platform: aarch64-apple-darwin20
 #&gt; Running under: macOS Sequoia 15.5

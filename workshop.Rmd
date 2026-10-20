@@ -67,6 +67,7 @@ The six variables are
 Place the downloaded CSV files in your R project folder
 
 ```{r import}
+# Import the common-adoption and staggered-adoption panels
 simple <- read_csv("simple_did_district.csv")
 staggered <- read_csv("staggered_did_district.csv")
 ```
@@ -80,6 +81,8 @@ We use functions from **dplyr**, part of the tidyverse, to summarize the treatme
 See the [introduction to dplyr](https://dplyr.tidyverse.org/articles/dplyr.html) for more information.
 
 ```{r counts}
+# Count each district once, rather than counting its seven observations
+# A treatment start year of 0 identifies never-treated districts
 simple %>%
   distinct(district_id, treatment_start_year) %>%
   count(treatment_start_year, name = "districts")
@@ -144,14 +147,18 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 $$
 
 ```{r two-period}
+# Keep the year before adoption and the first treated year
 two_period <- simple %>%
   filter(year %in% c(4, 5))
+# Estimate DID with district and year fixed effects
+# Cluster standard errors by district
 model_2x2 <- feols(
   outcome_std ~ treated | district_id + year,
   data = two_period,
   vcov = ~ district_id
 )
 summary(model_2x2)
+# The treated coefficient is the two-by-two DID estimate, about 0.2125 SD
 ```
 
 **filter() comes from dplyr and feols() comes from fixest.**
@@ -191,12 +198,14 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 $$
 
 ```{r twfe}
+# Use all seven years with the same fixed effects and clustering
 model_twfe <- feols(
   outcome_std ~ treated | district_id + year,
   data = simple,
   vcov = ~ district_id
 )
 summary(model_twfe)
+# The treated coefficient summarizes the effect across Years 5-7
 ```
 
 The time-constant treated_ever variable would be absorbed by district effects.
@@ -233,6 +242,7 @@ We subtract 5 from the observation year to express time relative to treatment.
 | 7 | $7-5$ | 2 | Two years after treatment begins |
 
 ```{r event-time}
+# Event time 0 is Year 5, and event time -1 is Year 4
 simple <- simple %>%
   mutate(relative_year = year - 5)
 ```
@@ -254,6 +264,8 @@ Together, these arguments allow a separate treated-group coefficient for each ye
 other than the reference year.
 
 ```{r event-study}
+# Estimate separate year-specific effects relative to Year 4
+# treated_ever distinguishes adopters from never-treated districts
 model_event <- feols(
   outcome_std ~ i(relative_year, treated_ever, ref = -1) |
     district_id + year,
@@ -261,6 +273,7 @@ model_event <- feols(
   vcov = ~ district_id
 )
 summary(model_event)
+# relative_year::1:treated_ever is the Year 6 effect, about 0.1690 SD
 ```
 
 ### Interpret the Coefficients
@@ -329,7 +342,9 @@ ATT(6,7) compares the Year 6 cohort's change from Year 5 to Year 7
 with the control group's change over those same years.
 
 ```{r csa}
+# Make the bootstrap reproducible
 set.seed(20261014)
+# Estimate ATT(g,t) for each adoption group g and calendar year t
 model_csa <- att_gt(
   yname = "outcome_std",
   tname = "year",
@@ -347,6 +362,8 @@ model_csa <- att_gt(
   cband = TRUE
 )
 summary(model_csa)
+# Group 5, Time 5 is ATT(5,5), about 0.1501 SD
+# This is a group-by-time effect, not an average across post-treatment years
 ```
 
 | Argument | Meaning and reason for our choice |
@@ -409,6 +426,7 @@ examine whether the groups changed similarly before treatment.
 #### Examine the Pre-Treatment Estimates
 
 ```{r pretrends-plot, fig.path="assets/figures/lab-", fig.width=8, fig.height=5.5, dpi=160, out.width="100%", fig.alt="Group-time estimates for Year 5 and Year 6 adopters, with pre-treatment comparisons and simultaneous confidence bands"}
+# Examine pre-treatment comparisons and their simultaneous confidence bands
 ggdid(model_csa)
 ```
 
@@ -430,7 +448,9 @@ joint null hypothesis, although individual estimates and their significance can 
 #### Read the Pre-Test
 
 ```{r pretest}
+# Show the model results, including the joint pre-trends test
 summary(model_csa)
+# Extract its p-value; a large value does not prove parallel trends
 model_csa$Wpval
 ```
 
@@ -514,23 +534,41 @@ $$
 $$
 
 ```{r group-aggregation}
+# Average post-treatment effects within each adoption group
 group_att <- aggte(model_csa, type = "group")
 summary(group_att)
+# Group 5 averages ATT(5,5), ATT(5,6), and ATT(5,7), about 0.2505 SD
+# Group 6 averages ATT(6,6) and ATT(6,7), about 0.2414 SD
+# The overall group average weights these by cohort size, about 0.2460 SD
 ```
 
 `aggte()` takes the fitted `model_csa` object. `type = "group"` requests the group averages.
 We extract the five estimated post-treatment effects to show the arithmetic.
 
 ```{r extract-effects}
+# Collect each group-by-time estimate and its bootstrap standard error
+# Use the model's critical value for 95% simultaneous confidence bounds
 post_att <- data.frame(
   group = model_csa$group,
   year = model_csa$t,
-  estimate = model_csa$att
+  estimate = model_csa$att,
+  SE = model_csa$se,
+  lower_95_sim = model_csa$att - model_csa$c * model_csa$se,
+  upper_95_sim = model_csa$att + model_csa$c * model_csa$se
 ) %>%
   filter(year >= group) %>%
   arrange(group, year)
-post_att
+# Show post-treatment cells, rounding only the displayed table
+post_att %>%
+  mutate(across(c(estimate, SE, lower_95_sim, upper_95_sim), ~ round(.x, 4)))
+# Group 5, Year 5 is ATT(5,5), about 0.1501 SD
+# SE describes uncertainty, and the last two columns give the band bounds
 ```
+
+`lower_95_sim` and `upper_95_sim` are the 95% simultaneous confidence bounds
+reported by `summary(model_csa)`. They use the fitted model's critical value,
+not 1.96. We retain the model's simultaneous band when displaying only the
+post-treatment rows. Estimates, standard errors, and bounds are in SD units.
 
 ```{r arithmetic-helpers, include=FALSE, purl=FALSE}
 cell <- function(g,t) post_att$estimate[post_att$group == g & post_att$year == t]
@@ -771,8 +809,12 @@ $$
 $$
 
 ```{r calendar-aggregation}
+# Average effects for groups already treated in the same calendar year
 calendar_att <- aggte(model_csa, type = "calendar")
 summary(calendar_att)
+# Year 5 uses Group 5 only, about 0.1501 SD
+# Years 6 and 7 combine both groups, about 0.2004 and 0.3418 SD
+# The overall calendar average weights these three years equally
 ```
 
 `type = "calendar"` requests a separate summary for each post-treatment calendar year.
@@ -936,8 +978,11 @@ $$
 $$
 
 ```{r aggregation}
+# Combine all post-treatment group-time effects using cohort-size weights
 overall_csa <- aggte(model_csa, type = "simple")
 summary(overall_csa)
+# Each of the five cells has weight 0.20 here
+# Simple ATT is approximately 0.2469 SD
 ```
 
 `type = "simple"` selects the cell-weighted overall average.
@@ -993,8 +1038,13 @@ For example, the first-year average combines the early group's effect in Year 5
 with the late group's effect in Year 6.
 
 ```{r dynamic-aggregation}
+# Average across groups at the same time since treatment began
 dynamic_att <- aggte(model_csa, type = "dynamic")
 summary(dynamic_att)
+# Event time 0 combines ATT(5,5) and ATT(6,6), about 0.1713 SD
+# Event time 1 combines ATT(5,6) and ATT(6,7), about 0.2493 SD
+# Event time 2 uses ATT(5,7) only, about 0.3932 SD
+# The overall dynamic average is about 0.2713 SD
 ```
 
 `type = "dynamic"` requests estimates by event time. The default output also
@@ -1078,5 +1128,6 @@ See [Resources](resources.html) for further reading.
 #### R Session and Package Versions
 
 ```{r session}
+# Record R and package versions to help reproduce these results
 sessionInfo()
 ```
