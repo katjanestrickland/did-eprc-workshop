@@ -409,6 +409,9 @@ tr:last-child td {
 .document li {margin-bottom:10px;}
 .document img {max-width:100%; height:auto; display:block; margin:20px auto;}
 .document .equation {max-width:100%; overflow-x:auto; padding:12px 0; margin:16px 0;}
+.document .numbered-equation {display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px; margin:16px 0;}
+.document .numbered-equation .equation {min-width:0; margin:0;}
+.document .equation-number {font-size:14px; white-space:nowrap; padding-right:2px;}
 .document .table-wrap {margin:20px 0; border-radius:4px;}
 .document article > table {display:block; max-width:100%; overflow-x:auto;}
 .document th {text-transform:none; font-size:13px;}

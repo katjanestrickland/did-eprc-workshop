@@ -8,10 +8,25 @@ const escape = s => s.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replace
 const footer = 'EPRC Methods Workshop Series · University of Florida · October 22, 2026';
 for (const [slug, name] of pages) {
   const input = slug === 'workshop' ? 'workshop-generated.md' : `${slug}.qmd`;
-  let body = cp.execFileSync('pandoc', [input, '-f', 'markdown', '-t', 'html5',
-    '--wrap=none', '--mathml', '--syntax-highlighting=pygments'], {encoding: 'utf8'});
+  const numbers = [];
+  // Keep explicit LaTeX tags in the download, but render HTML numbers outside MathML.
+  const source = fs.readFileSync(input, 'utf8').replace(/\n\\tag\{(\d+)\}/g, (_, n) => {
+    numbers.push(Number(n));
+    return '';
+  });
+  let body = cp.execFileSync('pandoc', ['-f', 'markdown', '-t', 'html5',
+    '--wrap=none', '--mathml', '--syntax-highlighting=pygments'], {encoding: 'utf8', input: source});
   body = body.replace(/<p>(<math display="block"[\s\S]*?<\/math>)<\/p>/g,
     '<div class="equation">$1</div>');
+  if (numbers.length) {
+    let index = 0;
+    body = body.replace(/<div class="equation">(<math[\s\S]*?<\/math>)<\/div>/g, (_, math) => {
+      const n = numbers[index++];
+      if (n !== index) throw new Error('Equation numbering must be consecutive');
+      return `<div class="numbered-equation" id="equation-${n}"><div class="equation">${math}</div><span class="equation-number" aria-label="Equation ${n}">(${n})</span></div>`;
+    });
+    if (index !== numbers.length) throw new Error('An equation did not render');
+  }
   if (!/<h1\b/.test(body) && slug !== 'workshop') body = `<h1>${name}</h1>\n` + body;
   const headings = [...body.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/g)];
   const toc = slug === 'workshop' ? `<aside class="lab-toc" aria-label="On this page"><strong>In this lab</strong><nav>${headings.map(h => `<a href="#${escape(h[1])}">${h[2]}</a>`).join('')}</nav></aside>` : '';

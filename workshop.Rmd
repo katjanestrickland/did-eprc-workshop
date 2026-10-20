@@ -55,12 +55,14 @@ at the district level.
 
 The six variables are
 
-- `district_id` identifies each district
-- `year` identifies the observation year, from 1 to 7
-- `treatment_start_year` records the first treatment year, with 0 for never-treated districts
-- `outcome_std` is the achievement outcome
-- `treated_ever` identifies districts that eventually receive treatment
-- `treated` identifies observations when treatment is active
+| Variable | Meaning |
+|---|---|
+| `district_id` | Identifies each district |
+| `year` | Observation year, from 1 to 7 |
+| `treatment_start_year` | First treatment year, with 0 for never-treated districts |
+| `outcome_std` | Achievement outcome measured in SD units |
+| `treated_ever` | Identifies districts that eventually receive treatment |
+| `treated` | Identifies observations when treatment is active |
 
 Place the downloaded CSV files in your R project folder
 
@@ -129,6 +131,7 @@ $$
 \widehat{\operatorname{ATT}}_{2\times2}
 =(\overline Y_{G,\mathrm{post}}-\overline Y_{G,\mathrm{pre}})
 -(\overline Y_{C,\mathrm{post}}-\overline Y_{C,\mathrm{pre}})
+\tag{1}
 $$
 
 $G$ is the treated group, $C$ the control group, and $\overline Y$ a group mean.
@@ -137,6 +140,7 @@ for the treated group. Estimate the contrast using the slides' TWFE equation
 
 $$
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
+\tag{2}
 $$
 
 ```{r two-period}
@@ -183,6 +187,7 @@ Year effects account for common shocks. The equation stays the same
 
 $$
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
+\tag{3}
 $$
 
 ```{r twfe}
@@ -206,6 +211,7 @@ before treatment and how treatment effects evolve afterward.
 $$
 Y_{it}=\alpha_i+\lambda_t+
 \sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g=k\}\,\mathrm{TreatedEver}_i+u_{it}
+\tag{4}
 $$
 
 Treatment begins in Year 5, so $g=5$ and event time is $k=t-g$.
@@ -282,6 +288,7 @@ Effects now depend on cohort and year
 $$
 \operatorname{ATT}(g,t)=\mathbb{E}[Y_{it}(g)-Y_{it}(0)\mid i\in G_g],
 \qquad t\geq g
+\tag{5}
 $$
 
 $G_g$ is the cohort first treated in $g$. $Y_{it}(g)$ is the potential outcome when
@@ -302,6 +309,7 @@ $$
 \widehat{\operatorname{ATT}}(g,t)
 =(\overline Y_{g,t}-\overline Y_{g,g-1})
 -(\overline Y_{C,t}-\overline Y_{C,g-1})
+\tag{6}
 $$
 
 ATT(6,7) compares the Year 6 cohort's change from Year 5 to Year 7
@@ -423,13 +431,19 @@ A group average summarizes one adoption group's effects across its post-treatmen
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(g)
 =\frac{1}{T-g+1}\sum_{t=g}^{T}\widehat{\operatorname{ATT}}(g,t)
+\tag{7}
 $$
 
 Here $g$ is the first treatment year, $t$ is the outcome year, and $T=7$ is the last year.
 $T-g+1$ counts the group's post-treatment years. Hats indicate estimates, not known effects.
 Each year within a group receives equal weight in this balanced panel.
 
-### Calculate the Within-Group Weights
+### Average Across Each Group's Post-Treatment Years
+
+The Year 5 group contributes $7-5+1=3$ post-treatment years, Years 5, 6, and 7,
+so each year receives weight $1/3$.
+The Year 6 group contributes $7-6+1=2$ post-treatment years, Years 6 and 7,
+so each year receives weight $1/2$.
 
 For Group 5, the included years are $t=5,6,7$.
 
@@ -439,6 +453,7 @@ w_{5\mid5}=w_{6\mid5}=w_{7\mid5}
 &=\frac{1}{T-g+1}\\
 &=\frac{1}{7-5+1}=\frac13
 \end{aligned}
+\tag{8}
 $$
 
 For Group 6, the included years are $t=6,7$.
@@ -449,6 +464,7 @@ w_{6\mid6}=w_{7\mid6}
 &=\frac{1}{T-g+1}\\
 &=\frac{1}{7-6+1}=\frac12
 \end{aligned}
+\tag{9}
 $$
 
 Here $w_{t\mid g}$ is the weight on year $t$ within group $g$.
@@ -458,17 +474,20 @@ $$
 \frac13+\frac13+\frac13=1,
 \qquad
 \frac12+\frac12=1
+\tag{10}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(5)
 =\frac{\widehat{\operatorname{ATT}}(5,5)+
 \widehat{\operatorname{ATT}}(5,6)+\widehat{\operatorname{ATT}}(5,7)}{3}
+\tag{11}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(6)
 =\frac{\widehat{\operatorname{ATT}}(6,6)+\widehat{\operatorname{ATT}}(6,7)}{2}
+\tag{12}
 $$
 
 ```{r group-aggregation}
@@ -521,6 +540,7 @@ $$
 &\quad-(\bar Y_{C,5}-\bar Y_{C,4})\\
 &\approx `r fmt(a55)`
 \end{aligned}
+\tag{13}
 $$
 
 $$
@@ -530,6 +550,7 @@ $$
 &\quad-(\bar Y_{C,6}-\bar Y_{C,4})\\
 &\approx `r fmt(a56)`
 \end{aligned}
+\tag{14}
 $$
 
 $$
@@ -539,6 +560,7 @@ $$
 &\quad-(\bar Y_{C,7}-\bar Y_{C,4})\\
 &\approx `r fmt(a57)`
 \end{aligned}
+\tag{15}
 $$
 
 $$
@@ -548,6 +570,7 @@ $$
 &\quad-(\bar Y_{C,6}-\bar Y_{C,5})\\
 &\approx `r fmt(a66)`
 \end{aligned}
+\tag{16}
 $$
 
 $$
@@ -557,6 +580,7 @@ $$
 &\quad-(\bar Y_{C,7}-\bar Y_{C,5})\\
 &\approx `r fmt(a67)`
 \end{aligned}
+\tag{17}
 $$
 
 All results are in SD units. We show seven decimals in the next arithmetic steps
@@ -574,6 +598,7 @@ $$
 &=\frac{`r sprintf("%.7f",sum(round(c(a55,a56,a57),7)))`}{3}\\
 &\approx\boxed{`r fmt(g5)`}
 \end{aligned}
+\tag{18}
 $$
 
 $$
@@ -584,6 +609,7 @@ $$
 &=\frac{`r sprintf("%.7f",sum(round(c(a66,a67),7)))`}{2}\\
 &\approx\boxed{`r fmt(g6)`}
 \end{aligned}
+\tag{19}
 $$
 
 ### Overall Group Average
@@ -595,6 +621,7 @@ $$
 \widehat{\operatorname{ATT}}_{\mathrm{group,overall}}
 \approx\frac12(`r fmt(g5)`)+\frac12(`r fmt(g6)`)
 \approx`r fmt(group_att$overall.att)`
+\tag{20}
 $$
 
 This overall result averages the group averages, rather than weighting all five cells equally.
@@ -607,6 +634,7 @@ $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(t)
 =\sum_{g\le t}\frac{N_g}{\sum_{h\le t}N_h}
 \widehat{\operatorname{ATT}}(g,t)
+\tag{21}
 $$
 
 $N_g$ is the number of districts in group $g$. The index $h$ runs over adoption groups
@@ -626,6 +654,7 @@ The weight on $\widehat{\operatorname{ATT}}(g,t)$ is the coefficient in the cale
 
 $$
 \frac{N_g}{\sum_{h\leq t}N_h},\qquad g\leq t
+\tag{22}
 $$
 
 The sum includes adoption groups already treated by year $t$.
@@ -642,6 +671,7 @@ $$
 &=\frac{208}{208}
 =1
 \end{aligned}
+\tag{23}
 $$
 
 **Year 6**
@@ -655,6 +685,7 @@ $$
 &=\frac{208}{208+208}
 =\frac12
 \end{aligned}
+\tag{24}
 $$
 
 Weight on $\widehat{\operatorname{ATT}}(6,6)$
@@ -666,6 +697,7 @@ $$
 &=\frac{208}{208+208}
 =\frac12
 \end{aligned}
+\tag{25}
 $$
 
 **Year 7**
@@ -679,6 +711,7 @@ $$
 &=\frac{208}{208+208}
 =\frac12
 \end{aligned}
+\tag{26}
 $$
 
 Weight on $\widehat{\operatorname{ATT}}(6,7)$
@@ -690,6 +723,7 @@ $$
 &=\frac{208}{208+208}
 =\frac12
 \end{aligned}
+\tag{27}
 $$
 
 Only the early group contributes in Year 5. Both groups contribute in Years 6 and 7.
@@ -698,16 +732,19 @@ Calendar time means the same observation year, not the same time since adoption.
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(5)
 =\widehat{\operatorname{ATT}}(5,5)
+\tag{28}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(6)
 =\frac12\widehat{\operatorname{ATT}}(5,6)+\frac12\widehat{\operatorname{ATT}}(6,6)
+\tag{29}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
 =\frac12\widehat{\operatorname{ATT}}(5,7)+\frac12\widehat{\operatorname{ATT}}(6,7)
+\tag{30}
 $$
 
 ```{r calendar-aggregation}
@@ -734,6 +771,7 @@ $$
 &\quad-(\bar Y_{C,5}-\bar Y_{C,4})\\
 &\approx `r fmt(a55)`
 \end{aligned}
+\tag{31}
 $$
 
 **Year 6**
@@ -745,6 +783,7 @@ $$
 &\quad-(\bar Y_{C,6}-\bar Y_{C,4})\\
 &\approx `r fmt(a56)`
 \end{aligned}
+\tag{32}
 $$
 
 $$
@@ -754,6 +793,7 @@ $$
 &\quad-(\bar Y_{C,6}-\bar Y_{C,5})\\
 &\approx `r fmt(a66)`
 \end{aligned}
+\tag{33}
 $$
 
 **Year 7**
@@ -765,6 +805,7 @@ $$
 &\quad-(\bar Y_{C,7}-\bar Y_{C,4})\\
 &\approx `r fmt(a57)`
 \end{aligned}
+\tag{34}
 $$
 
 $$
@@ -774,21 +815,25 @@ $$
 &\quad-(\bar Y_{C,7}-\bar Y_{C,5})\\
 &\approx `r fmt(a67)`
 \end{aligned}
+\tag{35}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(5)
 \approx1(`r fmt(a55)`)\approx`r fmt(c5)`
+\tag{36}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(6)
 \approx\frac12(`r fmt(a56)`)+\frac12(`r fmt(a66)`)\approx`r fmt(c6)`
+\tag{37}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
 \approx\frac12(`r fmt(a57)`)+\frac12(`r fmt(a67)`)\approx`r fmt(c7)`
+\tag{38}
 $$
 
 ### Overall Calendar Average
@@ -800,6 +845,7 @@ $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar,overall}}
 \approx\frac{(`r fmt(c5)`)+(`r fmt(c6)`)+(`r fmt(c7)`)}{3}
 \approx`r fmt(calendar_att$overall.att)`
+\tag{39}
 $$
 
 ## 12. Estimate Simple ATT
@@ -809,10 +855,12 @@ Simple ATT combines all post-treatment group-time effects with cell weights prop
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{simple}}
 =\sum_g\sum_{t=g}^{T}w_{g,t}\widehat{\operatorname{ATT}}(g,t)
+\tag{40}
 $$
 
 $$
 w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
+\tag{41}
 $$
 
 $N_g$ counts districts in adoption group $g$, and $T-h+1$ counts group $h$'s
@@ -833,6 +881,7 @@ $$
 &=624+416\\
 &=1040
 \end{aligned}
+\tag{42}
 $$
 
 Each of our five cells has the same cohort size, so each receives weight
@@ -840,6 +889,7 @@ Each of our five cells has the same cohort size, so each receives weight
 $$
 w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 =\frac{208}{1040}=0.20
+\tag{43}
 $$
 
 | Group | Year | Cell weight |
@@ -859,6 +909,7 @@ $$
 +0.20\widehat{\operatorname{ATT}}(6,6)\\
 &+0.20\widehat{\operatorname{ATT}}(6,7)
 \end{aligned}
+\tag{44}
 $$
 
 ```{r aggregation}
@@ -876,8 +927,9 @@ $$
 \approx{}&0.20(`r fmt(a55)`)+0.20(`r fmt(a56)`)\\
 &+0.20(`r fmt(a57)`)+0.20(`r fmt(a66)`)\\
 &+0.20(`r fmt(a67)`)\\
-\approx{}&`r fmt(overall_csa$overall.att)`
+&\approx `r fmt(overall_csa$overall.att)`
 \end{aligned}
+\tag{45}
 $$
 
 The early group receives total weight $3(0.20)=0.60$ and the late group receives
