@@ -53,13 +53,22 @@
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(fixest)</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(did)</span></code></pre></div>
 <h2 id="load-the-data">2. Load the Data</h2>
-<p>Both datasets contain <strong>832 simulated districts representing Texas</strong>, each observed over seven years. Each row represents one district in one year. Both panels are balanced and treatment is assigned at the district level. The six supplied variables are district_id, year, treatment_start_year, outcome_std, treated_ever, and treated. Data preparation is omitted so we can begin analysis directly.</p>
+<p>Both datasets contain <strong>832 simulated districts representing Texas</strong>, each observed over seven years. Each row represents one district in one year. Both panels are balanced and treatment is assigned at the district level.</p>
+<p>The six variables are</p>
+<ul>
+<li><code>district_id</code> identifies each district</li>
+<li><code>year</code> identifies the observation year, from 1 to 7</li>
+<li><code>treatment_start_year</code> records the first treatment year, with 0 for never-treated districts</li>
+<li><code>outcome_std</code> is the achievement outcome</li>
+<li><code>treated_ever</code> identifies districts that eventually receive treatment</li>
+<li><code>treated</code> identifies observations when treatment is active</li>
+</ul>
 <p>Place the downloaded CSV files in your R project folder</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;simple_did_district.csv&quot;</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>staggered <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;staggered_did_district.csv&quot;</span>)</span></code></pre></div>
-<p><strong>read_csv() comes from readr.</strong> Each row is one district in one year. We use outcome_std, measured in standard-deviation (SD) units.</p>
+<p><strong>read_csv() comes from readr.</strong> We use <code>outcome_std</code>, measured in standard-deviation (SD) units, so estimated treatment effects are also expressed in SD units.</p>
 <h2 id="understand-the-treatment-variables">3. Understand the Treatment Variables</h2>
-<p>Use <strong>dplyr</strong> to count districts by first treatment year</p>
+<p>We use functions from <strong>dplyr</strong>, part of the tidyverse, to summarize the treatment groups. See the <a href="https://dplyr.tidyverse.org/articles/dplyr.html">introduction to dplyr</a> for more information.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>simple <span class="sc">%&gt;%</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(district_id, treatment_start_year) <span class="sc">%&gt;%</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(treatment_start_year, <span class="at">name =</span> <span class="st">&quot;districts&quot;</span>)</span></code></pre></div>
@@ -77,7 +86,6 @@
 #&gt; 1                    0       416
 #&gt; 2                    5       208
 #&gt; 3                    6       208</code></pre>
-<p><strong>distinct()</strong> keeps one record per district and adoption year. <strong>count()</strong> counts districts in each group. Read <strong>%&gt;%</strong> as “then.” Zero codes never treated. Treatment stays on after adoption.</p>
 <p>The Texas traditional panel has 416 adopting and 416 never-treated districts. The staggered panel has 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.</p>
 <h3 id="treatment-group-membership-and-active-treatment">Treatment Group Membership and Active Treatment</h3>
 <p>Our dataset records each district’s first treatment year in <code>treatment_start_year</code>. A value of 5 or 6 tells us when the district adopts the policy, while 0 means it never adopts. Both files already contain the following indicators</p>
@@ -217,9 +225,10 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 </tr>
 </tbody>
 </table>
-<p>Variables after the vertical bar specify fixed effects, not ordinary numeric predictors. <strong>data</strong> selects the dataset. <strong>vcov = ~ district_id</strong> requests district-clustered standard errors. The coefficient on treated equals the two-by-two contrast. Clustering allows outcomes from the same district to be related across years. The estimated coefficient is measured in SD units.</p>
+<p>Variables after the vertical bar specify fixed effects, not ordinary numeric predictors. <strong>data</strong> selects the dataset. <strong>vcov = ~ district_id</strong> requests district-clustered standard errors. The coefficient on treated equals the two-by-two contrast. In this example, the estimated coefficient is 0.21 SD, meaning that achievement increased by 0.21 standard deviations more in treated districts than in never-treated districts between Years 4 and 5. Clustering allows outcomes from the same district to be related across years. The estimated coefficient is measured in SD units.</p>
 <h2 id="estimate-twfe-using-all-seven-years">5. Estimate TWFE Using All Seven Years</h2>
-<p>The equation stays the same</p>
+<p>We now use all seven years rather than only Years 4 and 5. The model specification stays the same, but we change the dataset from <code>two_period</code> to <code>simple</code>. The coefficient compares the treated group’s change from its average outcome in Years 1-4 to its average outcome in Years 5-7 with the same change for never-treated districts. In this balanced common-adoption example, it summarizes the average post-treatment effect.</p>
+<p>District effects account for persistent differences between districts. Year effects account for common shocks. The equation stays the same</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><mo>+</mo><mi>β</mi><msub><mi>D</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 </annotation></semantics></math></div>
@@ -239,49 +248,88 @@ Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 #&gt; RMSE: 0.395699     Adj. R2: 0.814441
 #&gt;                  Within R2: 0.0198</code></pre>
-<p>Only <strong>data = simple</strong> changes. We now use all seven years. District effects account for persistent differences. Year effects account for common shocks. In this balanced common-adoption design, the coefficient equals the treated group’s average pre-to-post change minus the control group’s average change. The model estimates one coefficient summarizing the effect across Years 5-7. The time-constant treated_ever variable would be absorbed by district effects. Use treated, which switches on at adoption.</p>
+<p>The time-constant treated_ever variable would be absorbed by district effects. Use treated, which switches on at adoption.</p>
 <h2 id="estimate-an-event-study">6. Estimate an Event Study</h2>
-<p>We use the same equation as the slides</p>
+<p>In an event study, we estimate a separate coefficient for each year relative to treatment, rather than one average post-treatment effect. This lets us examine differences in trends before treatment and how treatment effects evolve afterward.</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><mo>+</mo><munder><mo>∑</mo><mrow><mi>k</mi><mo>≠</mo><mi>−</mi><mn>1</mn></mrow></munder><msub><mi>β</mi><mi>k</mi></msub><mspace width="0.167em"></mspace><mn mathvariant="bold">𝟏</mn><mo stretchy="false" form="prefix">{</mo><mi>t</mi><mo>−</mo><mi>g</mi><mo>=</mo><mi>k</mi><mo stretchy="false" form="postfix">}</mo><mspace width="0.167em"></mspace><msub><mrow><mi mathvariant="normal">T</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">t</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">E</mi><mi mathvariant="normal">v</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi></mrow><mi>i</mi></msub><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
 Y_{it}=\alpha_i+\lambda_t+
 \sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g=k\}\,\mathrm{TreatedEver}_i+u_{it}
 </annotation></semantics></math></div>
-<p>Treatment begins in Year 5, so <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo>=</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">g=5</annotation></semantics></math> and event time is the study year minus 5, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>=</mo><mi>t</mi><mo>−</mo><mi>g</mi></mrow><annotation encoding="application/x-tex">k=t-g</annotation></semantics></math>. The model compares treated and never-treated districts in each year, using Year 4 as the reference year.</p>
+<p>Treatment begins in Year 5, so <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo>=</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">g=5</annotation></semantics></math> and event time is <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>=</mo><mi>t</mi><mo>−</mo><mi>g</mi></mrow><annotation encoding="application/x-tex">k=t-g</annotation></semantics></math>. Each coefficient shows how the difference between treated and never-treated districts in that year compares with their difference in Year 4, the reference year.</p>
+<h3 id="create-the-event-time-variable">Create the Event-Time Variable</h3>
+<p>We subtract 5 from the observation year to express time relative to treatment.</p>
 <table>
 <thead>
 <tr>
 <th>Study year</th>
-<th>Event time</th>
-<th>Interpretation</th>
+<th>Calculation</th>
+<th>relative_year</th>
+<th>Meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>1, 2, 3</td>
-<td>-4, -3, -2</td>
-<td>Pre-treatment comparisons</td>
+<td>1</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">1-5</annotation></semantics></math></td>
+<td>-4</td>
+<td>Four years before treatment</td>
+</tr>
+<tr>
+<td>2</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2</mn><mo>−</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">2-5</annotation></semantics></math></td>
+<td>-3</td>
+<td>Three years before treatment</td>
+</tr>
+<tr>
+<td>3</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>3</mn><mo>−</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">3-5</annotation></semantics></math></td>
+<td>-2</td>
+<td>Two years before treatment</td>
 </tr>
 <tr>
 <td>4</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4</mn><mo>−</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">4-5</annotation></semantics></math></td>
 <td>-1</td>
-<td>Reference period</td>
+<td>Reference year</td>
 </tr>
 <tr>
-<td>5, 6, 7</td>
-<td>0, 1, 2</td>
-<td>First, second, third treated year</td>
+<td>5</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>5</mn><mo>−</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">5-5</annotation></semantics></math></td>
+<td>0</td>
+<td>Treatment begins</td>
+</tr>
+<tr>
+<td>6</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>6</mn><mo>−</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">6-5</annotation></semantics></math></td>
+<td>1</td>
+<td>One year after treatment begins</td>
+</tr>
+<tr>
+<td>7</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>7</mn><mo>−</mo><mn>5</mn></mrow><annotation encoding="application/x-tex">7-5</annotation></semantics></math></td>
+<td>2</td>
+<td>Two years after treatment begins</td>
 </tr>
 </tbody>
 </table>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>simple <span class="ot">&lt;-</span> simple <span class="sc">%&gt;%</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">relative_year =</span> year <span class="sc">-</span> <span class="dv">5</span>)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>model_event <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> <span class="fu">i</span>(relative_year, treated_ever, <span class="at">ref =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">|</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    district_id <span class="sc">+</span> year,</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simple,</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_event)</span></code></pre></div>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">relative_year =</span> year <span class="sc">-</span> <span class="dv">5</span>)</span></code></pre></div>
+<p>This adds <code>relative_year</code> without changing the existing variables. We use the same year index for both groups. Never-treated districts do not actually adopt in Year 5, but the shared index lets us compare both groups in the same years.</p>
+<h3 id="estimate-the-model">Estimate the Model</h3>
+<p>We still use <code>feols()</code> with district and year fixed effects. We replace the single <code>treated</code> indicator with <code>i(relative_year, treated_ever, ref = -1)</code>.</p>
+<ul>
+<li><code>relative_year</code> identifies the year relative to adoption</li>
+<li><code>treated_ever</code> identifies districts belonging to the treatment group, including before adoption</li>
+<li><code>ref = -1</code> sets Year 4 as the reference, so its coefficient is not estimated separately</li>
+</ul>
+<p>Together, these arguments allow a separate treated-group coefficient for each year other than the reference year.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>model_event <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> <span class="fu">i</span>(relative_year, treated_ever, <span class="at">ref =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">|</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    district_id <span class="sc">+</span> year,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> simple,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_event)</span></code></pre></div>
 <pre><code>#&gt; OLS estimation, Dep. Var.: outcome_std
 #&gt; Observations: 5,824
 #&gt; Fixed-effects: district_id: 832,  year: 7
@@ -297,9 +345,10 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 #&gt; RMSE: 0.395566     Adj. R2: 0.814379
 #&gt;                  Within R2: 0.020456</code></pre>
-<p><strong>mutate() is from dplyr.</strong> This relative-year index is defined for every observation. Never-treated districts have no adoption year of their own, so we use the common Year 5 reference for this index and distinguish the treated group with treated_ever. <code>i(relative_year, treated_ever, ref = -1)</code> from <strong>fixest</strong> creates a separate comparison for each year. Multiplying the year indicators by <code>treated_ever</code> distinguishes treated districts from never-treated districts. Setting <code>ref = -1</code> makes the year before treatment the reference period.</p>
-<p>Each <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mi>k</mi></msub><annotation encoding="application/x-tex">\beta_k</annotation></semantics></math> measures how the treated-control gap differs from its Year 4 value. Pre-treatment coefficients are diagnostics, not proof of parallel trends. Under parallel trends and no anticipation, post-treatment coefficients estimate effects relative to Year 4. The three post-treatment coefficients estimate those effects separately.</p>
-<p>This example has one treatment start year. In the staggered example, districts begin treatment in different years, so we next estimate effects separately for each adoption cohort and study year.</p>
+<h3 id="interpret-the-coefficients">Interpret the Coefficients</h3>
+<p>The coefficient for <code>relative_year::1:treated_ever</code> is <strong>0.169 SD</strong>. Event time 1 corresponds to Year 6, one year after treatment began. Achievement increased by 0.169 standard deviations more in treated districts than in never-treated districts between Years 4 and 6. This is not the additional change from Year 5 to Year 6. Every coefficient is compared with Year 4.</p>
+<p>Pre-treatment coefficients describe changes in the treated-control gap before treatment. They help assess pre-trends but do not prove parallel trends. Under parallel trends and no anticipation, post-treatment coefficients estimate effects separately for Years 5, 6, and 7, rather than one average effect.</p>
+<p>This example has one treatment start year. Next we consider districts adopting in different years and estimate effects separately for each cohort and study year.</p>
 <h2 id="move-to-staggered-adoption">7. Move to Staggered Adoption</h2>
 <p>Effects now depend on cohort and year</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ATT</mi><mo>&#8289;</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi mathvariant="double-struck">𝔼</mi><mo stretchy="false" form="prefix">[</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo><mo>∣</mo><mi>i</mi><mo>∈</mo><msub><mi>G</mi><mi>g</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>t</mi><mo>≥</mo><mi>g</mi></mrow><annotation encoding="application/x-tex">
@@ -316,24 +365,24 @@ Y_{it}=\alpha_i+\lambda_t+
 -(\overline Y_{C,t}-\overline Y_{C,g-1})
 </annotation></semantics></math></div>
 <p>ATT(6,7) compares the Year 6 cohort’s change from Year 5 to Year 7 with the control group’s change over those same years.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20261014</span>)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>model_csa <span class="ot">&lt;-</span> <span class="fu">att_gt</span>(</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">yname =</span> <span class="st">&quot;outcome_std&quot;</span>,</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">tname =</span> <span class="st">&quot;year&quot;</span>,</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">idname =</span> <span class="st">&quot;district_id&quot;</span>,</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">gname =</span> <span class="st">&quot;treatment_start_year&quot;</span>,</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">xformla =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> staggered,</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">panel =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">control_group =</span> <span class="st">&quot;nevertreated&quot;</span>,</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">base_period =</span> <span class="st">&quot;universal&quot;</span>,</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">anticipation =</span> <span class="dv">0</span>,</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">bstrap =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">biters =</span> <span class="dv">1000</span>,</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">clustervars =</span> <span class="st">&quot;district_id&quot;</span>,</span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">cband =</span> <span class="cn">TRUE</span></span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_csa)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20261014</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>model_csa <span class="ot">&lt;-</span> <span class="fu">att_gt</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">yname =</span> <span class="st">&quot;outcome_std&quot;</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">tname =</span> <span class="st">&quot;year&quot;</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">idname =</span> <span class="st">&quot;district_id&quot;</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">gname =</span> <span class="st">&quot;treatment_start_year&quot;</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">xformla =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> staggered,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">panel =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">control_group =</span> <span class="st">&quot;nevertreated&quot;</span>,</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">base_period =</span> <span class="st">&quot;universal&quot;</span>,</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">anticipation =</span> <span class="dv">0</span>,</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">bstrap =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">biters =</span> <span class="dv">1000</span>,</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">clustervars =</span> <span class="st">&quot;district_id&quot;</span>,</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">cband =</span> <span class="cn">TRUE</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_csa)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; att_gt(yname = &quot;outcome_std&quot;, tname = &quot;year&quot;, idname = &quot;district_id&quot;,
@@ -439,7 +488,7 @@ Y_{it}=\alpha_i+\lambda_t+
 <p>In <code>xformla = ~ 1</code>, the 1 represents an intercept, not one covariate. With covariates, a formula could be <code>~ poverty_rate + enrollment</code>, provided those columns existed. Our example has no covariates.</p>
 <p>The alternative <code>control_group = "notyettreated"</code> includes never-treated districts and eligible districts that have not yet adopted. With no anticipation, Year 6 adopters can contribute as controls in Year 5, but not once treated in Year 6.</p>
 <h3 id="what-does-the-base-period-mean">What Does the Base Period Mean?</h3>
-<p>With <code>base_period = "universal"</code> and no anticipation, each cohort uses <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">g-1</annotation></semantics></math>. Universal does not mean that every cohort uses the same calendar year.</p>
+<p>With <code>base_period = "universal"</code> and no anticipation, each group uses its last year before treatment as the reference. Year 5 adopters use Year 4, and Year 6 adopters use Year 5.</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -477,7 +526,7 @@ Y_{it}=\alpha_i+\lambda_t+
 <p><code>biters = 1000</code> requests 1,000 iterations. <code>cband = TRUE</code> requests simultaneous confidence bands that target coverage of the group-time effects together at the default 95% level, rather than separate 95% pointwise intervals. <code>cband = FALSE</code> requests pointwise intervals. Simultaneous bands require <code>bstrap = TRUE</code>.</p>
 <h3 id="pre-trends-assessment">Pre-Trends Assessment</h3>
 <p><code>summary(model_csa)</code> includes a p-value for a joint Wald pre-test of whether the non-normalized pre-treatment comparisons are jointly zero. For our universal-base specification, comparisons are relative to each cohort’s fixed pre-treatment reference.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>model_csa<span class="sc">$</span>Wpval</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>model_csa<span class="sc">$</span>Wpval</span></code></pre></div>
 <pre><code>#&gt;         [,1]
 #&gt; [1,] 0.23306</code></pre>
 <p>The pre-test p-value is <strong>0.233</strong>. A small p-value provides evidence against the pre-treatment restrictions. A large p-value means we did not detect a violation, not that parallel trends is proven. Pre-treatment evidence cannot establish the unobserved post-treatment counterfactual. Interpret the test alongside the design, estimates, and their uncertainty.</p>
@@ -490,7 +539,28 @@ Y_{it}=\alpha_i+\lambda_t+
 </annotation></semantics></math></div>
 <p>Here <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math> is the first treatment year, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math> is the outcome year, and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">T=7</annotation></semantics></math> is the last year. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>−</mo><mi>g</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">T-g+1</annotation></semantics></math> counts the group’s post-treatment years. Hats indicate estimates, not known effects. Each year within a group receives equal weight in this balanced panel.</p>
 <h3 id="calculate-the-within-group-weights">Calculate the Within-Group Weights</h3>
-<p>The Year 5 group contributes <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>7</mn><mo>−</mo><mn>5</mn><mo>+</mo><mn>1</mn><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">7-5+1=3</annotation></semantics></math> years, each weighted <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mn>3</mn></mrow><annotation encoding="application/x-tex">1/3</annotation></semantics></math>. The Year 6 group contributes <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>7</mn><mo>−</mo><mn>6</mn><mo>+</mo><mn>1</mn><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">7-6+1=2</annotation></semantics></math> years, each weighted <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">1/2</annotation></semantics></math>.</p>
+<p>For Group 5, the included years are <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>=</mo><mn>5</mn><mo>,</mo><mn>6</mn><mo>,</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">t=5,6,7</annotation></semantics></math>.</p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mi>w</mi><mrow><mn>5</mn><mo>∣</mo><mn>5</mn></mrow></msub><mo>=</mo><msub><mi>w</mi><mrow><mn>6</mn><mo>∣</mo><mn>5</mn></mrow></msub><mo>=</mo><msub><mi>w</mi><mrow><mn>7</mn><mo>∣</mo><mn>5</mn></mrow></msub></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>1</mn><mrow><mi>T</mi><mo>−</mo><mi>g</mi><mo>+</mo><mn>1</mn></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>1</mn><mrow><mn>7</mn><mo>−</mo><mn>5</mn><mo>+</mo><mn>1</mn></mrow></mfrac><mo>=</mo><mfrac><mn>1</mn><mn>3</mn></mfrac></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+w_{5\mid5}=w_{6\mid5}=w_{7\mid5}
+&amp;=\frac{1}{T-g+1}\\
+&amp;=\frac{1}{7-5+1}=\frac13
+\end{aligned}
+</annotation></semantics></math></div>
+<p>For Group 6, the included years are <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>=</mo><mn>6</mn><mo>,</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">t=6,7</annotation></semantics></math>.</p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mi>w</mi><mrow><mn>6</mn><mo>∣</mo><mn>6</mn></mrow></msub><mo>=</mo><msub><mi>w</mi><mrow><mn>7</mn><mo>∣</mo><mn>6</mn></mrow></msub></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>1</mn><mrow><mi>T</mi><mo>−</mo><mi>g</mi><mo>+</mo><mn>1</mn></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>1</mn><mrow><mn>7</mn><mo>−</mo><mn>6</mn><mo>+</mo><mn>1</mn></mrow></mfrac><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+w_{6\mid6}=w_{7\mid6}
+&amp;=\frac{1}{T-g+1}\\
+&amp;=\frac{1}{7-6+1}=\frac12
+\end{aligned}
+</annotation></semantics></math></div>
+<p>Here <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>w</mi><mrow><mi>t</mi><mo>∣</mo><mi>g</mi></mrow></msub><annotation encoding="application/x-tex">w_{t\mid g}</annotation></semantics></math> is the weight on year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math> within group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>. The weights sum to one within each group.</p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mn>1</mn><mn>3</mn></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>3</mn></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>3</mn></mfrac><mo>=</mo><mn>1</mn><mo>,</mo><mspace width="2.0em"></mspace><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">
+\frac13+\frac13+\frac13=1,
+\qquad
+\frac12+\frac12=1
+</annotation></semantics></math></div>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">g</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mrow><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo></mrow><mn>3</mn></mfrac></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(5)
 =\frac{\widehat{\operatorname{ATT}}(5,5)+
@@ -500,8 +570,8 @@ Y_{it}=\alpha_i+\lambda_t+
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(6)
 =\frac{\widehat{\operatorname{ATT}}(6,6)+\widehat{\operatorname{ATT}}(6,7)}{2}
 </annotation></semantics></math></div>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>group_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;group&quot;</span>)</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(group_att)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>group_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;group&quot;</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(group_att)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; aggte(MP = model_csa, type = &quot;group&quot;)
@@ -524,14 +594,14 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt; Control Group:  Never Treated,  Anticipation Periods:  0
 #&gt; Estimation Method:  Doubly Robust</code></pre>
 <p><code>aggte()</code> takes the fitted <code>model_csa</code> object. <code>type = "group"</code> requests the group averages. We extract the five estimated post-treatment effects to show the arithmetic.</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>post_att <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> model_csa<span class="sc">$</span>group,</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> model_csa<span class="sc">$</span>t,</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate =</span> model_csa<span class="sc">$</span>att</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> group) <span class="sc">%&gt;%</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(group, year)</span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>post_att</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>post_att <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> model_csa<span class="sc">$</span>group,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">year =</span> model_csa<span class="sc">$</span>t,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">estimate =</span> model_csa<span class="sc">$</span>att</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> group) <span class="sc">%&gt;%</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(group, year)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>post_att</span></code></pre></div>
 <pre><code>#&gt;   group year  estimate
 #&gt; 1     5    5 0.1500799
 #&gt; 2     5    6 0.2082406
@@ -539,23 +609,75 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt; 4     6    6 0.1925952
 #&gt; 5     6    7 0.2902764</code></pre>
 <h3 id="substitute-the-estimated-effects">Substitute the Estimated Effects</h3>
-<p>All results below are in SD units. Displayed numbers are rounded to four decimals. Calculations use full precision.</p>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">g</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.2082</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.3932</mn><mo stretchy="false" form="postfix">)</mo></mrow><mn>3</mn></mfrac><mo>=</mo><mn>0.2505</mn></mrow><annotation encoding="application/x-tex">
-\widehat{\operatorname{ATT}}_{\mathrm{group}}(5)
-=\frac{(0.1501)+(0.2082)+(0.3932)}{3}
-=0.2505
+<p><strong>Group-time ATT values</strong></p>
+<p>Using the estimates from Section 8, let <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math> denote the never-treated districts and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">\bar Y_{g,t}</annotation></semantics></math> the mean outcome for group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math> in year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>. Group 5 uses Year 4 as its reference. Group 6 uses Year 5. The following comparisons display four decimals and use unrounded estimates for aggregation.</p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>5</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>5</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.1501</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,5)
+&amp;=(\bar Y_{5,5}-\bar Y_{5,4})\\
+&amp;\quad-(\bar Y_{C,5}-\bar Y_{C,4})\\
+&amp;\approx 0.1501
+\end{aligned}
 </annotation></semantics></math></div>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">g</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.1926</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.2903</mn><mo stretchy="false" form="postfix">)</mo></mrow><mn>2</mn></mfrac><mo>=</mo><mn>0.2414</mn></mrow><annotation encoding="application/x-tex">
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>6</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>6</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.2082</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,6)
+&amp;=(\bar Y_{5,6}-\bar Y_{5,4})\\
+&amp;\quad-(\bar Y_{C,6}-\bar Y_{C,4})\\
+&amp;\approx 0.2082
+\end{aligned}
+</annotation></semantics></math></div>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>7</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>7</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.3932</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,7)
+&amp;=(\bar Y_{5,7}-\bar Y_{5,4})\\
+&amp;\quad-(\bar Y_{C,7}-\bar Y_{C,4})\\
+&amp;\approx 0.3932
+\end{aligned}
+</annotation></semantics></math></div>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo>,</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>6</mn><mo>,</mo><mn>6</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>6</mn><mo>,</mo><mn>5</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>6</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>5</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.1926</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}(6,6)
+&amp;=(\bar Y_{6,6}-\bar Y_{6,5})\\
+&amp;\quad-(\bar Y_{C,6}-\bar Y_{C,5})\\
+&amp;\approx 0.1926
+\end{aligned}
+</annotation></semantics></math></div>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo>,</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>6</mn><mo>,</mo><mn>7</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>6</mn><mo>,</mo><mn>5</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>7</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>5</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.2903</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}(6,7)
+&amp;=(\bar Y_{6,7}-\bar Y_{6,5})\\
+&amp;\quad-(\bar Y_{C,7}-\bar Y_{C,5})\\
+&amp;\approx 0.2903
+\end{aligned}
+</annotation></semantics></math></div>
+<p>All results are in SD units. We show seven decimals in the next arithmetic steps to avoid ambiguity from rounding. Intermediate sums add the displayed inputs. Final estimates use full precision and are reported to four decimals.</p>
+<p>Substituting the ATT values and their weights gives</p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">g</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mfrac><mn>1</mn><mn>3</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.1500799</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>3</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2082406</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>+</mo><mfrac><mn>1</mn><mn>3</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.3932432</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>0.7515637</mn><mn>3</mn></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><menclose notation="box"><mn>0.2505</mn></menclose></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}_{\mathrm{group}}(5)
+&amp;\approx\frac13(0.1500799)
++\frac13(0.2082406)\\
+&amp;\quad+\frac13(0.3932432)\\
+&amp;=\frac{0.7515637}{3}\\
+&amp;\approx\boxed{0.2505}
+\end{aligned}
+</annotation></semantics></math></div>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">g</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.1925952</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2902764</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>0.4828716</mn><mn>2</mn></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><menclose notation="box"><mn>0.2414</mn></menclose></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(6)
-=\frac{(0.1926)+(0.2903)}{2}
-=0.2414
+&amp;\approx\frac12(0.1925952)
++\frac12(0.2902764)\\
+&amp;=\frac{0.4828716}{2}\\
+&amp;\approx\boxed{0.2414}
+\end{aligned}
 </annotation></semantics></math></div>
 <h3 id="overall-group-average">Overall Group Average</h3>
 <p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> counts districts in adoption group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>, not rows. We have <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mn>5</mn></msub><mo>=</mo><msub><mi>N</mi><mn>6</mn></msub><mo>=</mo><mn>208</mn></mrow><annotation encoding="application/x-tex">N_5=N_6=208</annotation></semantics></math>. Each group receives weight <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>208</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>208</mn><mo>+</mo><mn>208</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">208/(208+208)=1/2</annotation></semantics></math>.</p>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">g</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi><mo mathvariant="normal">,</mo><mi mathvariant="normal">o</mi><mi mathvariant="normal">v</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">l</mi></mrow></msub><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2505</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2414</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.2460</mn></mrow><annotation encoding="application/x-tex">
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">g</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi><mo mathvariant="normal">,</mo><mi mathvariant="normal">o</mi><mi mathvariant="normal">v</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">l</mi></mrow></msub><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2505</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2414</mn><mo stretchy="false" form="postfix">)</mo><mo>≈</mo><mn>0.2460</mn></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{group,overall}}
-=\frac12(0.2505)+\frac12(0.2414)
-=0.2460
+\approx\frac12(0.2505)+\frac12(0.2414)
+\approx0.2460
 </annotation></semantics></math></div>
 <p>This overall result averages the group averages, rather than weighting all five cells equally.</p>
 <h2 id="estimate-calendar-summaries">11. Estimate Calendar Summaries</h2>
@@ -597,6 +719,59 @@ Y_{it}=\alpha_i+\lambda_t+
 </tr>
 </tbody>
 </table>
+<p>The weight on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo>,</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\widehat{\operatorname{ATT}}(g,t)</annotation></semantics></math> is the coefficient in the calendar formula.</p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><msub><mi>N</mi><mi>g</mi></msub><mrow><munder><mo>∑</mo><mrow><mi>h</mi><mo>≤</mo><mi>t</mi></mrow></munder><msub><mi>N</mi><mi>h</mi></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><mi>g</mi><mo>≤</mo><mi>t</mi></mrow><annotation encoding="application/x-tex">
+\frac{N_g}{\sum_{h\leq t}N_h},\qquad g\leq t
+</annotation></semantics></math></div>
+<p>The sum includes adoption groups already treated by year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>. With <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mn>5</mn></msub><mo>=</mo><msub><mi>N</mi><mn>6</mn></msub><mo>=</mo><mn>208</mn></mrow><annotation encoding="application/x-tex">N_5=N_6=208</annotation></semantics></math>, substitute <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math> and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math> directly.</p>
+<p><strong>Year 5</strong></p>
+<p>Weight on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\widehat{\operatorname{ATT}}(5,5)</annotation></semantics></math></p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><msub><mi>N</mi><mn>5</mn></msub><mrow><munder><mo>∑</mo><mrow><mi>h</mi><mo>≤</mo><mn>5</mn></mrow></munder><msub><mi>N</mi><mi>h</mi></msub></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><msub><mi>N</mi><mn>5</mn></msub><msub><mi>N</mi><mn>5</mn></msub></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>208</mn><mn>208</mn></mfrac><mo>=</mo><mn>1</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\frac{N_5}{\sum_{h\leq5}N_h}
+&amp;=\frac{N_5}{N_5}\\
+&amp;=\frac{208}{208}
+=1
+\end{aligned}
+</annotation></semantics></math></div>
+<p><strong>Year 6</strong></p>
+<p>Weight on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\widehat{\operatorname{ATT}}(5,6)</annotation></semantics></math></p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><msub><mi>N</mi><mn>5</mn></msub><mrow><munder><mo>∑</mo><mrow><mi>h</mi><mo>≤</mo><mn>6</mn></mrow></munder><msub><mi>N</mi><mi>h</mi></msub></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><msub><mi>N</mi><mn>5</mn></msub><mrow><msub><mi>N</mi><mn>5</mn></msub><mo>+</mo><msub><mi>N</mi><mn>6</mn></msub></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>208</mn><mrow><mn>208</mn><mo>+</mo><mn>208</mn></mrow></mfrac><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\frac{N_5}{\sum_{h\leq6}N_h}
+&amp;=\frac{N_5}{N_5+N_6}\\
+&amp;=\frac{208}{208+208}
+=\frac12
+\end{aligned}
+</annotation></semantics></math></div>
+<p>Weight on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo>,</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\widehat{\operatorname{ATT}}(6,6)</annotation></semantics></math></p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><msub><mi>N</mi><mn>6</mn></msub><mrow><munder><mo>∑</mo><mrow><mi>h</mi><mo>≤</mo><mn>6</mn></mrow></munder><msub><mi>N</mi><mi>h</mi></msub></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><msub><mi>N</mi><mn>6</mn></msub><mrow><msub><mi>N</mi><mn>5</mn></msub><mo>+</mo><msub><mi>N</mi><mn>6</mn></msub></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>208</mn><mrow><mn>208</mn><mo>+</mo><mn>208</mn></mrow></mfrac><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\frac{N_6}{\sum_{h\leq6}N_h}
+&amp;=\frac{N_6}{N_5+N_6}\\
+&amp;=\frac{208}{208+208}
+=\frac12
+\end{aligned}
+</annotation></semantics></math></div>
+<p><strong>Year 7</strong></p>
+<p>Weight on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\widehat{\operatorname{ATT}}(5,7)</annotation></semantics></math></p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><msub><mi>N</mi><mn>5</mn></msub><mrow><munder><mo>∑</mo><mrow><mi>h</mi><mo>≤</mo><mn>7</mn></mrow></munder><msub><mi>N</mi><mi>h</mi></msub></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><msub><mi>N</mi><mn>5</mn></msub><mrow><msub><mi>N</mi><mn>5</mn></msub><mo>+</mo><msub><mi>N</mi><mn>6</mn></msub></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>208</mn><mrow><mn>208</mn><mo>+</mo><mn>208</mn></mrow></mfrac><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\frac{N_5}{\sum_{h\leq7}N_h}
+&amp;=\frac{N_5}{N_5+N_6}\\
+&amp;=\frac{208}{208+208}
+=\frac12
+\end{aligned}
+</annotation></semantics></math></div>
+<p>Weight on <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo>,</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\widehat{\operatorname{ATT}}(6,7)</annotation></semantics></math></p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mfrac><msub><mi>N</mi><mn>6</mn></msub><mrow><munder><mo>∑</mo><mrow><mi>h</mi><mo>≤</mo><mn>7</mn></mrow></munder><msub><mi>N</mi><mi>h</mi></msub></mrow></mfrac></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><msub><mi>N</mi><mn>6</mn></msub><mrow><msub><mi>N</mi><mn>5</mn></msub><mo>+</mo><msub><mi>N</mi><mn>6</mn></msub></mrow></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mfrac><mn>208</mn><mrow><mn>208</mn><mo>+</mo><mn>208</mn></mrow></mfrac><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\frac{N_6}{\sum_{h\leq7}N_h}
+&amp;=\frac{N_6}{N_5+N_6}\\
+&amp;=\frac{208}{208+208}
+=\frac12
+\end{aligned}
+</annotation></semantics></math></div>
 <p>Only the early group contributes in Year 5. Both groups contribute in Years 6 and 7. Calendar time means the same observation year, not the same time since adoption.</p>
 <div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(5)
@@ -610,8 +785,8 @@ Y_{it}=\alpha_i+\lambda_t+
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
 =\frac12\widehat{\operatorname{ATT}}(5,7)+\frac12\widehat{\operatorname{ATT}}(6,7)
 </annotation></semantics></math></div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>calendar_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;calendar&quot;</span>)</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(calendar_att)</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>calendar_att <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;calendar&quot;</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(calendar_att)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; aggte(MP = model_csa, type = &quot;calendar&quot;)
@@ -636,24 +811,69 @@ Y_{it}=\alpha_i+\lambda_t+
 #&gt; Estimation Method:  Doubly Robust</code></pre>
 <p><code>type = "calendar"</code> requests a separate summary for each post-treatment calendar year.</p>
 <h3 id="substitute-the-estimated-effects-1">Substitute the Estimated Effects</h3>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>1</mn><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.1501</mn></mrow><annotation encoding="application/x-tex">
+<p><strong>Group-time ATT values by calendar year</strong></p>
+<p>Use the same group-time estimates as in Section 10, arranged by outcome year. With <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math> denoting the never-treated districts, Group 5 uses Year 4 as its reference and Group 6 uses Year 5. Displayed estimates use four decimals and aggregation uses unrounded values.</p>
+<p><strong>Year 5</strong></p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>5</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>5</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.1501</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,5)
+&amp;=(\bar Y_{5,5}-\bar Y_{5,4})\\
+&amp;\quad-(\bar Y_{C,5}-\bar Y_{C,4})\\
+&amp;\approx 0.1501
+\end{aligned}
+</annotation></semantics></math></div>
+<p><strong>Year 6</strong></p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>6</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>6</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.2082</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,6)
+&amp;=(\bar Y_{5,6}-\bar Y_{5,4})\\
+&amp;\quad-(\bar Y_{C,6}-\bar Y_{C,4})\\
+&amp;\approx 0.2082
+\end{aligned}
+</annotation></semantics></math></div>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo>,</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>6</mn><mo>,</mo><mn>6</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>6</mn><mo>,</mo><mn>5</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>6</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>5</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.1926</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}(6,6)
+&amp;=(\bar Y_{6,6}-\bar Y_{6,5})\\
+&amp;\quad-(\bar Y_{C,6}-\bar Y_{C,5})\\
+&amp;\approx 0.1926
+\end{aligned}
+</annotation></semantics></math></div>
+<p><strong>Year 7</strong></p>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo>,</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>7</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>5</mn><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>7</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.3932</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,7)
+&amp;=(\bar Y_{5,7}-\bar Y_{5,4})\\
+&amp;\quad-(\bar Y_{C,7}-\bar Y_{C,4})\\
+&amp;\approx 0.3932
+\end{aligned}
+</annotation></semantics></math></div>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo>,</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>6</mn><mo>,</mo><mn>7</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mn>6</mn><mo>,</mo><mn>5</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mspace width="1.0em"></mspace><mo>−</mo><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>7</mn></mrow></msub><mo>−</mo><msub><mover><mi>Y</mi><mo accent="true">‾</mo></mover><mrow><mi>C</mi><mo>,</mo><mn>5</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>≈</mo><mn>0.2903</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+\widehat{\operatorname{ATT}}(6,7)
+&amp;=(\bar Y_{6,7}-\bar Y_{6,5})\\
+&amp;\quad-(\bar Y_{C,7}-\bar Y_{C,5})\\
+&amp;\approx 0.2903
+\end{aligned}
+</annotation></semantics></math></div>
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>5</mn><mo stretchy="false" form="postfix">)</mo><mo>≈</mo><mn>1</mn><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>≈</mo><mn>0.1501</mn></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(5)
-=1(0.1501)=0.1501
+\approx1(0.1501)\approx0.1501
 </annotation></semantics></math></div>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2082</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.1926</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.2004</mn></mrow><annotation encoding="application/x-tex">
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>6</mn><mo stretchy="false" form="postfix">)</mo><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2082</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.1926</mn><mo stretchy="false" form="postfix">)</mo><mo>≈</mo><mn>0.2004</mn></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(6)
-=\frac12(0.2082)+\frac12(0.1926)=0.2004
+\approx\frac12(0.2082)+\frac12(0.1926)\approx0.2004
 </annotation></semantics></math></div>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.3932</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2903</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.3418</mn></mrow><annotation encoding="application/x-tex">
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>7</mn><mo stretchy="false" form="postfix">)</mo><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.3932</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">(</mo><mn>0.2903</mn><mo stretchy="false" form="postfix">)</mo><mo>≈</mo><mn>0.3418</mn></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
-=\frac12(0.3932)+\frac12(0.2903)=0.3418
+\approx\frac12(0.3932)+\frac12(0.2903)\approx0.3418
 </annotation></semantics></math></div>
 <h3 id="overall-calendar-average">Overall Calendar Average</h3>
 <p>The overall result gives equal weight to each included post-treatment calendar year. There are three such years, so each year receives weight <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mn>3</mn></mrow><annotation encoding="application/x-tex">1/3</annotation></semantics></math>.</p>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi><mo mathvariant="normal">,</mo><mi mathvariant="normal">o</mi><mi mathvariant="normal">v</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">l</mi></mrow></msub><mo>=</mo><mfrac><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.2004</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.3418</mn><mo stretchy="false" form="postfix">)</mo></mrow><mn>3</mn></mfrac><mo>=</mo><mn>0.2308</mn></mrow><annotation encoding="application/x-tex">
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi><mo mathvariant="normal">,</mo><mi mathvariant="normal">o</mi><mi mathvariant="normal">v</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">l</mi></mrow></msub><mo>≈</mo><mfrac><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.2004</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>0.3418</mn><mo stretchy="false" form="postfix">)</mo></mrow><mn>3</mn></mfrac><mo>≈</mo><mn>0.2308</mn></mrow><annotation encoding="application/x-tex">
 \widehat{\operatorname{ATT}}_{\mathrm{calendar,overall}}
-=\frac{(0.1501)+(0.2004)+(0.3418)}{3}
-=0.2308
+\approx\frac{(0.1501)+(0.2004)+(0.3418)}{3}
+\approx0.2308
 </annotation></semantics></math></div>
 <h2 id="estimate-simple-att">12. Estimate Simple ATT</h2>
 <p>Simple ATT combines all post-treatment group-time effects with cell weights proportional to cohort size.</p>
@@ -667,16 +887,20 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 <p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mi>g</mi></msub><annotation encoding="application/x-tex">N_g</annotation></semantics></math> counts districts in adoption group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>, and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>−</mo><mi>h</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">T-h+1</annotation></semantics></math> counts group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>’s post-treatment years. The sums include treated cohorts only. This formula applies to our balanced panel without sampling weights.</p>
 <h3 id="calculate-the-denominator-and-weights">Calculate the Denominator and Weights</h3>
 <p>The Year 5 group contributes <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>208</mn><mo>×</mo><mn>3</mn><mo>=</mo><mn>624</mn></mrow><annotation encoding="application/x-tex">208\times3=624</annotation></semantics></math> treated district-year observations. The Year 6 group contributes <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>208</mn><mo>×</mo><mn>2</mn><mo>=</mo><mn>416</mn></mrow><annotation encoding="application/x-tex">208\times2=416</annotation></semantics></math>.</p>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><munder><mo>∑</mo><mi>h</mi></munder><msub><mi>N</mi><mi>h</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>T</mi><mo>−</mo><mi>h</mi><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>208</mn><mo stretchy="false" form="prefix">(</mo><mn>3</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>208</mn><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>624</mn><mo>+</mo><mn>416</mn></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>1040</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><munder><mo>∑</mo><mi>h</mi></munder><msub><mi>N</mi><mi>h</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>T</mi><mo>−</mo><mi>h</mi><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><msub><mi>N</mi><mn>5</mn></msub><mo stretchy="false" form="prefix">(</mo><mi>T</mi><mo>−</mo><mn>5</mn><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>N</mi><mn>6</mn></msub><mo stretchy="false" form="prefix">(</mo><mi>T</mi><mo>−</mo><mn>6</mn><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>208</mn><mo stretchy="false" form="prefix">(</mo><mn>7</mn><mo>−</mo><mn>5</mn><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>208</mn><mo stretchy="false" form="prefix">(</mo><mn>7</mn><mo>−</mo><mn>6</mn><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>208</mn><mo stretchy="false" form="prefix">(</mo><mn>3</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>208</mn><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>624</mn><mo>+</mo><mn>416</mn></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mo>=</mo><mn>1040</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
 \begin{aligned}
-\sum_h N_h(T-h+1)&amp;=208(3)+208(2)\\
+\sum_h N_h(T-h+1)
+&amp;=N_5(T-5+1)+N_6(T-6+1)\\
+&amp;=208(7-5+1)+208(7-6+1)\\
+&amp;=208(3)+208(2)\\
 &amp;=624+416\\
 &amp;=1040
 \end{aligned}
 </annotation></semantics></math></div>
 <p>Each of our five cells has the same cohort size, so each receives weight</p>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>=</mo><mfrac><mn>208</mn><mn>1040</mn></mfrac><mo>=</mo><mn>0.20</mn></mrow><annotation encoding="application/x-tex">
-w_{g,t}=\frac{208}{1040}=0.20
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><mo>=</mo><mfrac><msub><mi>N</mi><mi>g</mi></msub><mrow><munder><mo>∑</mo><mi>h</mi></munder><msub><mi>N</mi><mi>h</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>T</mi><mo>−</mo><mi>h</mi><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><mo>=</mo><mfrac><mn>208</mn><mn>1040</mn></mfrac><mo>=</mo><mn>0.20</mn></mrow><annotation encoding="application/x-tex">
+w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
+=\frac{208}{1040}=0.20
 </annotation></semantics></math></div>
 <table>
 <thead>
@@ -724,8 +948,8 @@ w_{g,t}=\frac{208}{1040}=0.20
 &amp;+0.20\widehat{\operatorname{ATT}}(6,7)
 \end{aligned}
 </annotation></semantics></math></div>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>overall_csa <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(overall_csa)</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>overall_csa <span class="ot">&lt;-</span> <span class="fu">aggte</span>(model_csa, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(overall_csa)</span></code></pre></div>
 <pre><code>#&gt;
 #&gt; Call:
 #&gt; aggte(MP = model_csa, type = &quot;simple&quot;)
@@ -744,13 +968,13 @@ w_{g,t}=\frac{208}{1040}=0.20
 #&gt; Estimation Method:  Doubly Robust</code></pre>
 <p><code>type = "simple"</code> selects the cell-weighted overall average.</p>
 <h3 id="substitute-the-estimated-effects-2">Substitute the Estimated Effects</h3>
-<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>=</mo><mrow></mrow></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.2082</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.3932</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.1926</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.2903</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mo>=</mo><mrow></mrow></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mn>0.2469</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
+<div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mover><mi mathvariant="normal">ATT</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>≈</mo><mrow></mrow></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.1501</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.2082</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.3932</mn><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.1926</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><mn>0.20</mn><mo stretchy="false" form="prefix">(</mo><mn>0.2903</mn><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><mo>≈</mo><mrow></mrow></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mn>0.2469</mn></mtd></mtr></mtable><annotation encoding="application/x-tex">
 \begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{simple}}
-={}&amp;0.20(0.1501)+0.20(0.2082)\\
+\approx{}&amp;0.20(0.1501)+0.20(0.2082)\\
 &amp;+0.20(0.3932)+0.20(0.1926)\\
 &amp;+0.20(0.2903)\\
-={}&amp;0.2469
+\approx{}&amp;0.2469
 \end{aligned}
 </annotation></semantics></math></div>
 <p>The early group receives total weight <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>3</mn><mo stretchy="false" form="prefix">(</mo><mn>0.20</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.60</mn></mrow><annotation encoding="application/x-tex">3(0.20)=0.60</annotation></semantics></math> and the late group receives <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2</mn><mo stretchy="false" form="prefix">(</mo><mn>0.20</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>0.40</mn></mrow><annotation encoding="application/x-tex">2(0.20)=0.40</annotation></semantics></math>. This differs from the overall group average, which gives each group weight <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.50</mn><annotation encoding="application/x-tex">0.50</annotation></semantics></math>. The calendar overall average instead gives each calendar year equal weight. These summaries can differ because they answer different questions.</p>
@@ -759,7 +983,7 @@ w_{g,t}=\frac{208}{1040}=0.20
 <p><strong>1:30-2:00 PM</strong> Which units receive treatment? Which supply an untreated comparison? Which effect summary answers your question? What makes parallel trends plausible?</p>
 <p>ETWFE remains a lecture-only extension in this lab. See <a href="resources.html">Resources</a> for further reading.</p>
 <h3 id="r-session-and-package-versions">R Session and Package Versions</h3>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
 <pre><code>#&gt; R version 4.4.2 (2024-10-31)
 #&gt; Platform: aarch64-apple-darwin20
 #&gt; Running under: macOS Sequoia 15.5

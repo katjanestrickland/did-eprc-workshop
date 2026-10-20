@@ -40,9 +40,12 @@ model_twfe <- feols(
 summary(model_twfe)
 
 
-## ----event-study--------------------------------------------------------------
+## ----event-time---------------------------------------------------------------
 simple <- simple %>%
   mutate(relative_year = year - 5)
+
+
+## ----event-study--------------------------------------------------------------
 model_event <- feols(
   outcome_std ~ i(relative_year, treated_ever, ref = -1) |
     district_id + year,

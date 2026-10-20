@@ -51,8 +51,16 @@ library(did)
 
 Both datasets contain **832 simulated districts representing Texas**, each observed over seven years.
 Each row represents one district in one year. Both panels are balanced and treatment is assigned
-at the district level. The six supplied variables are district_id, year, treatment_start_year,
-outcome_std, treated_ever, and treated. Data preparation is omitted so we can begin analysis directly.
+at the district level.
+
+The six variables are
+
+- `district_id` identifies each district
+- `year` identifies the observation year, from 1 to 7
+- `treatment_start_year` records the first treatment year, with 0 for never-treated districts
+- `outcome_std` is the achievement outcome
+- `treated_ever` identifies districts that eventually receive treatment
+- `treated` identifies observations when treatment is active
 
 Place the downloaded CSV files in your R project folder
 
@@ -61,12 +69,13 @@ simple <- read_csv("simple_did_district.csv")
 staggered <- read_csv("staggered_did_district.csv")
 ```
 
-**read_csv() comes from readr.** Each row is one district in one year.
-We use outcome_std, measured in standard-deviation (SD) units.
+**read_csv() comes from readr.** We use `outcome_std`, measured in standard-deviation
+(SD) units, so estimated treatment effects are also expressed in SD units.
 
 ## 3. Understand the Treatment Variables
 
-Use **dplyr** to count districts by first treatment year
+We use functions from **dplyr**, part of the tidyverse, to summarize the treatment groups.
+See the [introduction to dplyr](https://dplyr.tidyverse.org/articles/dplyr.html) for more information.
 
 ```{r counts}
 simple %>%
@@ -76,9 +85,6 @@ staggered %>%
   distinct(district_id, treatment_start_year) %>%
   count(treatment_start_year, name = "districts")
 ```
-
-**distinct()** keeps one record per district and adoption year. **count()** counts districts in
-each group. Read **%>%** as "then." Zero codes never treated. Treatment stays on after adoption.
 
 The Texas traditional panel has 416 adopting and 416 never-treated districts.
 The staggered panel has 208 Year 5 adopters, 208 Year 6 adopters, and 416 never-treated districts.
@@ -158,12 +164,22 @@ summary(model_2x2)
 Variables after the vertical bar specify fixed effects, not ordinary numeric predictors.
 **data** selects the dataset. **vcov = ~ district_id** requests district-clustered standard errors.
 The coefficient on treated equals the two-by-two contrast.
+In this example, the estimated coefficient is `r sprintf('%.2f', coef(model_2x2)['treated'])` SD,
+meaning that achievement increased by `r sprintf('%.2f', coef(model_2x2)['treated'])` standard deviations
+more in treated districts than in never-treated districts between Years 4 and 5.
 Clustering allows outcomes from the same district to be related across years.
 The estimated coefficient is measured in SD units.
 
 ## 5. Estimate TWFE Using All Seven Years
 
-The equation stays the same
+We now use all seven years rather than only Years 4 and 5. The model specification
+stays the same, but we change the dataset from `two_period` to `simple`.
+The coefficient compares the treated group's change from its average outcome in
+Years 1-4 to its average outcome in Years 5-7 with the same change for never-treated districts.
+In this balanced common-adoption example, it summarizes the average post-treatment effect.
+
+District effects account for persistent differences between districts.
+Year effects account for common shocks. The equation stays the same
 
 $$
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
@@ -178,35 +194,60 @@ model_twfe <- feols(
 summary(model_twfe)
 ```
 
-Only **data = simple** changes. We now use all seven years.
-District effects account for persistent differences. Year effects account for common shocks.
-In this balanced common-adoption design, the coefficient equals the treated group's average
-pre-to-post change minus the control group's average change.
-The model estimates one coefficient summarizing the effect across Years 5-7.
 The time-constant treated_ever variable would be absorbed by district effects.
 Use treated, which switches on at adoption.
 
 ## 6. Estimate an Event Study
 
-We use the same equation as the slides
+In an event study, we estimate a separate coefficient for each year relative to treatment,
+rather than one average post-treatment effect. This lets us examine differences in trends
+before treatment and how treatment effects evolve afterward.
 
 $$
 Y_{it}=\alpha_i+\lambda_t+
 \sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g=k\}\,\mathrm{TreatedEver}_i+u_{it}
 $$
 
-Treatment begins in Year 5, so $g=5$ and event time is the study year minus 5, $k=t-g$.
-The model compares treated and never-treated districts in each year, using Year 4 as the reference year.
+Treatment begins in Year 5, so $g=5$ and event time is $k=t-g$.
+Each coefficient shows how the difference between treated and never-treated districts
+in that year compares with their difference in Year 4, the reference year.
 
-| Study year | Event time | Interpretation |
-|---|---|---|
-| 1, 2, 3 | -4, -3, -2 | Pre-treatment comparisons |
-| 4 | -1 | Reference period |
-| 5, 6, 7 | 0, 1, 2 | First, second, third treated year |
+### Create the Event-Time Variable
 
-```{r event-study}
+We subtract 5 from the observation year to express time relative to treatment.
+
+| Study year | Calculation | relative_year | Meaning |
+|---|---|---|---|
+| 1 | $1-5$ | -4 | Four years before treatment |
+| 2 | $2-5$ | -3 | Three years before treatment |
+| 3 | $3-5$ | -2 | Two years before treatment |
+| 4 | $4-5$ | -1 | Reference year |
+| 5 | $5-5$ | 0 | Treatment begins |
+| 6 | $6-5$ | 1 | One year after treatment begins |
+| 7 | $7-5$ | 2 | Two years after treatment begins |
+
+```{r event-time}
 simple <- simple %>%
   mutate(relative_year = year - 5)
+```
+
+This adds `relative_year` without changing the existing variables.
+We use the same year index for both groups. Never-treated districts do not actually
+adopt in Year 5, but the shared index lets us compare both groups in the same years.
+
+### Estimate the Model
+
+We still use `feols()` with district and year fixed effects. We replace the single
+`treated` indicator with `i(relative_year, treated_ever, ref = -1)`.
+
+- `relative_year` identifies the year relative to adoption
+- `treated_ever` identifies districts belonging to the treatment group, including before adoption
+- `ref = -1` sets Year 4 as the reference, so its coefficient is not estimated separately
+
+Together, these arguments allow a separate treated-group coefficient for each year
+other than the reference year.
+
+```{r event-study}
 model_event <- feols(
   outcome_std ~ i(relative_year, treated_ever, ref = -1) |
     district_id + year,
@@ -216,23 +257,23 @@ model_event <- feols(
 summary(model_event)
 ```
 
-**mutate() is from dplyr.** This relative-year index is defined for every observation.
-Never-treated districts have no adoption year of their own, so we use the common
-Year 5 reference for this index and distinguish the treated group with treated_ever.
-`i(relative_year, treated_ever, ref = -1)` from **fixest** creates a separate comparison
-for each year. Multiplying the year indicators by `treated_ever` distinguishes treated
-districts from never-treated districts. Setting `ref = -1` makes the year before
-treatment the reference period.
+### Interpret the Coefficients
 
-Each $\beta_k$ measures how the treated-control gap differs from its Year 4 value.
-Pre-treatment coefficients are diagnostics, not proof of parallel trends.
-Under parallel trends and no anticipation, post-treatment coefficients estimate effects relative
-to Year 4.
-The three post-treatment coefficients estimate those effects separately.
+The coefficient for `relative_year::1:treated_ever` is
+**`r sprintf("%.3f", coef(model_event)["relative_year::1:treated_ever"])` SD**.
+Event time 1 corresponds to Year 6, one year after treatment began.
+Achievement increased by `r sprintf("%.3f", coef(model_event)["relative_year::1:treated_ever"])`
+standard deviations more in treated districts than in never-treated districts
+between Years 4 and 6. This is not the additional change from Year 5 to Year 6.
+Every coefficient is compared with Year 4.
 
-This example has one treatment start year. In the staggered example, districts begin
-treatment in different years, so we next estimate effects separately for each adoption
-cohort and study year.
+Pre-treatment coefficients describe changes in the treated-control gap before treatment.
+They help assess pre-trends but do not prove parallel trends.
+Under parallel trends and no anticipation, post-treatment coefficients estimate effects
+separately for Years 5, 6, and 7, rather than one average effect.
+
+This example has one treatment start year. Next we consider districts adopting
+in different years and estimate effects separately for each cohort and study year.
 
 ## 7. Move to Staggered Adoption
 
@@ -314,8 +355,8 @@ adopters can contribute as controls in Year 5, but not once treated in Year 6.
 
 ### What Does the Base Period Mean?
 
-With `base_period = "universal"` and no anticipation, each cohort uses $g-1$.
-Universal does not mean that every cohort uses the same calendar year.
+With `base_period = "universal"` and no anticipation, each group uses its last year
+before treatment as the reference. Year 5 adopters use Year 4, and Year 6 adopters use Year 5.
 
 | Cohort | Reference year | Example |
 |---|---|---|
@@ -390,8 +431,34 @@ Each year within a group receives equal weight in this balanced panel.
 
 ### Calculate the Within-Group Weights
 
-The Year 5 group contributes $7-5+1=3$ years, each weighted $1/3$.
-The Year 6 group contributes $7-6+1=2$ years, each weighted $1/2$.
+For Group 5, the included years are $t=5,6,7$.
+
+$$
+\begin{aligned}
+w_{5\mid5}=w_{6\mid5}=w_{7\mid5}
+&=\frac{1}{T-g+1}\\
+&=\frac{1}{7-5+1}=\frac13
+\end{aligned}
+$$
+
+For Group 6, the included years are $t=6,7$.
+
+$$
+\begin{aligned}
+w_{6\mid6}=w_{7\mid6}
+&=\frac{1}{T-g+1}\\
+&=\frac{1}{7-6+1}=\frac12
+\end{aligned}
+$$
+
+Here $w_{t\mid g}$ is the weight on year $t$ within group $g$.
+The weights sum to one within each group.
+
+$$
+\frac13+\frac13+\frac13=1,
+\qquad
+\frac12+\frac12=1
+$$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(5)
@@ -440,19 +507,83 @@ c7 <- mean(c(a57,a67))
 
 ### Substitute the Estimated Effects
 
-All results below are in SD units. Displayed numbers are rounded to four decimals.
-Calculations use full precision.
+**Group-time ATT values**
+
+Using the estimates from Section 8, let $C$ denote the never-treated districts
+and $\bar Y_{g,t}$ the mean outcome for group $g$ in year $t$.
+Group 5 uses Year 4 as its reference. Group 6 uses Year 5.
+The following comparisons display four decimals and use unrounded estimates for aggregation.
 
 $$
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,5)
+&=(\bar Y_{5,5}-\bar Y_{5,4})\\
+&\quad-(\bar Y_{C,5}-\bar Y_{C,4})\\
+&\approx `r fmt(a55)`
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,6)
+&=(\bar Y_{5,6}-\bar Y_{5,4})\\
+&\quad-(\bar Y_{C,6}-\bar Y_{C,4})\\
+&\approx `r fmt(a56)`
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,7)
+&=(\bar Y_{5,7}-\bar Y_{5,4})\\
+&\quad-(\bar Y_{C,7}-\bar Y_{C,4})\\
+&\approx `r fmt(a57)`
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}(6,6)
+&=(\bar Y_{6,6}-\bar Y_{6,5})\\
+&\quad-(\bar Y_{C,6}-\bar Y_{C,5})\\
+&\approx `r fmt(a66)`
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}(6,7)
+&=(\bar Y_{6,7}-\bar Y_{6,5})\\
+&\quad-(\bar Y_{C,7}-\bar Y_{C,5})\\
+&\approx `r fmt(a67)`
+\end{aligned}
+$$
+
+All results are in SD units. We show seven decimals in the next arithmetic steps
+to avoid ambiguity from rounding. Intermediate sums add the displayed inputs.
+Final estimates use full precision and are reported to four decimals.
+
+Substituting the ATT values and their weights gives
+
+$$
+\begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(5)
-=\frac{(`r fmt(a55)`)+(`r fmt(a56)`)+(`r fmt(a57)`)}{3}
-=`r fmt(g5)`
+&\approx\frac13(`r sprintf("%.7f",a55)`)
++\frac13(`r sprintf("%.7f",a56)`)\\
+&\quad+\frac13(`r sprintf("%.7f",a57)`)\\
+&=\frac{`r sprintf("%.7f",sum(round(c(a55,a56,a57),7)))`}{3}\\
+&\approx\boxed{`r fmt(g5)`}
+\end{aligned}
 $$
 
 $$
+\begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(6)
-=\frac{(`r fmt(a66)`)+(`r fmt(a67)`)}{2}
-=`r fmt(g6)`
+&\approx\frac12(`r sprintf("%.7f",a66)`)
++\frac12(`r sprintf("%.7f",a67)`)\\
+&=\frac{`r sprintf("%.7f",sum(round(c(a66,a67),7)))`}{2}\\
+&\approx\boxed{`r fmt(g6)`}
+\end{aligned}
 $$
 
 ### Overall Group Average
@@ -462,8 +593,8 @@ Each group receives weight $208/(208+208)=1/2$.
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{group,overall}}
-=\frac12(`r fmt(g5)`)+\frac12(`r fmt(g6)`)
-=`r fmt(group_att$overall.att)`
+\approx\frac12(`r fmt(g5)`)+\frac12(`r fmt(g6)`)
+\approx`r fmt(group_att$overall.att)`
 $$
 
 This overall result averages the group averages, rather than weighting all five cells equally.
@@ -490,6 +621,76 @@ although never-treated districts supply the comparison used to estimate each ATT
 | 5 | Group 5 | $208$ | $208/208=1$ |
 | 6 | Groups 5 and 6 | $208+208=416$ | $208/416=1/2$ |
 | 7 | Groups 5 and 6 | $208+208=416$ | $208/416=1/2$ |
+
+The weight on $\widehat{\operatorname{ATT}}(g,t)$ is the coefficient in the calendar formula.
+
+$$
+\frac{N_g}{\sum_{h\leq t}N_h},\qquad g\leq t
+$$
+
+The sum includes adoption groups already treated by year $t$.
+With $N_5=N_6=208$, substitute $g$ and $t$ directly.
+
+**Year 5**
+
+Weight on $\widehat{\operatorname{ATT}}(5,5)$
+
+$$
+\begin{aligned}
+\frac{N_5}{\sum_{h\leq5}N_h}
+&=\frac{N_5}{N_5}\\
+&=\frac{208}{208}
+=1
+\end{aligned}
+$$
+
+**Year 6**
+
+Weight on $\widehat{\operatorname{ATT}}(5,6)$
+
+$$
+\begin{aligned}
+\frac{N_5}{\sum_{h\leq6}N_h}
+&=\frac{N_5}{N_5+N_6}\\
+&=\frac{208}{208+208}
+=\frac12
+\end{aligned}
+$$
+
+Weight on $\widehat{\operatorname{ATT}}(6,6)$
+
+$$
+\begin{aligned}
+\frac{N_6}{\sum_{h\leq6}N_h}
+&=\frac{N_6}{N_5+N_6}\\
+&=\frac{208}{208+208}
+=\frac12
+\end{aligned}
+$$
+
+**Year 7**
+
+Weight on $\widehat{\operatorname{ATT}}(5,7)$
+
+$$
+\begin{aligned}
+\frac{N_5}{\sum_{h\leq7}N_h}
+&=\frac{N_5}{N_5+N_6}\\
+&=\frac{208}{208+208}
+=\frac12
+\end{aligned}
+$$
+
+Weight on $\widehat{\operatorname{ATT}}(6,7)$
+
+$$
+\begin{aligned}
+\frac{N_6}{\sum_{h\leq7}N_h}
+&=\frac{N_6}{N_5+N_6}\\
+&=\frac{208}{208+208}
+=\frac12
+\end{aligned}
+$$
 
 Only the early group contributes in Year 5. Both groups contribute in Years 6 and 7.
 Calendar time means the same observation year, not the same time since adoption.
@@ -518,19 +719,76 @@ summary(calendar_att)
 
 ### Substitute the Estimated Effects
 
+**Group-time ATT values by calendar year**
+
+Use the same group-time estimates as in Section 10, arranged by outcome year.
+With $C$ denoting the never-treated districts, Group 5 uses Year 4 as its reference
+and Group 6 uses Year 5. Displayed estimates use four decimals and aggregation uses unrounded values.
+
+**Year 5**
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,5)
+&=(\bar Y_{5,5}-\bar Y_{5,4})\\
+&\quad-(\bar Y_{C,5}-\bar Y_{C,4})\\
+&\approx `r fmt(a55)`
+\end{aligned}
+$$
+
+**Year 6**
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,6)
+&=(\bar Y_{5,6}-\bar Y_{5,4})\\
+&\quad-(\bar Y_{C,6}-\bar Y_{C,4})\\
+&\approx `r fmt(a56)`
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}(6,6)
+&=(\bar Y_{6,6}-\bar Y_{6,5})\\
+&\quad-(\bar Y_{C,6}-\bar Y_{C,5})\\
+&\approx `r fmt(a66)`
+\end{aligned}
+$$
+
+**Year 7**
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}(5,7)
+&=(\bar Y_{5,7}-\bar Y_{5,4})\\
+&\quad-(\bar Y_{C,7}-\bar Y_{C,4})\\
+&\approx `r fmt(a57)`
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\widehat{\operatorname{ATT}}(6,7)
+&=(\bar Y_{6,7}-\bar Y_{6,5})\\
+&\quad-(\bar Y_{C,7}-\bar Y_{C,5})\\
+&\approx `r fmt(a67)`
+\end{aligned}
+$$
+
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(5)
-=1(`r fmt(a55)`)=`r fmt(c5)`
+\approx1(`r fmt(a55)`)\approx`r fmt(c5)`
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(6)
-=\frac12(`r fmt(a56)`)+\frac12(`r fmt(a66)`)=`r fmt(c6)`
+\approx\frac12(`r fmt(a56)`)+\frac12(`r fmt(a66)`)\approx`r fmt(c6)`
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
-=\frac12(`r fmt(a57)`)+\frac12(`r fmt(a67)`)=`r fmt(c7)`
+\approx\frac12(`r fmt(a57)`)+\frac12(`r fmt(a67)`)\approx`r fmt(c7)`
 $$
 
 ### Overall Calendar Average
@@ -540,8 +798,8 @@ There are three such years, so each year receives weight $1/3$.
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar,overall}}
-=\frac{(`r fmt(c5)`)+(`r fmt(c6)`)+(`r fmt(c7)`)}{3}
-=`r fmt(calendar_att$overall.att)`
+\approx\frac{(`r fmt(c5)`)+(`r fmt(c6)`)+(`r fmt(c7)`)}{3}
+\approx`r fmt(calendar_att$overall.att)`
 $$
 
 ## 12. Estimate Simple ATT
@@ -568,7 +826,10 @@ The Year 6 group contributes $208\times2=416$.
 
 $$
 \begin{aligned}
-\sum_h N_h(T-h+1)&=208(3)+208(2)\\
+\sum_h N_h(T-h+1)
+&=N_5(T-5+1)+N_6(T-6+1)\\
+&=208(7-5+1)+208(7-6+1)\\
+&=208(3)+208(2)\\
 &=624+416\\
 &=1040
 \end{aligned}
@@ -577,7 +838,8 @@ $$
 Each of our five cells has the same cohort size, so each receives weight
 
 $$
-w_{g,t}=\frac{208}{1040}=0.20
+w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
+=\frac{208}{1040}=0.20
 $$
 
 | Group | Year | Cell weight |
@@ -611,10 +873,10 @@ summary(overall_csa)
 $$
 \begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{simple}}
-={}&0.20(`r fmt(a55)`)+0.20(`r fmt(a56)`)\\
+\approx{}&0.20(`r fmt(a55)`)+0.20(`r fmt(a56)`)\\
 &+0.20(`r fmt(a57)`)+0.20(`r fmt(a66)`)\\
 &+0.20(`r fmt(a67)`)\\
-={}&`r fmt(overall_csa$overall.att)`
+\approx{}&`r fmt(overall_csa$overall.att)`
 \end{aligned}
 $$
 

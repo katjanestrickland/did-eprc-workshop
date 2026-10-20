@@ -4,7 +4,7 @@ title: "Data"
 
 # Data
 
-These datasets illustrate a district-level intervention in Texas using 832 simulated districts followed over 7 years. Every district is observed each year, so the panels are balanced. Each row represents one district in one year. Once a district starts treatment, it stays treated for the remaining years. Both datasets are ready for analysis and include the treatment indicators used in the lab.
+These datasets illustrate a district-level intervention in Texas using 832 simulated districts followed over 7 years. Every district is observed each year, so the panels are balanced. Each row represents one district in one year. Once a district starts treatment, it stays treated for the remaining years.
 
 ## Download the Data
 
