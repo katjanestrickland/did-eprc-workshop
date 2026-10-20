@@ -418,6 +418,7 @@ tr:last-child td {
 .lab-layout {display:grid; grid-template-columns:200px minmax(0,1fr); gap:32px;}
 .lab-toc {position:sticky; top:100px; align-self:start; max-height:calc(100vh - 120px); overflow:auto; font-size:13px;}
 .lab-toc a {display:block; padding:7px 0; color:var(--muted); text-decoration:none;}
+.lab-toc a.toc-subsection {padding-left:18px; border-left:1px solid var(--line); margin-left:4px;}
 .lab-toc a:hover {color:var(--blue); text-decoration:underline;}
 pre {white-space:pre; overflow:auto; max-height:420px; padding:18px; background:#f2f5f7; border:1px solid #d9e1e7; border-radius:4px; font-size:13px; line-height:1.65; tab-size:2;}
 pre code {font-family:Consolas, 'Liberation Mono', monospace;}
