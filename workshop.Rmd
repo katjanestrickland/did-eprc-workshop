@@ -28,6 +28,7 @@ R performs calculations. RStudio provides an interface for code and results.
 |---|---|
 | readr | Import CSVs with read_csv(). |
 | dplyr | Select observations, create variables, and summarize data. |
+| etwfe | Estimate extended TWFE models and summarize their treatment effects. |
 | fixest | Estimate regressions and fixed-effects models with feols(). |
 | did | Estimate and aggregate group-by-time treatment effects. |
 
@@ -36,7 +37,7 @@ See the [function documentation](https://lrberge.github.io/fixest/reference/feol
 
 ```{r install, eval=FALSE, purl=FALSE}
 # Install once.
-install.packages(c("readr", "dplyr", "fixest", "did"))
+install.packages(c("readr", "dplyr", "fixest", "did", "etwfe"))
 ```
 
 ```{r packages}
@@ -45,6 +46,7 @@ library(readr)
 library(dplyr)
 library(fixest)
 library(did)
+library(etwfe)
 ```
 
 ## 2. Load the Data
@@ -1117,12 +1119,259 @@ This is not Simple ATT. Averaging event-time summaries gives different total wei
 to the five group-time cells. See the
 [aggregation documentation](https://bcallaway11.github.io/did/reference/aggte.html).
 
+## 9. Extended Two-Way Fixed Effects
+
+Ordinary TWFE estimates one treatment coefficient. Extended TWFE allows the effect
+to differ across adoption groups and years. Our staggered dataset has five
+post-treatment group-time effects.
+
+We first show a model with only post-treatment interactions. We then include
+pre-treatment interactions and use never-treated districts as the comparison,
+matching the comparison group in our CSA analysis. These specifications are not identical.
+
+### 9.1 Allow Effects to Differ Across Groups and Years
+
+The ordinary TWFE equation is
+
+$$
+Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
+\tag{51}
+$$
+
+Replace its single treatment coefficient with five cohort-by-year interactions.
+
+$$
+\begin{aligned}
+Y_{it}={}&\alpha_i+\lambda_t\\
+&+\delta_{5,5}(G_{5i}T_{5t})+\delta_{5,6}(G_{5i}T_{6t})\\
+&+\delta_{5,7}(G_{5i}T_{7t})\\
+&+\delta_{6,6}(G_{6i}T_{6t})+\delta_{6,7}(G_{6i}T_{7t})+u_{it}
+\end{aligned}
+\tag{52}
+$$
+
+| Term | Meaning |
+|---|---|
+| $G_{5i}$ and $G_{6i}$ | Indicators for districts adopting in Year 5 or Year 6 |
+| $T_{jt}$ | Indicator that the observation is in calendar year $j$ |
+| $\alpha_i$ | District fixed effect |
+| $\lambda_t$ | Year fixed effect |
+| $\delta_{g,t}$ | Coefficient for adoption group $g$ in year $t$ |
+| $u_{it}$ | Regression error |
+
+For example, $G_{5i}T_{6t}$ equals 1 for Year 5 adopters observed in Year 6.
+Under no anticipation, parallel trends, and the model's untreated-outcome
+restrictions, its coefficient identifies ATT(5,6).
+
+This model fits a common untreated time pattern using untreated observations.
+It does not estimate separate pre-treatment cohort-by-year coefficients.
+
+```{r etwfe-post}
+# Estimate five post-treatment effects with district and year fixed effects
+# Use never-treated and not-yet-treated observations as controls
+model_etwfe_post <- etwfe(
+  fml = outcome_std ~ 0,
+  tvar = year,
+  gvar = treatment_start_year,
+  ivar = district_id,
+  gref = 0,
+  data = staggered,
+  cgroup = "notyet",
+  fe = "vs",
+  vcov = ~ district_id
+)
+
+# Summarize the post-treatment effects as a simple ATT
+post_simple <- emfx(model_etwfe_post, type = "simple")
+post_simple
+
+# Summarize effects by time since adoption
+emfx(model_etwfe_post, type = "event")
+```
+
+With `cgroup = "notyet"`, pre-treatment effects are zero by construction.
+They are not estimated placebo effects and do not demonstrate parallel trends.
+
+### 9.2 Use Never-Treated Districts as the Comparison
+
+To compare with our CSA results, use `cgroup = "never"`. This specification
+includes pre-treatment interactions as well as the five post-treatment effects.
+Each cohort's last untreated year is omitted as its reference.
+
+$$
+\begin{aligned}
+Y_{it}={}&\alpha_i+\lambda_t\\
+&+\delta_{5,1}(G_{5i}T_{1t})+\delta_{5,2}(G_{5i}T_{2t})\\
+&+\delta_{5,3}(G_{5i}T_{3t})\\
+&+\delta_{5,5}(G_{5i}T_{5t})+\delta_{5,6}(G_{5i}T_{6t})\\
+&+\delta_{5,7}(G_{5i}T_{7t})\\
+&+\delta_{6,1}(G_{6i}T_{1t})+\delta_{6,2}(G_{6i}T_{2t})\\
+&+\delta_{6,3}(G_{6i}T_{3t})+\delta_{6,4}(G_{6i}T_{4t})\\
+&+\delta_{6,6}(G_{6i}T_{6t})+\delta_{6,7}(G_{6i}T_{7t})+u_{it}
+\end{aligned}
+\tag{53}
+$$
+
+The omitted terms are $G_{5i}T_{4t}$ and $G_{6i}T_{5t}$.
+Group 5 therefore uses Year 4 as its reference, and Group 6 uses Year 5.
+The five post-treatment coefficients estimate treatment effects. The other
+seven coefficients describe pre-treatment comparisons.
+
+```{r etwfe-never}
+# Match the never-treated comparison group used in the CSA model
+model_etwfe_never <- etwfe(
+  fml = outcome_std ~ 0,
+  tvar = year,
+  gvar = treatment_start_year,
+  ivar = district_id,
+  gref = 0,
+  data = staggered,
+  cgroup = "never",
+  fe = "vs",
+  vcov = ~ district_id
+)
+```
+
+| Argument | Meaning |
+|---|---|
+| `outcome_std ~ 0` | Standardized outcome without covariates |
+| `tvar = year` | Calendar year |
+| `gvar = treatment_start_year` | Adoption cohort |
+| `ivar = district_id` | Use district fixed effects alongside time effects |
+| `gref = 0` | Identify the never-treated cohort |
+| `cgroup = "never"` | Use never-treated districts as controls |
+| `fe = "vs"` | Use the package's varying-slopes implementation of fixed effects |
+| `vcov = ~ district_id` | Cluster standard errors by district |
+
+#### Summarize the Effects
+
+`etwfe()` fits the model. Its companion function `emfx()` summarizes the effects.
+
+```{r etwfe-summaries}
+# Simple ATT combines post-treatment effects, about 0.2469 SD here
+etwfe_simple <- emfx(model_etwfe_never, type = "simple")
+etwfe_simple
+
+# Average within each adoption group
+etwfe_group <- emfx(model_etwfe_never, type = "group")
+etwfe_group
+
+# Average within each calendar year
+etwfe_calendar <- emfx(model_etwfe_never, type = "calendar")
+etwfe_calendar
+
+# Average across groups at the same time since adoption
+etwfe_event <- emfx(model_etwfe_never, type = "event")
+etwfe_event
+```
+
+`type = "event"` corresponds to `type = "dynamic"` in CSA's `aggte()`.
+In the never-treated specification, this output also includes pre-treatment
+comparisons. They are diagnostics, not proof of parallel trends.
+Read `Estimate` as an effect in SD units. The output also reports standard errors
+and confidence intervals.
+
+### 9.3 See the Regression Directly
+
+We can estimate the expanded never-treated specification with `feols()`.
+Here we create the two cohort indicators in a separate analysis object.
+
+```{r etwfe-manual}
+# Identify adoption groups without changing the downloaded dataset
+staggered_manual <- staggered %>%
+  mutate(
+    g5 = as.integer(treatment_start_year == 5),
+    g6 = as.integer(treatment_start_year == 6)
+  )
+
+# Include each cohort's year interactions, omitting its last untreated year
+model_manual <- feols(
+  outcome_std ~ i(year, g5, ref = 4) +
+    i(year, g6, ref = 5) | district_id + year,
+  data = staggered_manual,
+  vcov = ~ district_id
+)
+summary(model_manual)
+# year::5:g5 is ATT(5,5), about 0.1501 SD
+# The output includes both pre-treatment comparisons and treatment effects
+```
+
+### 9.4 Compare the Results
+
+First fit ordinary TWFE on the **staggered** panel so every method below uses
+the same observations. This is different from the common-adoption panel in Section 5.
+
+```{r etwfe-comparison}
+# Estimate the single-coefficient TWFE model on the staggered panel
+model_twfe_staggered <- feols(
+  outcome_std ~ treated | district_id + year,
+  data = staggered,
+  vcov = ~ district_id
+)
+summary(model_twfe_staggered)
+```
+
+```{r etwfe-table-values, include=FALSE, purl=FALSE}
+etwfe_cell <- function(model, g, t) {
+  unname(coef(model)[paste0(".Dtreat:treatment_start_year::", g, ":year::", t)])
+}
+etwfe_cells <- data.frame(
+  group = post_att$group,
+  year = post_att$year,
+  post_only = mapply(function(g,t) etwfe_cell(model_etwfe_post,g,t), post_att$group, post_att$year),
+  never = mapply(function(g,t) etwfe_cell(model_etwfe_never,g,t), post_att$group, post_att$year),
+  CSA = post_att$estimate
+)
+```
+
+#### Five Group-by-Time Effects
+
+| Effect | Post-only ETWFE | Never-control ETWFE | CSA |
+|---|---|---|---|
+| ATT(5,5) | `r fmt(etwfe_cells$post_only[1])` | `r fmt(etwfe_cells$never[1])` | `r fmt(a55)` |
+| ATT(5,6) | `r fmt(etwfe_cells$post_only[2])` | `r fmt(etwfe_cells$never[2])` | `r fmt(a56)` |
+| ATT(5,7) | `r fmt(etwfe_cells$post_only[3])` | `r fmt(etwfe_cells$never[3])` | `r fmt(a57)` |
+| ATT(6,6) | `r fmt(etwfe_cells$post_only[4])` | `r fmt(etwfe_cells$never[4])` | `r fmt(a66)` |
+| ATT(6,7) | `r fmt(etwfe_cells$post_only[5])` | `r fmt(etwfe_cells$never[5])` | `r fmt(a67)` |
+
+The post-only model pools information across untreated periods to fit the untreated
+time pattern. The never-control specification allows cohort-specific pre-treatment
+comparisons and uses each cohort's last untreated year as the reference.
+Leaving out the pre-treatment interactions changes the model, not just the display.
+
+#### Overall Estimates
+
+| Model and summary | Estimate in SD units |
+|---|---|
+| Ordinary TWFE on the staggered panel | `r fmt(coef(model_twfe_staggered)["treated"])` |
+| Post-only ETWFE, simple ATT | `r fmt(post_simple$estimate)` |
+| Never-control ETWFE, simple ATT | `r fmt(etwfe_simple$estimate)` |
+| CSA, simple ATT | `r fmt(overall_csa$overall.att)` |
+
+In this balanced example without covariates, never-control ETWFE and CSA give
+the same five post-treatment point estimates and simple ATT. This is not a
+general guarantee for other datasets or specifications.
+
+Their uncertainty calculations are different. Our CSA model uses a multiplier
+bootstrap and simultaneous bands for the group-time estimates. The ETWFE
+summaries use regression-based district-clustered inference with delta-method
+uncertainty from `emfx()`. Its reported intervals are pointwise, not the CSA
+simultaneous bands.
+
+The never-control event-time estimates are `r fmt(d0)`, `r fmt(d1)`, and
+`r fmt(d2)` SD at event times 0, 1, and 2. Only Group 5 contributes at event
+time 2. Equal weighting of these three estimates gives `r fmt(mean(c(d0,d1,d2)))`
+SD, which differs from the simple ATT because the weights differ.
+
+See the [etwfe() documentation](https://grantmcdermott.com/etwfe/reference/etwfe.html),
+[emfx() documentation](https://grantmcdermott.com/etwfe/reference/emfx.html),
+and [Wooldridge's paper](https://doi.org/10.1007/s00181-025-02807-z).
+
 ## Questions and Discussion
 
 **1:30-2:00 PM** Which units receive treatment? Which supply an untreated comparison?
 Which effect summary answers your question? What makes parallel trends plausible?
 
-ETWFE remains a lecture-only extension in this lab.
 See [Resources](resources.html) for further reading.
 
 #### R Session and Package Versions

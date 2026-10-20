@@ -12,13 +12,17 @@
 <a href="data.html">Data</a>
 <a href="resources.html">Resources</a></div></nav></header>
 <main id="main" class="document lab-layout">
-<aside class="lab-toc" aria-label="On this page"><strong>In this lab</strong><nav><a href="#set-up-r">1. Set Up R</a><a href="#load-the-data">2. Load the Data</a><a href="#understand-the-treatment-variables">3. Understand the Treatment Variables</a><a href="#estimate-the-classic-two-by-two-did">4. Estimate the Classic Two-by-Two DID</a><a href="#estimate-twfe-using-all-seven-years">5. Estimate TWFE Using All Seven Years</a><a href="#estimate-an-event-study">6. Estimate an Event Study</a><a href="#move-to-staggered-adoption">7. Move to Staggered Adoption</a><a href="#estimate-and-summarize-treatment-effects">8. Estimate and Summarize Treatment Effects</a><a href="#group-by-time-atts" class="toc-subsection">8.1 Group-by-Time ATTs</a><a href="#inference" class="toc-subsection">Inference</a><a href="#assess-parallel-trends" class="toc-subsection">Assess Parallel Trends</a><a href="#group-averages" class="toc-subsection">8.2 Group Averages</a><a href="#calendar-summaries" class="toc-subsection">8.3 Calendar Summaries</a><a href="#simple-att" class="toc-subsection">8.4 Simple ATT</a><a href="#dynamic-effects" class="toc-subsection">8.5 Dynamic Effects</a><a href="#questions-and-discussion">Questions and Discussion</a></nav></aside><article><h1 id="hands-on-r-lab">Hands-on R Lab</h1>
+<aside class="lab-toc" aria-label="On this page"><strong>In this lab</strong><nav><a href="#set-up-r">1. Set Up R</a><a href="#load-the-data">2. Load the Data</a><a href="#understand-the-treatment-variables">3. Understand the Treatment Variables</a><a href="#estimate-the-classic-two-by-two-did">4. Estimate the Classic Two-by-Two DID</a><a href="#estimate-twfe-using-all-seven-years">5. Estimate TWFE Using All Seven Years</a><a href="#estimate-an-event-study">6. Estimate an Event Study</a><a href="#move-to-staggered-adoption">7. Move to Staggered Adoption</a><a href="#estimate-and-summarize-treatment-effects">8. Estimate and Summarize Treatment Effects</a><a href="#group-by-time-atts" class="toc-subsection">8.1 Group-by-Time ATTs</a><a href="#inference" class="toc-subsection">Inference</a><a href="#assess-parallel-trends" class="toc-subsection">Assess Parallel Trends</a><a href="#group-averages" class="toc-subsection">8.2 Group Averages</a><a href="#calendar-summaries" class="toc-subsection">8.3 Calendar Summaries</a><a href="#simple-att" class="toc-subsection">8.4 Simple ATT</a><a href="#dynamic-effects" class="toc-subsection">8.5 Dynamic Effects</a><a href="#extended-two-way-fixed-effects">9. Extended Two-Way Fixed Effects</a><a href="#allow-effects-to-differ-across-groups-and-years" class="toc-subsection">9.1 Allow Effects to Differ Across Groups and Years</a><a href="#use-never-treated-districts-as-the-comparison" class="toc-subsection">9.2 Use Never-Treated Districts as the Comparison</a><a href="#see-the-regression-directly" class="toc-subsection">9.3 See the Regression Directly</a><a href="#compare-the-results" class="toc-subsection">9.4 Compare the Results</a><a href="#questions-and-discussion">Questions and Discussion</a></nav></aside><article><h1 id="hands-on-r-lab">Hands-on R Lab</h1>
 <p><strong>October 22, 2026 | 1:00-1:30 PM Eastern</strong></p>
 <p>What is the effect of district adoption of a gifted education program on district-level achievement? These are simulated teaching examples, not estimates from the actual gifted education study.</p>
 <p><a href="code/workshop_lab.R">Download the R script</a> · <a href="workshop.Rmd">Download the R Markdown</a> · <a href="data.html">Data and codebook</a></p>
 <h2 id="set-up-r">1. Set Up R</h2>
 <p>For help installing R and RStudio, see <a href="https://posit.co/download/rstudio-desktop/">Posit’s setup page</a>. R performs calculations. RStudio provides an interface for code and results.</p>
 <table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
 <thead>
 <tr>
 <th>Package</th>
@@ -35,6 +39,10 @@
 <td>Select observations, create variables, and summarize data.</td>
 </tr>
 <tr>
+<td>etwfe</td>
+<td>Estimate extended TWFE models and summarize their treatment effects.</td>
+</tr>
+<tr>
 <td>fixest</td>
 <td>Estimate regressions and fixed-effects models with feols().</td>
 </tr>
@@ -46,12 +54,13 @@
 </table>
 <p><strong>fixest is the package and feols() is its linear-regression function.</strong> See the <a href="https://lrberge.github.io/fixest/reference/feols.html">function documentation</a>.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install once.</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;readr&quot;</span>, <span class="st">&quot;dplyr&quot;</span>, <span class="st">&quot;fixest&quot;</span>, <span class="st">&quot;did&quot;</span>))</span></code></pre></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;readr&quot;</span>, <span class="st">&quot;dplyr&quot;</span>, <span class="st">&quot;fixest&quot;</span>, <span class="st">&quot;did&quot;</span>, <span class="st">&quot;etwfe&quot;</span>))</span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load for each session.</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(fixest)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(did)</span></code></pre></div>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(did)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(etwfe)</span></code></pre></div>
 <h2 id="load-the-data">2. Load the Data</h2>
 <p>Both datasets contain <strong>832 simulated districts representing Texas</strong>, each observed over seven years. Each row represents one district in one year. Both panels are balanced and treatment is assigned at the district level.</p>
 <p>The six variables are</p>
@@ -1234,12 +1243,365 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 \end{aligned}
 </annotation></semantics></math></div><span class="equation-number" aria-label="Equation 50">(50)</span></div>
 <p>This is not Simple ATT. Averaging event-time summaries gives different total weights to the five group-time cells. See the <a href="https://bcallaway11.github.io/did/reference/aggte.html">aggregation documentation</a>.</p>
+<h2 id="extended-two-way-fixed-effects">9. Extended Two-Way Fixed Effects</h2>
+<p>Ordinary TWFE estimates one treatment coefficient. Extended TWFE allows the effect to differ across adoption groups and years. Our staggered dataset has five post-treatment group-time effects.</p>
+<p>We first show a model with only post-treatment interactions. We then include pre-treatment interactions and use never-treated districts as the comparison, matching the comparison group in our CSA analysis. These specifications are not identical.</p>
+<h3 id="allow-effects-to-differ-across-groups-and-years">9.1 Allow Effects to Differ Across Groups and Years</h3>
+<p>The ordinary TWFE equation is</p>
+<div class="numbered-equation" id="equation-51"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub><mo>+</mo><mi>β</mi><msub><mi>D</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">
+Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
+</annotation></semantics></math></div><span class="equation-number" aria-label="Equation 51">(51)</span></div>
+<p>Replace its single treatment coefficient with five cohort-by-year interactions.</p>
+<div class="numbered-equation" id="equation-52"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><mrow></mrow></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><msub><mi>δ</mi><mrow><mn>5</mn><mo>,</mo><mn>5</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>5</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>δ</mi><mrow><mn>5</mn><mo>,</mo><mn>6</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>6</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><msub><mi>δ</mi><mrow><mn>5</mn><mo>,</mo><mn>7</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>7</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><msub><mi>δ</mi><mrow><mn>6</mn><mo>,</mo><mn>6</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>6</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>6</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>δ</mi><mrow><mn>6</mn><mo>,</mo><mn>7</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>6</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>7</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+Y_{it}={}&amp;\alpha_i+\lambda_t\\
+&amp;+\delta_{5,5}(G_{5i}T_{5t})+\delta_{5,6}(G_{5i}T_{6t})\\
+&amp;+\delta_{5,7}(G_{5i}T_{7t})\\
+&amp;+\delta_{6,6}(G_{6i}T_{6t})+\delta_{6,7}(G_{6i}T_{7t})+u_{it}
+\end{aligned}
+</annotation></semantics></math></div><span class="equation-number" aria-label="Equation 52">(52)</span></div>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><annotation encoding="application/x-tex">G_{5i}</annotation></semantics></math> and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>G</mi><mrow><mn>6</mn><mi>i</mi></mrow></msub><annotation encoding="application/x-tex">G_{6i}</annotation></semantics></math></td>
+<td>Indicators for districts adopting in Year 5 or Year 6</td>
+</tr>
+<tr>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>T</mi><mrow><mi>j</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">T_{jt}</annotation></semantics></math></td>
+<td>Indicator that the observation is in calendar year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math></td>
+</tr>
+<tr>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>α</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\alpha_i</annotation></semantics></math></td>
+<td>District fixed effect</td>
+</tr>
+<tr>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\lambda_t</annotation></semantics></math></td>
+<td>Year fixed effect</td>
+</tr>
+<tr>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>δ</mi><mrow><mi>g</mi><mo>,</mo><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">\delta_{g,t}</annotation></semantics></math></td>
+<td>Coefficient for adoption group <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math> in year <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math></td>
+</tr>
+<tr>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><annotation encoding="application/x-tex">u_{it}</annotation></semantics></math></td>
+<td>Regression error</td>
+</tr>
+</tbody>
+</table>
+<p>For example, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>6</mn><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">G_{5i}T_{6t}</annotation></semantics></math> equals 1 for Year 5 adopters observed in Year 6. Under no anticipation, parallel trends, and the model’s untreated-outcome restrictions, its coefficient identifies ATT(5,6).</p>
+<p>This model fits a common untreated time pattern using untreated observations. It does not estimate separate pre-treatment cohort-by-year coefficients.</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimate five post-treatment effects with district and year fixed effects</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Use never-treated and not-yet-treated observations as controls</span></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>model_etwfe_post <span class="ot">&lt;-</span> <span class="fu">etwfe</span>(</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">fml =</span> outcome_std <span class="sc">~</span> <span class="dv">0</span>,</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">tvar =</span> year,</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">gvar =</span> treatment_start_year,</span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">ivar =</span> district_id,</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">gref =</span> <span class="dv">0</span>,</span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> staggered,</span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">cgroup =</span> <span class="st">&quot;notyet&quot;</span>,</span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">fe =</span> <span class="st">&quot;vs&quot;</span>,</span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Summarize the post-treatment effects as a simple ATT</span></span>
+<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a>post_simple <span class="ot">&lt;-</span> <span class="fu">emfx</span>(model_etwfe_post, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
+<span id="cb41-17"><a href="#cb41-17" aria-hidden="true" tabindex="-1"></a>post_simple</span></code></pre></div>
+<pre><code>#&gt;
+#&gt;  .Dtreat Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 % 97.5 %
+#&gt;     TRUE    0.245     0.0316 7.74   &lt;0.001 46.5 0.183  0.307
+#&gt;
+#&gt; Term: .Dtreat
+#&gt; Type: response
+#&gt; Comparison: TRUE - FALSE</code></pre>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Summarize effects by time since adoption</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="fu">emfx</span>(model_etwfe_post, <span class="at">type =</span> <span class="st">&quot;event&quot;</span>)</span></code></pre></div>
+<pre><code>#&gt;
+#&gt;  event Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 % 97.5 %
+#&gt;      0    0.171     0.0296 5.79   &lt;0.001 27.1 0.113  0.230
+#&gt;      1    0.255     0.0372 6.86   &lt;0.001 37.1 0.182  0.328
+#&gt;      2    0.371     0.0507 7.33   &lt;0.001 41.9 0.272  0.470
+#&gt;
+#&gt; Term: .Dtreat
+#&gt; Type: response
+#&gt; Comparison: TRUE - FALSE</code></pre>
+<p>With <code>cgroup = "notyet"</code>, pre-treatment effects are zero by construction. They are not estimated placebo effects and do not demonstrate parallel trends.</p>
+<h3 id="use-never-treated-districts-as-the-comparison">9.2 Use Never-Treated Districts as the Comparison</h3>
+<p>To compare with our CSA results, use <code>cgroup = "never"</code>. This specification includes pre-treatment interactions as well as the five post-treatment effects. Each cohort’s last untreated year is omitted as its reference.</p>
+<div class="numbered-equation" id="equation-53"><div class="equation"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"><msub><mi>Y</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><mrow></mrow></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><msub><mi>α</mi><mi>i</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>t</mi></msub></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><msub><mi>δ</mi><mrow><mn>5</mn><mo>,</mo><mn>1</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>1</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>δ</mi><mrow><mn>5</mn><mo>,</mo><mn>2</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>2</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><msub><mi>δ</mi><mrow><mn>5</mn><mo>,</mo><mn>3</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>3</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><msub><mi>δ</mi><mrow><mn>5</mn><mo>,</mo><mn>5</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>5</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>δ</mi><mrow><mn>5</mn><mo>,</mo><mn>6</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>6</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><msub><mi>δ</mi><mrow><mn>5</mn><mo>,</mo><mn>7</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>7</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><msub><mi>δ</mi><mrow><mn>6</mn><mo>,</mo><mn>1</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>6</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>1</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>δ</mi><mrow><mn>6</mn><mo>,</mo><mn>2</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>6</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>2</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><msub><mi>δ</mi><mrow><mn>6</mn><mo>,</mo><mn>3</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>6</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>3</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>δ</mi><mrow><mn>6</mn><mo>,</mo><mn>4</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>6</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>4</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right; padding-right: 0"></mtd><mtd columnalign="left" style="text-align: left; padding-left: 0"><mi>+</mi><msub><mi>δ</mi><mrow><mn>6</mn><mo>,</mo><mn>6</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>6</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>6</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>δ</mi><mrow><mn>6</mn><mo>,</mo><mn>7</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>G</mi><mrow><mn>6</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>7</mn><mi>t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>u</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub></mtd></mtr></mtable><annotation encoding="application/x-tex">
+\begin{aligned}
+Y_{it}={}&amp;\alpha_i+\lambda_t\\
+&amp;+\delta_{5,1}(G_{5i}T_{1t})+\delta_{5,2}(G_{5i}T_{2t})\\
+&amp;+\delta_{5,3}(G_{5i}T_{3t})\\
+&amp;+\delta_{5,5}(G_{5i}T_{5t})+\delta_{5,6}(G_{5i}T_{6t})\\
+&amp;+\delta_{5,7}(G_{5i}T_{7t})\\
+&amp;+\delta_{6,1}(G_{6i}T_{1t})+\delta_{6,2}(G_{6i}T_{2t})\\
+&amp;+\delta_{6,3}(G_{6i}T_{3t})+\delta_{6,4}(G_{6i}T_{4t})\\
+&amp;+\delta_{6,6}(G_{6i}T_{6t})+\delta_{6,7}(G_{6i}T_{7t})+u_{it}
+\end{aligned}
+</annotation></semantics></math></div><span class="equation-number" aria-label="Equation 53">(53)</span></div>
+<p>The omitted terms are <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>G</mi><mrow><mn>5</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>4</mn><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">G_{5i}T_{4t}</annotation></semantics></math> and <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>G</mi><mrow><mn>6</mn><mi>i</mi></mrow></msub><msub><mi>T</mi><mrow><mn>5</mn><mi>t</mi></mrow></msub></mrow><annotation encoding="application/x-tex">G_{6i}T_{5t}</annotation></semantics></math>. Group 5 therefore uses Year 4 as its reference, and Group 6 uses Year 5. The five post-treatment coefficients estimate treatment effects. The other seven coefficients describe pre-treatment comparisons.</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Match the never-treated comparison group used in the CSA model</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>model_etwfe_never <span class="ot">&lt;-</span> <span class="fu">etwfe</span>(</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">fml =</span> outcome_std <span class="sc">~</span> <span class="dv">0</span>,</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">tvar =</span> year,</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">gvar =</span> treatment_start_year,</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">ivar =</span> district_id,</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">gref =</span> <span class="dv">0</span>,</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> staggered,</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">cgroup =</span> <span class="st">&quot;never&quot;</span>,</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">fe =</span> <span class="st">&quot;vs&quot;</span>,</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>outcome_std ~ 0</code></td>
+<td>Standardized outcome without covariates</td>
+</tr>
+<tr>
+<td><code>tvar = year</code></td>
+<td>Calendar year</td>
+</tr>
+<tr>
+<td><code>gvar = treatment_start_year</code></td>
+<td>Adoption cohort</td>
+</tr>
+<tr>
+<td><code>ivar = district_id</code></td>
+<td>Use district fixed effects alongside time effects</td>
+</tr>
+<tr>
+<td><code>gref = 0</code></td>
+<td>Identify the never-treated cohort</td>
+</tr>
+<tr>
+<td><code>cgroup = "never"</code></td>
+<td>Use never-treated districts as controls</td>
+</tr>
+<tr>
+<td><code>fe = "vs"</code></td>
+<td>Use the package’s varying-slopes implementation of fixed effects</td>
+</tr>
+<tr>
+<td><code>vcov = ~ district_id</code></td>
+<td>Cluster standard errors by district</td>
+</tr>
+</tbody>
+</table>
+<h4 id="summarize-the-effects">Summarize the Effects</h4>
+<p><code>etwfe()</code> fits the model. Its companion function <code>emfx()</code> summarizes the effects.</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simple ATT combines post-treatment effects, about 0.2469 SD here</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>etwfe_simple <span class="ot">&lt;-</span> <span class="fu">emfx</span>(model_etwfe_never, <span class="at">type =</span> <span class="st">&quot;simple&quot;</span>)</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>etwfe_simple</span></code></pre></div>
+<pre><code>#&gt;
+#&gt;  .Dtreat Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 % 97.5 %
+#&gt;     TRUE    0.247      0.032 7.72   &lt;0.001 46.3 0.184   0.31
+#&gt;
+#&gt; Term: .Dtreat
+#&gt; Type: response
+#&gt; Comparison: TRUE - FALSE</code></pre>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Average within each adoption group</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>etwfe_group <span class="ot">&lt;-</span> <span class="fu">emfx</span>(model_etwfe_never, <span class="at">type =</span> <span class="st">&quot;group&quot;</span>)</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>etwfe_group</span></code></pre></div>
+<pre><code>#&gt;
+#&gt;  treatment_start_year Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 % 97.5 %
+#&gt;                     5    0.251     0.0417 6.01   &lt;0.001 29.0 0.169  0.332
+#&gt;                     6    0.241     0.0413 5.84   &lt;0.001 27.5 0.160  0.322
+#&gt;
+#&gt; Term: .Dtreat
+#&gt; Type: response
+#&gt; Comparison: TRUE - FALSE</code></pre>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Average within each calendar year</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>etwfe_calendar <span class="ot">&lt;-</span> <span class="fu">emfx</span>(model_etwfe_never, <span class="at">type =</span> <span class="st">&quot;calendar&quot;</span>)</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>etwfe_calendar</span></code></pre></div>
+<pre><code>#&gt;
+#&gt;  year Estimate Std. Error    z Pr(&gt;|z|)    S 2.5 % 97.5 %
+#&gt;     5    0.150     0.0378 3.97   &lt;0.001 13.8 0.076  0.224
+#&gt;     6    0.200     0.0353 5.69   &lt;0.001 26.2 0.131  0.270
+#&gt;     7    0.342     0.0424 8.05   &lt;0.001 50.1 0.259  0.425
+#&gt;
+#&gt; Term: .Dtreat
+#&gt; Type: response
+#&gt; Comparison: TRUE - FALSE</code></pre>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Average across groups at the same time since adoption</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>etwfe_event <span class="ot">&lt;-</span> <span class="fu">emfx</span>(model_etwfe_never, <span class="at">type =</span> <span class="st">&quot;event&quot;</span>)</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>etwfe_event</span></code></pre></div>
+<pre><code>#&gt;
+#&gt;  event Estimate Std. Error       z Pr(&gt;|z|)    S   2.5 % 97.5 %
+#&gt;     -5  0.00401     0.0574  0.0699    0.944  0.1 -0.1084 0.1165
+#&gt;     -4  0.03032     0.0426  0.7118    0.477  1.1 -0.0532 0.1138
+#&gt;     -3 -0.03507     0.0374 -0.9385    0.348  1.5 -0.1083 0.0382
+#&gt;     -2 -0.04277     0.0273 -1.5695    0.117  3.1 -0.0962 0.0106
+#&gt;     -1  0.00000         NA      NA       NA   NA      NA     NA
+#&gt;      0  0.17134     0.0275  6.2303   &lt;0.001 31.0  0.1174 0.2252
+#&gt;      1  0.24926     0.0367  6.7930   &lt;0.001 36.4  0.1773 0.3212
+#&gt;      2  0.39324     0.0577  6.8147   &lt;0.001 36.6  0.2801 0.5063
+#&gt;
+#&gt; Term: .Dtreat
+#&gt; Type: response
+#&gt; Comparison: TRUE - FALSE</code></pre>
+<p><code>type = "event"</code> corresponds to <code>type = "dynamic"</code> in CSA’s <code>aggte()</code>. In the never-treated specification, this output also includes pre-treatment comparisons. They are diagnostics, not proof of parallel trends. Read <code>Estimate</code> as an effect in SD units. The output also reports standard errors and confidence intervals.</p>
+<h3 id="see-the-regression-directly">9.3 See the Regression Directly</h3>
+<p>We can estimate the expanded never-treated specification with <code>feols()</code>. Here we create the two cohort indicators in a separate analysis object.</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Identify adoption groups without changing the downloaded dataset</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>staggered_manual <span class="ot">&lt;-</span> staggered <span class="sc">%&gt;%</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">g5 =</span> <span class="fu">as.integer</span>(treatment_start_year <span class="sc">==</span> <span class="dv">5</span>),</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">g6 =</span> <span class="fu">as.integer</span>(treatment_start_year <span class="sc">==</span> <span class="dv">6</span>)</span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Include each cohort&#39;s year interactions, omitting its last untreated year</span></span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a>model_manual <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
+<span id="cb54-10"><a href="#cb54-10" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> <span class="fu">i</span>(year, g5, <span class="at">ref =</span> <span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb54-11"><a href="#cb54-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">i</span>(year, g6, <span class="at">ref =</span> <span class="dv">5</span>) <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
+<span id="cb54-12"><a href="#cb54-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> staggered_manual,</span>
+<span id="cb54-13"><a href="#cb54-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
+<span id="cb54-14"><a href="#cb54-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb54-15"><a href="#cb54-15" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_manual)</span></code></pre></div>
+<pre><code>#&gt; OLS estimation, Dep. Var.: outcome_std
+#&gt; Observations: 5,824
+#&gt; Fixed-effects: district_id: 832,  year: 7
+#&gt; Standard-errors: Clustered (district_id)
+#&gt;             Estimate Std. Error   t value   Pr(&gt;|t|)
+#&gt; year::1:g5  0.087171   0.058061  1.501368 1.3364e-01
+#&gt; year::2:g5  0.003985   0.050393  0.079086 9.3698e-01
+#&gt; year::3:g5 -0.013818   0.040462 -0.341498 7.3281e-01
+#&gt; year::5:g5  0.150080   0.037819  3.968397 7.8610e-05 ***
+#&gt; year::6:g5  0.208241   0.048882  4.260035 2.2776e-05 ***
+#&gt; year::7:g5  0.393243   0.057705  6.814733 1.8137e-11 ***
+#&gt; year::1:g6  0.004010   0.057371  0.069895 9.4429e-01
+#&gt; year::2:g6 -0.026535   0.055253 -0.480242 6.3118e-01
+#&gt; year::3:g6 -0.074131   0.050413 -1.470466 1.4181e-01
+#&gt; year::4:g6 -0.071726   0.038824 -1.847438 6.5039e-02 .
+#&gt; year::6:g6  0.192595   0.041518  4.638830 4.0689e-06 ***
+#&gt; year::7:g6  0.290276   0.049595  5.852887 6.9494e-09 ***
+#&gt; ---
+#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+#&gt; RMSE: 0.395083     Adj. R2: 0.811005
+#&gt;                  Within R2: 0.028331</code></pre>
+<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="co"># year::5:g5 is ATT(5,5), about 0.1501 SD</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="co"># The output includes both pre-treatment comparisons and treatment effects</span></span></code></pre></div>
+<h3 id="compare-the-results">9.4 Compare the Results</h3>
+<p>First fit ordinary TWFE on the <strong>staggered</strong> panel so every method below uses the same observations. This is different from the common-adoption panel in Section 5.</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimate the single-coefficient TWFE model on the staggered panel</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>model_twfe_staggered <span class="ot">&lt;-</span> <span class="fu">feols</span>(</span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  outcome_std <span class="sc">~</span> treated <span class="sc">|</span> district_id <span class="sc">+</span> year,</span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> staggered,</span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="sc">~</span> district_id</span>
+<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_twfe_staggered)</span></code></pre></div>
+<pre><code>#&gt; OLS estimation, Dep. Var.: outcome_std
+#&gt; Observations: 5,824
+#&gt; Fixed-effects: district_id: 832,  year: 7
+#&gt; Standard-errors: Clustered (district_id)
+#&gt;         Estimate Std. Error t value   Pr(&gt;|t|)
+#&gt; treated 0.231737   0.030258 7.65863 5.2249e-14 ***
+#&gt; ---
+#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+#&gt; RMSE: 0.396505     Adj. R2: 0.810062
+#&gt;                  Within R2: 0.02132</code></pre>
+<h4 id="five-group-by-time-effects">Five Group-by-Time Effects</h4>
+<table>
+<thead>
+<tr>
+<th>Effect</th>
+<th>Post-only ETWFE</th>
+<th>Never-control ETWFE</th>
+<th>CSA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ATT(5,5)</td>
+<td>0.1167</td>
+<td>0.1501</td>
+<td>0.1501</td>
+</tr>
+<tr>
+<td>ATT(5,6)</td>
+<td>0.1861</td>
+<td>0.2082</td>
+<td>0.2082</td>
+</tr>
+<tr>
+<td>ATT(5,7)</td>
+<td>0.3711</td>
+<td>0.3932</td>
+<td>0.3932</td>
+</tr>
+<tr>
+<td>ATT(6,6)</td>
+<td>0.2263</td>
+<td>0.1926</td>
+<td>0.1926</td>
+</tr>
+<tr>
+<td>ATT(6,7)</td>
+<td>0.3240</td>
+<td>0.2903</td>
+<td>0.2903</td>
+</tr>
+</tbody>
+</table>
+<p>The post-only model pools information across untreated periods to fit the untreated time pattern. The never-control specification allows cohort-specific pre-treatment comparisons and uses each cohort’s last untreated year as the reference. Leaving out the pre-treatment interactions changes the model, not just the display.</p>
+<h4 id="overall-estimates">Overall Estimates</h4>
+<table>
+<thead>
+<tr>
+<th>Model and summary</th>
+<th>Estimate in SD units</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ordinary TWFE on the staggered panel</td>
+<td>0.2317</td>
+</tr>
+<tr>
+<td>Post-only ETWFE, simple ATT</td>
+<td>0.2448</td>
+</tr>
+<tr>
+<td>Never-control ETWFE, simple ATT</td>
+<td>0.2469</td>
+</tr>
+<tr>
+<td>CSA, simple ATT</td>
+<td>0.2469</td>
+</tr>
+</tbody>
+</table>
+<p>In this balanced example without covariates, never-control ETWFE and CSA give the same five post-treatment point estimates and simple ATT. This is not a general guarantee for other datasets or specifications.</p>
+<p>Their uncertainty calculations are different. Our CSA model uses a multiplier bootstrap and simultaneous bands for the group-time estimates. The ETWFE summaries use regression-based district-clustered inference with delta-method uncertainty from <code>emfx()</code>. Its reported intervals are pointwise, not the CSA simultaneous bands.</p>
+<p>The never-control event-time estimates are 0.1713, 0.2493, and 0.3932 SD at event times 0, 1, and 2. Only Group 5 contributes at event time 2. Equal weighting of these three estimates gives 0.2713 SD, which differs from the simple ATT because the weights differ.</p>
+<p>See the <a href="https://grantmcdermott.com/etwfe/reference/etwfe.html">etwfe() documentation</a>, <a href="https://grantmcdermott.com/etwfe/reference/emfx.html">emfx() documentation</a>, and <a href="https://doi.org/10.1007/s00181-025-02807-z">Wooldridge’s paper</a>.</p>
 <h2 id="questions-and-discussion">Questions and Discussion</h2>
 <p><strong>1:30-2:00 PM</strong> Which units receive treatment? Which supply an untreated comparison? Which effect summary answers your question? What makes parallel trends plausible?</p>
-<p>ETWFE remains a lecture-only extension in this lab. See <a href="resources.html">Resources</a> for further reading.</p>
+<p>See <a href="resources.html">Resources</a> for further reading.</p>
 <h4 id="r-session-and-package-versions">R Session and Package Versions</h4>
-<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Record R and package versions to help reproduce these results</span></span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Record R and package versions to help reproduce these results</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code></pre></div>
 <pre><code>#&gt; R version 4.4.2 (2024-10-31)
 #&gt; Platform: aarch64-apple-darwin20
 #&gt; Running under: macOS Sequoia 15.5
@@ -1258,41 +1620,42 @@ w_{g,t}=\frac{N_g}{\sum_h N_h(T-h+1)}
 #&gt; [1] stats     graphics  grDevices utils     datasets  methods   base
 #&gt;
 #&gt; other attached packages:
-#&gt; [1] did_2.1.2     fixest_0.12.1 dplyr_1.1.4   readr_2.1.5
+#&gt; [1] etwfe_0.5.0   did_2.1.2     fixest_0.12.1 dplyr_1.1.4   readr_2.1.5
 #&gt;
 #&gt; loaded via a namespace (and not attached):
-#&gt;   [1] pROC_1.18.5          DRDID_1.2.0          sandwich_3.1-1
-#&gt;   [4] rlang_1.2.0          magrittr_2.0.4       multcomp_1.4-26
-#&gt;   [7] dreamerr_1.4.0       otel_0.2.0           compiler_4.4.2
-#&gt;  [10] vctrs_0.6.5          reshape2_1.4.4       stringr_1.5.2
-#&gt;  [13] pkgconfig_2.0.3      crayon_1.5.3         backports_1.5.0
-#&gt;  [16] labeling_0.4.3       prodlim_2024.06.25   tzdb_0.5.0
-#&gt;  [19] purrr_1.1.0          bit_4.6.0            xfun_0.61
-#&gt;  [22] trust_0.1-8          recipes_1.1.0        stringmagic_1.1.2
-#&gt;  [25] fastglm_0.0.3        uuid_1.2-1           broom_1.0.10
-#&gt;  [28] parallel_4.4.2       R6_2.6.1             stringi_1.8.7
-#&gt;  [31] RColorBrewer_1.1-3   parallelly_1.45.1    car_3.1-3
-#&gt;  [34] rpart_4.1.24         lubridate_1.9.4      numDeriv_2016.8-1.1
-#&gt;  [37] estimability_1.5.1   Rcpp_1.1.2           iterators_1.0.14
-#&gt;  [40] BMisc_1.4.7          knitr_1.51           future.apply_1.11.3
-#&gt;  [43] zoo_1.8-14           Matrix_1.7-1         splines_4.4.2
-#&gt;  [46] nnet_7.3-19          timechange_0.3.0     tidyselect_1.2.1
-#&gt;  [49] abind_1.4-8          timeDate_4041.110    codetools_0.2-20
-#&gt;  [52] listenv_0.9.1        lattice_0.22-6       tibble_3.3.0
-#&gt;  [55] plyr_1.8.9           withr_3.0.2          S7_0.2.1-1
-#&gt;  [58] coda_0.19-4.1        evaluate_1.0.1       future_1.67.0
-#&gt;  [61] survival_3.7-0       pillar_1.11.1        ggpubr_0.6.1
-#&gt;  [64] carData_3.0-5        foreach_1.5.2        stats4_4.4.2
-#&gt;  [67] generics_0.1.4       vroom_1.6.6          hms_1.1.3
-#&gt;  [70] ggplot2_4.0.1        scales_1.4.0         globals_0.18.0
-#&gt;  [73] xtable_1.8-4         class_7.3-22         glue_1.8.0
-#&gt;  [76] emmeans_1.11.1       tools_4.4.2          data.table_1.16.4
-#&gt;  [79] ModelMetrics_1.2.2.2 gower_1.0.2          ggsignif_0.6.4
-#&gt;  [82] mvtnorm_1.3-3        grid_4.4.2           bigmemory_4.6.4
-#&gt;  [85] tidyr_1.3.1          ipred_0.9-15         nlme_3.1-166
-#&gt;  [88] Formula_1.2-5        cli_3.6.5            bigmemory.sri_0.1.8
-#&gt;  [91] lava_1.8.0           gtable_0.3.6         rstatix_0.7.2
-#&gt;  [94] digest_0.6.37        caret_7.0-1          TH.data_1.1-2
-#&gt;  [97] farver_2.1.2         lifecycle_1.0.4      hardhat_1.4.0
-#&gt; [100] bit64_4.6.0-1        MASS_7.3-61</code></pre>
+#&gt;   [1] pROC_1.18.5            DRDID_1.2.0            sandwich_3.1-1
+#&gt;   [4] rlang_1.2.0            magrittr_2.0.4         multcomp_1.4-26
+#&gt;   [7] dreamerr_1.4.0         otel_0.2.0             compiler_4.4.2
+#&gt;  [10] vctrs_0.6.5            reshape2_1.4.4         stringr_1.5.2
+#&gt;  [13] pkgconfig_2.0.3        crayon_1.5.3           backports_1.5.0
+#&gt;  [16] labeling_0.4.3         prodlim_2024.06.25     tzdb_0.5.0
+#&gt;  [19] purrr_1.1.0            bit_4.6.0              xfun_0.61
+#&gt;  [22] trust_0.1-8            recipes_1.1.0          stringmagic_1.1.2
+#&gt;  [25] fastglm_0.0.3          uuid_1.2-1             broom_1.0.10
+#&gt;  [28] parallel_4.4.2         R6_2.6.1               stringi_1.8.7
+#&gt;  [31] RColorBrewer_1.1-3     parallelly_1.45.1      car_3.1-3
+#&gt;  [34] rpart_4.1.24           lubridate_1.9.4        numDeriv_2016.8-1.1
+#&gt;  [37] estimability_1.5.1     Rcpp_1.1.2             iterators_1.0.14
+#&gt;  [40] BMisc_1.4.7            knitr_1.51             future.apply_1.11.3
+#&gt;  [43] zoo_1.8-14             Matrix_1.7-1           splines_4.4.2
+#&gt;  [46] nnet_7.3-19            timechange_0.3.0       tidyselect_1.2.1
+#&gt;  [49] abind_1.4-8            timeDate_4041.110      codetools_0.2-20
+#&gt;  [52] listenv_0.9.1          lattice_0.22-6         tibble_3.3.0
+#&gt;  [55] plyr_1.8.9             withr_3.0.2            S7_0.2.1-1
+#&gt;  [58] coda_0.19-4.1          evaluate_1.0.1         marginaleffects_0.32.0
+#&gt;  [61] future_1.67.0          survival_3.7-0         pillar_1.11.1
+#&gt;  [64] ggpubr_0.6.1           carData_3.0-5          checkmate_2.3.2
+#&gt;  [67] foreach_1.5.2          stats4_4.4.2           insight_1.5.4
+#&gt;  [70] generics_0.1.4         vroom_1.6.6            hms_1.1.3
+#&gt;  [73] ggplot2_4.0.1          scales_1.4.0           globals_0.18.0
+#&gt;  [76] xtable_1.8-4           class_7.3-22           glue_1.8.0
+#&gt;  [79] emmeans_1.11.1         tools_4.4.2            data.table_1.16.4
+#&gt;  [82] ModelMetrics_1.2.2.2   gower_1.0.2            ggsignif_0.6.4
+#&gt;  [85] mvtnorm_1.3-3          grid_4.4.2             bigmemory_4.6.4
+#&gt;  [88] tidyr_1.3.1            ipred_0.9-15           nlme_3.1-166
+#&gt;  [91] Formula_1.2-5          cli_3.6.5              tinyplot_0.2.1
+#&gt;  [94] bigmemory.sri_0.1.8    lava_1.8.0             gtable_0.3.6
+#&gt;  [97] rstatix_0.7.2          digest_0.6.37          caret_7.0-1
+#&gt; [100] TH.data_1.1-2          farver_2.1.2           lifecycle_1.0.4
+#&gt; [103] hardhat_1.4.0          bit64_4.6.0-1          MASS_7.3-61</code></pre>
 </article></main><footer class="footer"><div class="footer-inner">EPRC Methods Workshop Series · University of Florida · October 22, 2026</div></footer></body></html>

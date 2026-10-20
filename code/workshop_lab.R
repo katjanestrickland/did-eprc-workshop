@@ -4,6 +4,7 @@ library(readr)
 library(dplyr)
 library(fixest)
 library(did)
+library(etwfe)
 
 
 ## ----import-------------------------------------------------------------------
@@ -161,6 +162,94 @@ summary(dynamic_att)
 # Event time 1 combines ATT(5,6) and ATT(6,7), about 0.2493 SD
 # Event time 2 uses ATT(5,7) only, about 0.3932 SD
 # The overall dynamic average is about 0.2713 SD
+
+
+
+
+## ----etwfe-post---------------------------------------------------------------
+# Estimate five post-treatment effects with district and year fixed effects
+# Use never-treated and not-yet-treated observations as controls
+model_etwfe_post <- etwfe(
+  fml = outcome_std ~ 0,
+  tvar = year,
+  gvar = treatment_start_year,
+  ivar = district_id,
+  gref = 0,
+  data = staggered,
+  cgroup = "notyet",
+  fe = "vs",
+  vcov = ~ district_id
+)
+
+# Summarize the post-treatment effects as a simple ATT
+post_simple <- emfx(model_etwfe_post, type = "simple")
+post_simple
+
+# Summarize effects by time since adoption
+emfx(model_etwfe_post, type = "event")
+
+
+## ----etwfe-never--------------------------------------------------------------
+# Match the never-treated comparison group used in the CSA model
+model_etwfe_never <- etwfe(
+  fml = outcome_std ~ 0,
+  tvar = year,
+  gvar = treatment_start_year,
+  ivar = district_id,
+  gref = 0,
+  data = staggered,
+  cgroup = "never",
+  fe = "vs",
+  vcov = ~ district_id
+)
+
+
+## ----etwfe-summaries----------------------------------------------------------
+# Simple ATT combines post-treatment effects, about 0.2469 SD here
+etwfe_simple <- emfx(model_etwfe_never, type = "simple")
+etwfe_simple
+
+# Average within each adoption group
+etwfe_group <- emfx(model_etwfe_never, type = "group")
+etwfe_group
+
+# Average within each calendar year
+etwfe_calendar <- emfx(model_etwfe_never, type = "calendar")
+etwfe_calendar
+
+# Average across groups at the same time since adoption
+etwfe_event <- emfx(model_etwfe_never, type = "event")
+etwfe_event
+
+
+## ----etwfe-manual-------------------------------------------------------------
+# Identify adoption groups without changing the downloaded dataset
+staggered_manual <- staggered %>%
+  mutate(
+    g5 = as.integer(treatment_start_year == 5),
+    g6 = as.integer(treatment_start_year == 6)
+  )
+
+# Include each cohort's year interactions, omitting its last untreated year
+model_manual <- feols(
+  outcome_std ~ i(year, g5, ref = 4) +
+    i(year, g6, ref = 5) | district_id + year,
+  data = staggered_manual,
+  vcov = ~ district_id
+)
+summary(model_manual)
+# year::5:g5 is ATT(5,5), about 0.1501 SD
+# The output includes both pre-treatment comparisons and treatment effects
+
+
+## ----etwfe-comparison---------------------------------------------------------
+# Estimate the single-coefficient TWFE model on the staggered panel
+model_twfe_staggered <- feols(
+  outcome_std ~ treated | district_id + year,
+  data = staggered,
+  vcov = ~ district_id
+)
+summary(model_twfe_staggered)
 
 
 

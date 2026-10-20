@@ -61,3 +61,21 @@ stopifnot(
             (lab$model_csa$att + lab$model_csa$c * lab$model_csa$se)[post_index])) < 1e-8
 )
 cat("Displayed standard errors and simultaneous bands match the model summary.\n")
+manual_cells <- mapply(function(g,t) {
+  unname(coef(lab$model_manual)[paste0("year::", t, ":g", g)])
+}, lab$post_att$group, lab$post_att$year)
+stopifnot(
+  all(is.finite(as.matrix(lab$etwfe_cells))),
+  max(abs(lab$etwfe_cells$never - lab$post_att$estimate)) < 1e-8,
+  max(abs(manual_cells - lab$post_att$estimate)) < 1e-8,
+  abs(lab$etwfe_simple$estimate - lab$overall_csa$overall.att) < 1e-8,
+  abs(lab$post_simple$estimate - mean(lab$etwfe_cells$post_only)) < 1e-8,
+  max(abs(lab$etwfe_group$estimate -
+    lab$group_att$att.egt[match(lab$etwfe_group$treatment_start_year,lab$group_att$egt)])) < 1e-8,
+  max(abs(lab$etwfe_calendar$estimate -
+    lab$calendar_att$att.egt[match(lab$etwfe_calendar$year,lab$calendar_att$egt)])) < 1e-8
+)
+event_post <- lab$etwfe_event[lab$etwfe_event$event >= 0, ]
+stopifnot(max(abs(event_post$estimate -
+  lab$dynamic_att$att.egt[match(event_post$event,lab$dynamic_att$egt)])) < 1e-8)
+cat("ETWFE cells, manual regression, and all never-control aggregations verified.\n")
