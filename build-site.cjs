@@ -32,7 +32,8 @@ for (const [slug, name] of pages) {
     .filter(h => h[1] === '2' || /^([89]\.\d|Inference|Assess Parallel Trends)/.test(h[3]))
     .map(h => [h[0], h[2], h[3], h[1]]);
   const toc = slug === 'workshop' ? `<aside class="lab-toc" aria-label="On this page"><strong>In this lab</strong><nav>${headings.map(h => `<a href="#${escape(h[1])}"${h[3] === '3' ? ' class="toc-subsection"' : ''}>${h[2]}</a>`).join('')}</nav></aside>` : '';
-  const nav = pages.slice(0,6).map(([p,n]) => `<a href="${p}.html"${p === slug ? ' aria-current="page"' : ''}>${n}</a>`).join('\n');
+  const nav = pages.slice(0,6).map(([p,n]) => `<a href="${p}.html"${p === slug ? ' aria-current="page"' : ''}>${n}</a>`).join('\n')
+    + '\n<a href="https://ufl.qualtrics.com/jfe/form/SV_8zSxiOqvBHLp3kW">Survey</a>';
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${name} | EPRC DID Workshop</title><link rel="stylesheet" href="styles.css">

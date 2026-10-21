@@ -17,6 +17,8 @@ website:
         text: Data
       - href: resources.qmd
         text: Resources
+      - href: https://ufl.qualtrics.com/jfe/form/SV_8zSxiOqvBHLp3kW
+        text: Survey
 
 format:
   html:
