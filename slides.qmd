@@ -4,5 +4,5 @@ title: "Workshop Slides"
 
 # Workshop Slides
 
-View or download the draft slides (PDF forthcoming)
+[View or download the workshop slides (PDF)](slides/slides.pdf)
 
