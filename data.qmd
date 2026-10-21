@@ -11,7 +11,7 @@ These datasets illustrate a district-level intervention in Texas using 832 simul
 <table>
 <thead><tr><th>Dataset</th><th>Groups</th><th>Downloads</th></tr></thead>
 <tbody>
-<tr><td>Traditional DID</td><td><ul><li><span class="cohort-label early">Treated</span> 416 districts adopt in Year 5</li><li><span class="cohort-label never">Never treated</span> 416 districts</li></ul></td><td><a href="assets/data/simple_did_district.csv">CSV</a> · <a href="assets/data/simple_did_district.dta">Stata</a></td></tr>
+<tr><td>Traditional DID</td><td><ul><li><span class="cohort-label early">Treated</span> 416 districts adopt in Year 5</li><li><span class="cohort-label never">Never treated</span> 416 districts</li></ul></td><td><a href="assets/data/traditional_did_district.csv">CSV</a> · <a href="assets/data/traditional_did_district.dta">Stata</a></td></tr>
 <tr><td>Staggered DID</td><td><ul><li><span class="cohort-label early">Early adopters</span> 208 districts adopt in Year 5</li><li><span class="cohort-label late">Late adopters</span> 208 districts adopt in Year 6</li><li><span class="cohort-label never">Never treated</span> 416 districts</li></ul></td><td><a href="assets/data/staggered_did_district.csv">CSV</a> · <a href="assets/data/staggered_did_district.dta">Stata</a></td></tr>
 </tbody>
 </table>

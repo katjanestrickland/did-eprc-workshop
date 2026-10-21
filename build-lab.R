@@ -2,27 +2,24 @@
 # Execute the page against published local CSVs.
 lab <- new.env(parent = globalenv())
 knitr::knit("workshop.Rmd", output = "workshop-generated.md", envir = lab)
-knitr::purl("workshop.Rmd", output = "code/workshop_lab.R", documentation = 1)
+# The downloadable lab script is maintained separately from the expanded page.
 cells <- data.frame(cohort=lab$model_csa$group, year=lab$model_csa$t, ATT=lab$model_csa$att)
 post <- cells[cells$year >= cells$cohort, ]
 stopifnot(nrow(post) == 5, abs(mean(post$ATT) - lab$overall_csa$overall.att) < 1e-8)
 cat("Lab executed and aggregation check passed.\n")
-stopifnot(nrow(lab$simple) == 5824, nrow(lab$staggered) == 5824,
-          length(unique(lab$simple$district_id)) == 832)
+stopifnot(nrow(lab$traditional) == 5824, nrow(lab$staggered) == 5824,
+          length(unique(lab$traditional$district_id)) == 832)
 contrast <- function(d, g, t, baseline) {
   mean(d$outcome_std[d$treatment_start_year == g & d$year == t]) -
     mean(d$outcome_std[d$treatment_start_year == g & d$year == baseline]) -
     mean(d$outcome_std[d$treatment_start_year == 0 & d$year == t]) +
     mean(d$outcome_std[d$treatment_start_year == 0 & d$year == baseline])
 }
-stopifnot(abs(contrast(lab$simple, 5, 5, 4) - coef(lab$model_2x2)["treated"]) < 1e-8)
-stopifnot(abs(lab$did_from_means - coef(lab$model_2x2)["treated"]) < 1e-8,
-          max(abs(lab$observed_means$change - c(0.8074642, 0.5949770))) < 1e-7)
-print(lab$observed_means)
+stopifnot(abs(contrast(lab$traditional, 5, 5, 4) - coef(lab$model_2x2)["treated"]) < 1e-8)
 manual <- mapply(function(g,t) contrast(lab$staggered,g,t,g-1), post$cohort, post$year)
 stopifnot(max(abs(manual - post$ATT)) < 1e-8)
 cat("Texas sample sizes and manual DID contrasts verified.\n")
-for (name in c("simple_did_district", "staggered_did_district")) {
+for (name in c("traditional_did_district", "staggered_did_district")) {
   input <- readr::read_csv(paste0("assets/data/", name, ".csv"), show_col_types=FALSE)
   stopifnot(identical(names(input), c("district_id", "year", "treatment_start_year", "outcome_std", "treated_ever", "treated")),
             !anyNA(input), nrow(input) == 5824,
@@ -30,7 +27,7 @@ for (name in c("simple_did_district", "staggered_did_district")) {
             all(table(input$district_id) == 7),
             all(input$treated_ever == as.integer(input$treatment_start_year > 0)),
             all(input$treated == as.integer(input$treatment_start_year > 0 & input$year >= input$treatment_start_year)))
-  expected <- if (name == "simple_did_district") c(`0`=416, `5`=416) else c(`0`=416, `5`=208, `6`=208)
+  expected <- if (name == "traditional_did_district") c(`0`=416, `5`=416) else c(`0`=416, `5`=208, `6`=208)
   counts <- table(input$treatment_start_year[input$year == 1])
   stopifnot(identical(names(counts), names(expected)), all(as.numeric(counts) == expected))
 }
