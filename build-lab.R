@@ -16,6 +16,9 @@ contrast <- function(d, g, t, baseline) {
     mean(d$outcome_std[d$treatment_start_year == 0 & d$year == baseline])
 }
 stopifnot(abs(contrast(lab$simple, 5, 5, 4) - coef(lab$model_2x2)["treated"]) < 1e-8)
+stopifnot(abs(lab$did_from_means - coef(lab$model_2x2)["treated"]) < 1e-8,
+          max(abs(lab$observed_means$change - c(0.8074642, 0.5949770))) < 1e-7)
+print(lab$observed_means)
 manual <- mapply(function(g,t) contrast(lab$staggered,g,t,g-1), post$cohort, post$year)
 stopifnot(max(abs(manual - post$ATT)) < 1e-8)
 cat("Texas sample sizes and manual DID contrasts verified.\n")

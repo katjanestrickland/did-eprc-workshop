@@ -28,7 +28,7 @@ R performs calculations. RStudio provides an interface for code and results.
 |---|---|
 | readr | Import CSVs with read_csv(). |
 | dplyr | Select observations, create variables, and summarize data. |
-| etwfe | Estimate extended TWFE models and summarize their treatment effects. |
+| etwfe | Estimate extended two-way fixed effects (TWFE) models and summarize their treatment effects. |
 | fixest | Estimate regressions and fixed-effects models with feols(). |
 | did | Estimate and aggregate group-by-time treatment effects. |
 
@@ -130,6 +130,17 @@ the start year. Never-treated districts remain 0 even though their start-year co
 ## 4. Estimate the Classic Two-by-Two DID
 
 Use Year 4, immediately before adoption, and Year 5, the first treated year.
+
+Parallel trends means that, without the program, adopting and never-treated
+districts would have experienced the same average change in achievement. Their
+achievement levels can differ. No anticipation means that the program does not
+affect achievement before a district adopts it.
+
+We also assume that adoption in one district does not affect achievement in the
+districts used as its comparison group. Together, these assumptions justify using
+the never-treated districts' observed change to represent the change adopting
+districts would have experienced without the program.
+
 The two-by-two contrast is
 
 $$
@@ -147,12 +158,50 @@ $$
 | $\overline Y_{C,\mathrm{post}}$ | Never-treated group's mean outcome in Year 5 |
 | $\overline Y_{C,\mathrm{pre}}$ | Never-treated group's mean outcome in Year 4 |
 
-Under parallel trends and no anticipation, the control change supplies the untreated change
-for the treated group. Estimate the contrast using the TWFE equation
+```{r observed-means, echo=FALSE, results='asis'}
+# Calculate observed means and changes without rounding the analysis values
+observed_means <- simple %>%
+  filter(year %in% c(4, 5)) %>%
+  group_by(treated_ever) %>%
+  summarise(
+    year4 = mean(outcome_std[year == 4]),
+    year5 = mean(outcome_std[year == 5]),
+    .groups = "drop"
+  ) %>%
+  mutate(change = year5 - year4) %>%
+  arrange(desc(treated_ever))
+did_from_means <- observed_means$change[1] - observed_means$change[2]
+means_display <- observed_means %>%
+  transmute(
+    Group = if_else(treated_ever == 1, "Adopting districts", "Never-treated districts"),
+    `Mean in Year 4` = sprintf("%.3f", year4),
+    `Mean in Year 5` = sprintf("%.3f", year5),
+    Change = sprintf("%.3f", change)
+  )
+knitr::kable(means_display, format = "pipe", align = c("l", "r", "r", "r"))
+```
+
+These are observed means of the standardized achievement outcome, in SD units.
+
+$$
+\widehat{\operatorname{ATT}}
+\approx `r sprintf('%.3f', observed_means$change[1])`
+- `r sprintf('%.3f', observed_means$change[2])`
+\approx `r sprintf('%.3f', did_from_means)`\text{ SD}
+\tag{2}
+$$
+
+Achievement increased in both groups. The DID estimate subtracts the increase
+among never-treated districts from the increase among adopting districts. Under
+the identifying assumptions, the remaining difference estimates the program's
+effect on adopting districts. Calculations use unrounded values, so the displayed
+rounded terms may not add up exactly to the displayed result.
+
+The regression below estimates this same DID contrast using the TWFE equation
 
 $$
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
-\tag{2}
+\tag{3}
 $$
 
 | Equation | R variable | Meaning |
@@ -176,7 +225,7 @@ model_2x2 <- feols(
   vcov = ~ district_id
 )
 summary(model_2x2)
-# The treated coefficient is the two-by-two DID estimate, about 0.2125 SD
+# The treated coefficient is the two-by-two DID estimate, about 0.212 SD
 ```
 
 **filter() comes from dplyr and feols() comes from fixest.**
@@ -184,8 +233,8 @@ summary(model_2x2)
 Variables after the vertical bar specify fixed effects, not ordinary numeric predictors.
 **data** selects the dataset. **vcov = ~ district_id** requests district-clustered standard errors.
 The coefficient on treated equals the two-by-two contrast.
-In this example, the estimated coefficient is `r sprintf('%.2f', coef(model_2x2)['treated'])` SD,
-meaning that achievement increased by `r sprintf('%.2f', coef(model_2x2)['treated'])` standard deviations
+In this example, the estimated coefficient is `r sprintf('%.3f', coef(model_2x2)['treated'])` SD,
+meaning that achievement increased by `r sprintf('%.3f', coef(model_2x2)['treated'])` standard deviations
 more in treated districts than in never-treated districts between Years 4 and 5.
 Clustering allows outcomes from the same district to be related across years.
 The estimated coefficient is measured in SD units.
@@ -199,11 +248,14 @@ Years 1-4 to its average outcome in Years 5-7 with the same change for never-tre
 In this balanced common-adoption example, it summarizes the average post-treatment effect.
 
 District effects account for persistent differences between districts.
-Year effects account for common shocks. The equation stays the same
+Year effects account for common shocks. We use `treated` because it changes from
+0 to 1 when a district adopts. `treated_ever` only identifies treatment-group
+membership and does not change over time, so its separate effect cannot be
+estimated alongside district fixed effects. The equation stays the same
 
 $$
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
-\tag{3}
+\tag{4}
 $$
 
 ```{r twfe}
@@ -217,9 +269,6 @@ summary(model_twfe)
 # The treated coefficient summarizes the effect across Years 5-7
 ```
 
-The time-constant treated_ever variable would be absorbed by district effects.
-Use treated, which switches on at adoption.
-
 ## 6. Estimate an Event Study
 
 In an event study, we estimate a separate coefficient for each year relative to treatment,
@@ -229,7 +278,7 @@ before treatment and how treatment effects evolve afterward.
 $$
 Y_{it}=\alpha_i+\lambda_t+
 \sum_{k\neq-1}\beta_k\left[\mathbf{1}\{t-g=k\}\times D_i\right]+u_{it}
-\tag{4}
+\tag{5}
 $$
 
 | Notation | Meaning |
@@ -262,7 +311,7 @@ Y_{it}={}&\alpha_i+\lambda_t\\
 &+\beta_1[\mathbf{1}\{t-5=1\}\times D_i]
 +\beta_2[\mathbf{1}\{t-5=2\}\times D_i]+u_{it}
 \end{aligned}
-\tag{5}
+\tag{6}
 $$
 
 In Year 1, only the $\beta_{-4}D_i$ interaction remains. In Year 4, all these
@@ -323,7 +372,7 @@ model_event <- feols(
   vcov = ~ district_id
 )
 summary(model_event)
-# relative_year::1:treated_ever is the Year 6 effect, about 0.1690 SD
+# relative_year::1:treated_ever is the Year 6 effect, about 0.169 SD
 ```
 
 ### Interpret the Coefficients
@@ -346,12 +395,18 @@ in different years and estimate effects separately for each cohort and study yea
 
 ## 7. Move to Staggered Adoption
 
+We now use `staggered`, a second simulated dataset in which some districts adopt
+in Year 5 and others adopt in Year 6. Other districts remain untreated throughout
+the study. Because we are switching datasets, differences from earlier results
+should not be interpreted as differences between estimation methods alone.
+In Section 9.4, we compare methods using the same staggered dataset.
+
 Effects now depend on cohort and year
 
 $$
 \operatorname{ATT}(g,t)=\mathbb{E}[Y_{it}(g)-Y_{it}(0)\mid i\in G_g],
 \qquad t\geq g
-\tag{6}
+\tag{7}
 $$
 
 $G_g$ is the cohort first treated in $g$. $Y_{it}(g)$ is the potential outcome when
@@ -379,14 +434,14 @@ ways, each answering a different question. These are not five separate models.
 ### 8.1 Group-by-Time ATT
 
 Use **att_gt() from did**, implementing
-[Callaway and Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001).
+[Callaway and Sant'Anna (2021)](https://doi.org/10.102/j.jeconom.2020.12.001).
 We compare each cohort with never-treated districts
 
 $$
 \widehat{\operatorname{ATT}}(g,t)
 =(\overline Y_{g,t}-\overline Y_{g,g-1})
 -(\overline Y_{C,t}-\overline Y_{C,g-1})
-\tag{7}
+\tag{8}
 $$
 
 ATT(6,7) compares the Year 6 cohort's change from Year 5 to Year 7
@@ -413,7 +468,7 @@ model_csa <- att_gt(
   cband = TRUE
 )
 summary(model_csa)
-# Group 5, Time 5 is ATT(5,5), about 0.1501 SD
+# Group 5, Time 5 is ATT(5,5), about 0.150 SD
 # This is a group-by-time effect, not an average across post-treatment years
 ```
 
@@ -525,7 +580,7 @@ A group average summarizes one adoption group's effects across its post-treatmen
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(g)
 =\sum_{t=g}^{T}w_{\mathrm{s}}(g,t)\widehat{\operatorname{ATT}}(g,t)
-\tag{8}
+\tag{9}
 $$
 
 Here $g$ is the first treatment year, $t$ is the outcome year, and $T=7$ is the last year.
@@ -533,7 +588,7 @@ $w_{\mathrm{s}}(g,t)$ is the weight on year $t$ within group $g$.
 
 $$
 w_{\mathrm{s}}(g,t)=\frac{1}{T-g+1}
-\tag{9}
+\tag{10}
 $$
 
 $T-g+1$ counts the group's post-treatment years. Hats indicate estimates, not known effects.
@@ -554,7 +609,7 @@ w_{\mathrm{s}}(5,5)=w_{\mathrm{s}}(5,6)=w_{\mathrm{s}}(5,7)
 &=\frac{1}{T-g+1}\\
 &=\frac{1}{7-5+1}=\frac13
 \end{aligned}
-\tag{10}
+\tag{11}
 $$
 
 For Group 6, the included years are $t=6,7$.
@@ -565,7 +620,7 @@ w_{\mathrm{s}}(6,6)=w_{\mathrm{s}}(6,7)
 &=\frac{1}{T-g+1}\\
 &=\frac{1}{7-6+1}=\frac12
 \end{aligned}
-\tag{11}
+\tag{12}
 $$
 
 The weights sum to one within each group.
@@ -574,7 +629,7 @@ $$
 \frac13+\frac13+\frac13=1,
 \qquad
 \frac12+\frac12=1
-\tag{12}
+\tag{13}
 $$
 
 $$
@@ -582,23 +637,23 @@ $$
 =w_{\mathrm{s}}(5,5)\widehat{\operatorname{ATT}}(5,5)
 +w_{\mathrm{s}}(5,6)\widehat{\operatorname{ATT}}(5,6)
 +w_{\mathrm{s}}(5,7)\widehat{\operatorname{ATT}}(5,7)
-\tag{13}
+\tag{14}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(6)
 =w_{\mathrm{s}}(6,6)\widehat{\operatorname{ATT}}(6,6)
 +w_{\mathrm{s}}(6,7)\widehat{\operatorname{ATT}}(6,7)
-\tag{14}
+\tag{15}
 $$
 
 ```{r group-aggregation}
 # Average post-treatment effects within each adoption group
 group_att <- aggte(model_csa, type = "group")
 summary(group_att)
-# Group 5 averages ATT(5,5), ATT(5,6), and ATT(5,7), about 0.2505 SD
-# Group 6 averages ATT(6,6) and ATT(6,7), about 0.2414 SD
-# The overall group average weights these by cohort size, about 0.2460 SD
+# Group 5 averages ATT(5,5), ATT(5,6), and ATT(5,7), about 0.251 SD
+# Group 6 averages ATT(6,6) and ATT(6,7), about 0.241 SD
+# The overall group average weights these by cohort size, about 0.246 SD
 ```
 
 `aggte()` takes the fitted `model_csa` object. `type = "group"` requests the group averages.
@@ -620,8 +675,8 @@ post_att <- data.frame(
   mutate(`ATT(g,t)` = paste0("ATT(", group, ",", year, ")"), .before = group)
 # Show post-treatment cells, rounding only the displayed table
 post_att %>%
-  mutate(across(c(estimate, SE, lower_95_sim, upper_95_sim), ~ round(.x, 4)))
-# Group 5, Year 5 is ATT(5,5), about 0.1501 SD
+  mutate(across(c(estimate, SE, lower_95_sim, upper_95_sim), ~ sprintf("%.3f", .x)))
+# Group 5, Year 5 is ATT(5,5), about 0.150 SD
 # SE describes uncertainty, and the last two columns give the band bounds
 ```
 
@@ -632,7 +687,7 @@ post-treatment rows. Estimates, standard errors, and bounds are in SD units.
 
 ```{r arithmetic-helpers, include=FALSE, purl=FALSE}
 cell <- function(g,t) post_att$estimate[post_att$group == g & post_att$year == t]
-fmt <- function(x) sprintf("%.4f", x)
+fmt <- function(x) sprintf("%.3f", x)
 a55 <- cell(5,5)
 a56 <- cell(5,6)
 a57 <- cell(5,7)
@@ -650,33 +705,23 @@ c7 <- mean(c(a57,a67))
 The table above provides the five post-treatment group-time estimates. We now
 combine these estimates to calculate each group's average treatment effect.
 
-All results are in SD units. We show seven decimals in the next arithmetic steps
-to avoid ambiguity from rounding. Intermediate sums add the displayed inputs.
-Final estimates use full precision and are reported to four decimals.
+All results are in SD units. We display three decimal places and calculate with
+unrounded values. Rounded terms may not add up exactly to the displayed result.
 
 Substituting the ATT values and their weights gives
 
 $$
-\begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(5)
-&\approx\frac13(`r sprintf("%.7f",a55)`)
-+\frac13(`r sprintf("%.7f",a56)`)\\
-&\quad+\frac13(`r sprintf("%.7f",a57)`)\\
-&=\frac{`r sprintf("%.7f",sum(round(c(a55,a56,a57),7)))`}{3}\\
-&\approx\boxed{`r fmt(g5)`}
-\end{aligned}
-\tag{15}
+\approx\tfrac13(`r fmt(a55)`)+\tfrac13(`r fmt(a56)`)
++\tfrac13(`r fmt(a57)`)\approx `r fmt(g5)`
+\tag{16}
 $$
 
 $$
-\begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{group}}(6)
-&\approx\frac12(`r sprintf("%.7f",a66)`)
-+\frac12(`r sprintf("%.7f",a67)`)\\
-&=\frac{`r sprintf("%.7f",sum(round(c(a66,a67),7)))`}{2}\\
-&\approx\boxed{`r fmt(g6)`}
-\end{aligned}
-\tag{16}
+\approx\tfrac12(`r fmt(a66)`)+\tfrac12(`r fmt(a67)`)
+\approx `r fmt(g6)`
+\tag{17}
 $$
 
 #### Overall Group Average
@@ -689,7 +734,7 @@ $$
 \widehat{\operatorname{ATT}}_{\mathrm{group,overall}}
 =\sum_g w_{\mathrm{s}}^O(g)\widehat{\operatorname{ATT}}_{\mathrm{group}}(g),
 \qquad w_{\mathrm{s}}^O(g)=\frac{N_g}{\sum_h N_h}
-\tag{17}
+\tag{18}
 $$
 
 We have $N_5=N_6=208$.
@@ -699,7 +744,7 @@ $$
 \widehat{\operatorname{ATT}}_{\mathrm{group,overall}}
 \approx\frac12(`r fmt(g5)`)+\frac12(`r fmt(g6)`)
 \approx`r fmt(group_att$overall.att)`
-\tag{18}
+\tag{19}
 $$
 
 This overall result averages the group averages, rather than weighting all five cells equally.
@@ -712,7 +757,7 @@ $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(t)
 =\sum_{g\le t}w_{\mathrm{c}}(g,t)
 \widehat{\operatorname{ATT}}(g,t)
-\tag{19}
+\tag{20}
 $$
 
 $w_{\mathrm{c}}(g,t)$ is the weight for group $g$ in year $t$.
@@ -733,7 +778,7 @@ The calendar weights are
 
 $$
 w_{\mathrm{c}}(g,t)=\frac{N_g}{\sum_{h\leq t}N_h},\qquad g\leq t
-\tag{20}
+\tag{21}
 $$
 
 The sum includes adoption groups already treated by year $t$.
@@ -750,7 +795,7 @@ $$
 &=\frac{208}{208}
 =1
 \end{aligned}
-\tag{21}
+\tag{22}
 $$
 
 **Year 6**
@@ -764,7 +809,7 @@ $$
 &=\frac{208}{208+208}
 =\frac12
 \end{aligned}
-\tag{22}
+\tag{23}
 $$
 
 Weight on $\widehat{\operatorname{ATT}}(6,6)$
@@ -776,7 +821,7 @@ $$
 &=\frac{208}{208+208}
 =\frac12
 \end{aligned}
-\tag{23}
+\tag{24}
 $$
 
 **Year 7**
@@ -790,7 +835,7 @@ $$
 &=\frac{208}{208+208}
 =\frac12
 \end{aligned}
-\tag{24}
+\tag{25}
 $$
 
 Weight on $\widehat{\operatorname{ATT}}(6,7)$
@@ -802,7 +847,7 @@ $$
 &=\frac{208}{208+208}
 =\frac12
 \end{aligned}
-\tag{25}
+\tag{26}
 $$
 
 Only the early group contributes in Year 5. Both groups contribute in Years 6 and 7.
@@ -811,27 +856,27 @@ Calendar time means the same observation year, not the same time since adoption.
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(5)
 =\widehat{\operatorname{ATT}}(5,5)
-\tag{26}
+\tag{27}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(6)
 =\frac12\widehat{\operatorname{ATT}}(5,6)+\frac12\widehat{\operatorname{ATT}}(6,6)
-\tag{27}
+\tag{28}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
 =\frac12\widehat{\operatorname{ATT}}(5,7)+\frac12\widehat{\operatorname{ATT}}(6,7)
-\tag{28}
+\tag{29}
 $$
 
 ```{r calendar-aggregation}
 # Average effects for groups already treated in the same calendar year
 calendar_att <- aggte(model_csa, type = "calendar")
 summary(calendar_att)
-# Year 5 uses Group 5 only, about 0.1501 SD
-# Years 6 and 7 combine both groups, about 0.2004 and 0.3418 SD
+# Year 5 uses Group 5 only, about 0.150 SD
+# Years 6 and 7 combine both groups, about 0.200 and 0.342 SD
 # The overall calendar average weights these three years equally
 ```
 
@@ -840,25 +885,25 @@ summary(calendar_att)
 #### Substitute the Estimated Effects
 
 We use the group-by-time estimates reported in Section 8.1 and apply the
-calendar-year weights calculated above. Displayed estimates use four decimals,
+calendar-year weights calculated above. Displayed estimates use three decimals,
 while calculations use unrounded values.
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(5)
 \approx1(`r fmt(a55)`)\approx`r fmt(c5)`
-\tag{29}
+\tag{30}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(6)
 \approx\frac12(`r fmt(a56)`)+\frac12(`r fmt(a66)`)\approx`r fmt(c6)`
-\tag{30}
+\tag{31}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(7)
 \approx\frac12(`r fmt(a57)`)+\frac12(`r fmt(a67)`)\approx`r fmt(c7)`
-\tag{31}
+\tag{32}
 $$
 
 #### Overall Calendar Average
@@ -872,14 +917,14 @@ $$
 =\sum_{t\in\mathcal{T}}w_{\mathrm{c}}^O(t)
 \widehat{\operatorname{ATT}}_{\mathrm{calendar}}(t),
 \qquad w_{\mathrm{c}}^O(t)=\frac{1}{|\mathcal{T}|}
-\tag{32}
+\tag{33}
 $$
 
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{calendar,overall}}
 \approx\frac{(`r fmt(c5)`)+(`r fmt(c6)`)+(`r fmt(c7)`)}{3}
 \approx`r fmt(calendar_att$overall.att)`
-\tag{33}
+\tag{34}
 $$
 
 ### 8.4 Simple ATT
@@ -891,12 +936,12 @@ In R, we request it using `aggte(model_csa, type = "simple")`.
 $$
 \widehat{\operatorname{ATT}}_{\mathrm{simple}}
 =\sum_g\sum_{t=g}^{T}w_W^O(g,t)\widehat{\operatorname{ATT}}(g,t)
-\tag{34}
+\tag{35}
 $$
 
 $$
 w_W^O(g,t)=\frac{N_g}{\sum_h N_h(T-h+1)}
-\tag{35}
+\tag{36}
 $$
 
 $w_W^O(g,t)$ is the weight on the group-by-time estimate in Simple ATT.
@@ -918,43 +963,43 @@ $$
 &=624+416\\
 &=1040
 \end{aligned}
-\tag{36}
+\tag{37}
 $$
 
 Each of our five cells has the same cohort size, so each receives weight
 
 $$
 w_W^O(g,t)=\frac{N_g}{\sum_h N_h(T-h+1)}
-=\frac{208}{1040}=0.20
-\tag{37}
+=\frac{208}{1040}=0.200
+\tag{38}
 $$
 
 | Group | Year | Cell weight |
 |---|---|---|
-| 5 | 5 | $208/1040=0.20$ |
-| 5 | 6 | $208/1040=0.20$ |
-| 5 | 7 | $208/1040=0.20$ |
-| 6 | 6 | $208/1040=0.20$ |
-| 6 | 7 | $208/1040=0.20$ |
+| 5 | 5 | $208/1040=0.200$ |
+| 5 | 6 | $208/1040=0.200$ |
+| 5 | 7 | $208/1040=0.200$ |
+| 6 | 6 | $208/1040=0.200$ |
+| 6 | 7 | $208/1040=0.200$ |
 
 $$
 \begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{simple}}
-={}&0.20\widehat{\operatorname{ATT}}(5,5)
-+0.20\widehat{\operatorname{ATT}}(5,6)\\
-&+0.20\widehat{\operatorname{ATT}}(5,7)
-+0.20\widehat{\operatorname{ATT}}(6,6)\\
-&+0.20\widehat{\operatorname{ATT}}(6,7)
+={}&0.200\widehat{\operatorname{ATT}}(5,5)
++0.200\widehat{\operatorname{ATT}}(5,6)\\
+&+0.200\widehat{\operatorname{ATT}}(5,7)
++0.200\widehat{\operatorname{ATT}}(6,6)\\
+&+0.200\widehat{\operatorname{ATT}}(6,7)
 \end{aligned}
-\tag{38}
+\tag{39}
 $$
 
 ```{r aggregation}
 # Combine all post-treatment group-time effects using cohort-size weights
 overall_csa <- aggte(model_csa, type = "simple")
 summary(overall_csa)
-# Each of the five cells has weight 0.20 here
-# Simple ATT is approximately 0.2469 SD
+# Each of the five cells has weight 0.200 here
+# Simple ATT is approximately 0.247 SD
 ```
 
 `type = "simple"` selects the cell-weighted overall average.
@@ -964,17 +1009,16 @@ summary(overall_csa)
 $$
 \begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{simple}}
-\approx{}&0.20(`r fmt(a55)`)+0.20(`r fmt(a56)`)\\
-&+0.20(`r fmt(a57)`)+0.20(`r fmt(a66)`)\\
-&+0.20(`r fmt(a67)`)\\
-&\approx `r fmt(overall_csa$overall.att)`
+\approx{}&0.200\bigl[(`r fmt(a55)`)+(`r fmt(a56)`)+(`r fmt(a57)`)\\
+&\qquad+(`r fmt(a66)`)+(`r fmt(a67)`)\bigr]
+\approx `r fmt(overall_csa$overall.att)`
 \end{aligned}
-\tag{39}
+\tag{40}
 $$
 
-The early group receives total weight $3(0.20)=0.60$ and the late group receives
-$2(0.20)=0.40$. This differs from the overall group average, which gives each group
-weight $0.50$. The calendar overall average instead gives each calendar year equal weight.
+The early group receives total weight $3(0.200)=0.600$ and the late group receives
+$2(0.200)=0.400$. This differs from the overall group average, which gives each group
+weight $0.500$. The calendar overall average instead gives each calendar year equal weight.
 These summaries can differ because they answer different questions.
 
 Never-treated districts supply the comparison but receive no treatment-effect weight.
@@ -995,7 +1039,7 @@ $$
 =\sum_{g\in\mathcal{G}_e}
 w_{\mathrm{es}}(g,g+e)
 \widehat{\operatorname{ATT}}(g,g+e)
-\tag{40}
+\tag{41}
 $$
 
 $w_{\mathrm{es}}(g,g+e)$ is the weight on group $g$ at event time $e$.
@@ -1003,7 +1047,7 @@ The index $h$ runs over the groups in $\mathcal{G}_e$.
 
 $$
 w_{\mathrm{es}}(g,g+e)=\frac{N_g}{\sum_{h\in\mathcal{G}_e}N_h}
-\tag{41}
+\tag{42}
 $$
 
 #### Identify the Comparisons and Weights
@@ -1018,7 +1062,7 @@ w_{\mathrm{es}}(5,5)=w_{\mathrm{es}}(6,6)&=\frac{208}{208+208}=\frac12\\
 w_{\mathrm{es}}(5,6)=w_{\mathrm{es}}(6,7)&=\frac{208}{208+208}=\frac12\\
 w_{\mathrm{es}}(5,7)&=\frac{208}{208}=1
 \end{aligned}
-\tag{42}
+\tag{43}
 $$
 
 | Event time | Meaning | Group-time effects | Weights |
@@ -1034,10 +1078,10 @@ with the late group's effect in Year 6.
 # Average across groups at the same time since treatment began
 dynamic_att <- aggte(model_csa, type = "dynamic")
 summary(dynamic_att)
-# Event time 0 combines ATT(5,5) and ATT(6,6), about 0.1713 SD
-# Event time 1 combines ATT(5,6) and ATT(6,7), about 0.2493 SD
-# Event time 2 uses ATT(5,7) only, about 0.3932 SD
-# The overall dynamic average is about 0.2713 SD
+# Event time 0 combines ATT(5,5) and ATT(6,6), about 0.171 SD
+# Event time 1 combines ATT(5,6) and ATT(6,7), about 0.249 SD
+# Event time 2 uses ATT(5,7) only, about 0.393 SD
+# The overall dynamic average is about 0.271 SD
 ```
 
 `type = "dynamic"` requests estimates by event time. The default output also
@@ -1056,10 +1100,10 @@ $$
 \widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(0)
 &=\frac12\widehat{\operatorname{ATT}}(5,5)
 +\frac12\widehat{\operatorname{ATT}}(6,6)\\
-&\approx\frac12(`r fmt(a55)`)+\frac12(`r fmt(a66)`)\\
-&\approx `r fmt(d0)`
+&\approx\tfrac12(`r fmt(a55)`)+\tfrac12(`r fmt(a66)`)
+\approx `r fmt(d0)`
 \end{aligned}
-\tag{43}
+\tag{44}
 $$
 
 $$
@@ -1067,19 +1111,16 @@ $$
 \widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(1)
 &=\frac12\widehat{\operatorname{ATT}}(5,6)
 +\frac12\widehat{\operatorname{ATT}}(6,7)\\
-&\approx\frac12(`r fmt(a56)`)+\frac12(`r fmt(a67)`)\\
-&\approx `r fmt(d1)`
+&\approx\tfrac12(`r fmt(a56)`)+\tfrac12(`r fmt(a67)`)
+\approx `r fmt(d1)`
 \end{aligned}
-\tag{44}
+\tag{45}
 $$
 
 $$
-\begin{aligned}
 \widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(2)
-&=\widehat{\operatorname{ATT}}(5,7)\\
-&\approx `r fmt(d2)`
-\end{aligned}
-\tag{45}
+=\widehat{\operatorname{ATT}}(5,7)\approx `r fmt(d2)`
+\tag{46}
 $$
 
 The estimate at event time 2 comes only from Group 5 because our data end in Year 7.
@@ -1100,10 +1141,10 @@ $$
 \widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(0)+
 \widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(1)+
 \widehat{\operatorname{ATT}}_{\mathrm{dynamic}}(2)}{3}\\
-&\approx\frac{(`r fmt(d0)`)+(`r fmt(d1)`)+(`r fmt(d2)`)}{3}\\
-&\approx `r fmt(dynamic_att$overall.att)`
+&\approx\frac{(`r fmt(d0)`)+(`r fmt(d1)`)+(`r fmt(d2)`)}{3}
+\approx `r fmt(dynamic_att$overall.att)`
 \end{aligned}
-\tag{46}
+\tag{47}
 $$
 
 This is not Simple ATT. Averaging event-time summaries gives different total weights
@@ -1126,7 +1167,7 @@ The traditional TWFE equation is
 
 $$
 Y_{it}=\alpha_i+\lambda_t+\beta D_{it}+u_{it}
-\tag{47}
+\tag{48}
 $$
 
 Replace its single treatment coefficient with five cohort-by-year interactions.
@@ -1138,7 +1179,7 @@ Y_{it}={}&\alpha_i+\lambda_t\\
 &+\delta_{5,7}(G_{5i}\times T_{7t})\\
 &+\delta_{6,6}(G_{6i}\times T_{6t})+\delta_{6,7}(G_{6i}\times T_{7t})+u_{it}
 \end{aligned}
-\tag{48}
+\tag{49}
 $$
 
 | Term | Meaning |
@@ -1200,7 +1241,7 @@ Y_{it}={}&\alpha_i+\lambda_t\\
 &+\delta_{6,3}(G_{6i}\times T_{3t})+\delta_{6,4}(G_{6i}\times T_{4t})\\
 &+\delta_{6,6}(G_{6i}\times T_{6t})+\delta_{6,7}(G_{6i}\times T_{7t})+u_{it}
 \end{aligned}
-\tag{49}
+\tag{50}
 $$
 
 The omitted terms are $G_{5i}\times T_{4t}$ and $G_{6i}\times T_{5t}$.
@@ -1239,7 +1280,7 @@ model_etwfe_never <- etwfe(
 `etwfe()` fits the model. Its companion function `emfx()` summarizes the effects.
 
 ```{r etwfe-summaries}
-# Simple ATT combines post-treatment effects, about 0.2469 SD here
+# Simple ATT combines post-treatment effects, about 0.247 SD here
 etwfe_simple <- emfx(model_etwfe_never, type = "simple")
 etwfe_simple
 
@@ -1283,7 +1324,7 @@ model_manual <- feols(
   vcov = ~ district_id
 )
 summary(model_manual)
-# year::5:g5 is ATT(5,5), about 0.1501 SD
+# year::5:g5 is ATT(5,5), about 0.150 SD
 # The output includes both pre-treatment comparisons and treatment effects
 ```
 
@@ -1356,7 +1397,7 @@ SD, which differs from the simple ATT because the weights differ.
 
 See the [etwfe() documentation](https://grantmcdermott.com/etwfe/reference/etwfe.html),
 [emfx() documentation](https://grantmcdermott.com/etwfe/reference/emfx.html),
-and [Wooldridge's paper](https://doi.org/10.1007/s00181-025-02807-z).
+and [Wooldridge's paper](https://doi.org/10.101/s00181-025-02807-z).
 
 ## Questions and Discussion
 
