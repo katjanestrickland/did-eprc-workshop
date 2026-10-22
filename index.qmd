@@ -31,7 +31,7 @@ experience is required. Bring a laptop to follow the demonstration and try the R
 ## Workshop Materials
 
 [Start the hands-on R lab](workshop.html) · [Prepare R before the session](workshop.html#setup) ·
-[Download the data](data.html) · [Slides](slides.html)
+[Download the data](data.html)
 
 The lab uses two simulated district-year panels, with seven years and no adjustment
 covariates. The first has a common treatment start; the second has adoption in Years
