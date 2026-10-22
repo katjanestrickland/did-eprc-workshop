@@ -4,7 +4,6 @@ if (!requireNamespace("readr", quietly = TRUE)) install.packages("readr")
 if (!requireNamespace("dplyr", quietly = TRUE)) install.packages("dplyr")
 if (!requireNamespace("fixest", quietly = TRUE)) install.packages("fixest")
 if (!requireNamespace("did", quietly = TRUE)) install.packages("did")
-if (!requireNamespace("etwfe", quietly = TRUE)) install.packages("etwfe")
 
 ## ----Set up packages----------------------------------------------------------
 # Load for each session.
@@ -12,7 +11,6 @@ library(readr)
 library(dplyr)
 library(fixest)
 library(did)
-library(etwfe)
 
 
 ## ----Load the Data------------------------------------------------------------
@@ -32,6 +30,8 @@ staggered %>%
   count(treatment_start_year, name = "districts")
 
 
+################################################################################
+######################Traditional DID###########################################
 ## ----Estimate the Classic Two-by-Two DID--------------------------------------
 # Two groups and two time periods
 # Keep one pre-treatment year and one post-treatment year
@@ -55,9 +55,8 @@ model_twfe <- feols(
   vcov = ~ district_id
 )
 summary(model_twfe)
-# Average achievement increased by about 0.227 SD more in adopting districts
-# than in never-treated districts from Years 1-4 to Years 5-7.
-# Under the DID assumptions, this estimates the average post-treatment effect.
+# The coefficient is the increase in average achievement 
+# from pre-treatment periods (Year 1-4) to post-treatment periods (Year 5-7)
 
 
 ## ----Estimate an Event Study--------------------------------------------------
@@ -77,7 +76,8 @@ model_event <- feols(
 summary(model_event)
 # Reference period: Year 4 (k = -1)
 
-
+################################################################################
+######################Staggered DID#############################################
 ## ----The Callaway–Sant’Anna (CSA) Method--------------------------------------
 # Make the bootstrap reproducible
 set.seed(20261014)
@@ -117,8 +117,8 @@ summary(group_att)
 calendar_att <- aggte(model_csa, type = "calendar")
 summary(calendar_att)
 # Year 5 uses ATT(5,5) only, about 0.150 SD
-# Year 6 combines ATT(5,6) and ATT(6,6), about 0.200 SD
-# Year 7 combines ATT(5,7) and ATT(6,7), about 0.342 SD
+# Years 6 combine ATT(5,6) and ATT(6,6), about 0.200 and 0.342 SD
+# Years 7 combine ATT(5,7) and ATT(6,7), about 0.200 and 0.342 SD
 # The overall calendar average weights these three years equally
 
 
